@@ -49,3 +49,5 @@ jobs:
             git commit -m "Migrar aplicativo Geladinho dos Sonhos para repositorio exclusivo"
             git push origin HEAD:main
           fi
+
+# disparo de migracao exclusiva v1
