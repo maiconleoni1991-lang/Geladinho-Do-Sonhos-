@@ -1,13 +1,6 @@
 (()=>{
 const frame=document.getElementById('store');
-const MARKER='/geladinhos/';
-function appRoot(){
-  const p=window.location.pathname;
-  const i=p.indexOf(MARKER);
-  if(i>=0)return new URL(p.slice(0,i+MARKER.length),window.location.origin).href.replace(/\/$/,'');
-  return new URL('./',window.location.href).href.replace(/\/$/,'');
-}
-const ROOT=appRoot();
+const ROOT=new URL('./',window.location.href).href.replace(/\/$/,'');
 function lastOrder(){try{const o=JSON.parse(localStorage.getItem('gds_last_order')||'null');if(!o||!o.token)return null;if(localStorage.getItem('gds_order_closed_'+o.token)==='1')return null;return o}catch(_){return null}}
 function hrefFor(o){return ROOT+'/acompanhar/'+(o&&o.token?'?t='+encodeURIComponent(o.token):'')}
 function testimonialsHref(){return ROOT+'/?depoimentos=1#gdsTestimonials'}
