@@ -1,6 +1,15 @@
 (()=>{
   if(window.__gdsCatalogV32)return; window.__gdsCatalogV32=true;
   const categories=['Tradicional','Cremoso','Gourmet','Trufado'];
+  const fallbackPrice={Tradicional:1.5,Cremoso:4,Gourmet:6,Trufado:7.5};
+  try{
+    if(typeof fallbackProducts!=='undefined'&&Array.isArray(fallbackProducts)){
+      fallbackProducts.forEach(p=>{if(fallbackPrice[p.cat]!=null)p.price=fallbackPrice[p.cat]});
+    }
+    if(typeof products!=='undefined'&&Array.isArray(products)){
+      products.forEach(p=>{if(p.stock===undefined&&fallbackPrice[p.cat]!=null)p.price=fallbackPrice[p.cat]});
+    }
+  }catch(_){}
   const meta={
     Tradicional:{icon:'🍓',subtitle:'Sabores clássicos e refrescantes!'},
     Cremoso:{icon:'🥛',subtitle:'Cremosos e com aquele sabor especial!'},
