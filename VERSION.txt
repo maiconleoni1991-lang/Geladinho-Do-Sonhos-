@@ -1,0 +1,14 @@
+Geladinho dos Sonhos — versão final v41
+Data: 2026-10-05
+
+Inclui:
+- Loja cliente com fundo oficial estático e persistente.
+- Logo oficial padronizada.
+- GDS Admin instalável e avisos em tempo real.
+- Produtos / estoque, pedidos, relatórios e loja.
+- Festas / Eventos com agenda, estoque compartilhado, PDF/impressão e CSV.
+- Novos pedidos numerados PED-001, PED-002...
+- Novos eventos numerados EVT-001, EVT-002...
+
+Imagem de fundo oficial armazenada em assets/store-background-final.jpg.
+SHA-256 da imagem original recebida: 1a1c6f83a3333883ead363d14d06ec3228a2c8d8e466fb02b6271feb13993517
