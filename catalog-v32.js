@@ -18,10 +18,18 @@
   };
   function priceLabel(arr){
     if(!arr.length)return'';
-    const vals=[...new Set(arr.map(p=>Number(p.price||0)).filter(v=>Number.isFinite(v)))].sort((a,b)=>a-b);
+    const vals=[...new Set(arr.map(p=>Number(p.price||0)).filter(v=>Number.isFinite(v)&&v>0))].sort((a,b)=>a-b);
     if(!vals.length)return'';
     if(vals.length===1)return money(vals[0])+' cada';
     return money(vals[0])+' a '+money(vals[vals.length-1]);
+  }
+  function categoryPriceLabel(cat){
+    try{
+      const arr=(products||[]).filter(p=>p.cat===cat);
+      const live=priceLabel(arr);
+      if(live)return live;
+    }catch(_){}
+    return money(fallbackPrice[cat]||0)+' cada';
   }
   function ensureTab(){
     const tb=document.querySelector('.toolbar'); if(!tb)return;
@@ -29,7 +37,7 @@
       const search=tb.querySelector('.searchWrap');
       const b=document.createElement('button');
       b.className='tab'; b.dataset.filter='Trufado';
-      b.innerHTML='🍫 Trufados<small>Nova categoria</small>';
+      b.innerHTML='🍫 Trufados<small>'+money(fallbackPrice.Trufado)+'</small>';
       b.addEventListener('click',()=>setFilter('Trufado'));
       tb.insertBefore(b,search||null);
     }
@@ -41,8 +49,7 @@
       categories.forEach(cat=>{
         const b=document.querySelector(`.tab[data-filter="${cat}"]`); if(!b)return;
         const small=b.querySelector('small'); if(!small)return;
-        const arr=(products||[]).filter(p=>p.cat===cat&&p.active);
-        small.textContent=arr.length?priceLabel(arr):cat==='Trufado'?'Nova categoria':'Sem itens';
+        small.textContent=categoryPriceLabel(cat);
       });
     }catch(_){}
   }
@@ -53,13 +60,14 @@
       if(filter!=='Todos'&&filter!==cat)return;
       const arr=visibleProducts(cat); if(!arr.length)return;
       const m=meta[cat]||{icon:'🍧',subtitle:'Sabores especiais!'};
-      html+=`<section class="section" data-cat="${cat}"><div class="sectionTitle"><h2>${m.icon} ${cat.toUpperCase()}</h2><p>${m.subtitle}</p><span class="sectionPrice">${priceLabel(arr)}</span></div><div class="cards">${arr.map(cardHTML).join('')}</div></section>`;
+      html+=`<section class="section" data-cat="${cat}"><div class="sectionTitle"><h2>${m.icon} ${cat.toUpperCase()}</h2><p>${m.subtitle}</p><span class="sectionPrice">${priceLabel(arr)||categoryPriceLabel(cat)}</span></div><div class="cards">${arr.map(cardHTML).join('')}</div></section>`;
     });
     if(!html)html='<p style="text-align:center;color:#705c63;padding:40px">Nenhum sabor encontrado.</p>';
     catalog.innerHTML=html; updateTabPrices();
   };
   try{render=renderV32}catch(e){console.error('Falha ao ativar catálogo v32',e)}
   ensureTab();
-  setTimeout(()=>{ensureTab();try{renderV32()}catch(_){}},80);
+  updateTabPrices();
+  setTimeout(()=>{ensureTab();updateTabPrices();try{renderV32()}catch(_){}},80);
   setTimeout(()=>{ensureTab();updateTabPrices();try{renderV32()}catch(_){}},900);
 })();
