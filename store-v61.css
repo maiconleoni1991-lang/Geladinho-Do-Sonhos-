@@ -92,3 +92,22 @@ footer .footer img{
     background-size:cover!important;
   }
 }
+
+/* v68 — banner original HD enviado pelo proprietário; restante do site preservado */
+.heroCard{
+  background-image:
+    linear-gradient(90deg,rgba(255,248,251,.76) 0%,rgba(255,248,251,.56) 34%,rgba(255,248,251,.10) 58%,rgba(255,248,251,0) 100%),
+    url('./assets/Banner%20de%20Geladinhos%20Gourmet%20com%20Frutas.png?v=68')!important;
+  background-position:center!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+}
+@media(max-width:680px){
+  .heroCard{
+    background-image:
+      linear-gradient(180deg,rgba(255,248,251,.02) 0%,rgba(255,248,251,.10) 42%,rgba(255,248,251,.50) 76%,rgba(255,248,251,.70) 100%),
+      url('./assets/Banner%20de%20Geladinhos%20Gourmet%20com%20Frutas.png?v=68')!important;
+    background-position:center!important;
+    background-size:cover!important;
+  }
+}
