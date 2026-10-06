@@ -34,3 +34,42 @@ url('./assets/hero-gds-v63.webp?v=63') center/cover no-repeat!important}
 .heroLogo{width:min(320px,80vw);height:auto;max-height:190px;object-fit:contain;display:block;opacity:1;visibility:visible}
 .footer img{width:190px;max-width:70vw;height:auto;object-fit:contain;display:block}
 @media(max-width:680px){.brand img{width:94px;height:54px}.heroLogo{width:min(280px,76vw)}}
+
+/* v66 — hero integrado ao fundo + logo oficial colorido no rodapé */
+.heroCopy{
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  border:0!important;
+}
+.heroCopy::before{display:none!important}
+.heroLogo{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.hero h1,.hero p{filter:drop-shadow(0 1px 1px rgba(255,255,255,.85))}
+footer .footer img{
+  filter:none!important;
+  opacity:1!important;
+  visibility:visible!important;
+  width:210px!important;
+  max-width:72vw!important;
+  height:auto!important;
+  object-fit:contain!important;
+  background:transparent!important;
+}
+@media(max-width:680px){
+  .heroCopy{
+    background:transparent!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    box-shadow:none!important;
+    border:0!important;
+  }
+  footer .footer img{
+    width:200px!important;
+    margin:0 0 12px!important;
+  }
+}
