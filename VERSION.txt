@@ -1,11 +1,9 @@
-Geladinho dos Sonhos — versão v69
+Geladinho dos Sonhos — versão v70
 Data: 2026-10-06
 
-- Mantido banner original HD aprovado.
-- Logo HD enviado pelo proprietário aplicado no topo, hero e rodapé.
-- Logo principal ampliado e equilibrado com o banner.
-- Conteúdo de boas-vindas centralizado no banner.
-- Novo título e texto comercial aplicados conforme solicitado.
-- Botões preservados.
-- Produtos, estoque, carrinho, pedidos, avaliações e administração preservados.
-- Cache atualizado para v69.
+- Aplicada no hero a arte final aprovada: assets/Geladinhos Gourmet_ Sabor da Infância.png (~2,59 MB).
+- Textos e logo HTML do hero ocultados para não duplicar o conteúdo já incorporado à arte.
+- Áreas clicáveis reais de Ver sabores e Acompanhar pedido preservadas sobre os botões desenhados na imagem.
+- Layout responsivo do hero ajustado em proporção 16:9.
+- Cardápio, estoque, preços, carrinho, pedidos, avaliações e administração preservados.
+- Cache atualizado para v70.
