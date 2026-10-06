@@ -1,32 +1,14 @@
-Geladinho dos Sonhos — versão v63 OPERACIONAL
+Geladinho dos Sonhos — versão v65 LOGO OFICIAL VISÍVEL
 Data: 2026-10-06
 
-LOJA PÚBLICA
-- Loja pública separada da administração.
-- Fundo paisagem oficial aplicado à área principal de vendas.
-- Logo oficial mantido no cabeçalho, hero, rodapé, acompanhamento e documentos.
-- Catálogo, estoque real, carrinho, retirada, entrega e checkout ativos.
-- Mensagem do pedido enviada ao WhatsApp da loja com resumo e aviso de avaliação após a entrega.
-- Página de acompanhamento com atualização de status e avaliação de 1 a 5 estrelas.
-- Depoimentos públicos carregados da tabela public_testimonials.
-
-ADMINISTRAÇÃO
-- Painel protegido por autenticação/MFA.
-- Produtos e estoque editáveis.
-- Pedidos comuns agora possuem edição completa: cliente, WhatsApp, recebimento, endereço, observações, itens, quantidades e status.
-- Edição de pedido recalcula preço e estoque com segurança no backend.
-- Cancelamento devolve estoque; reabertura volta a reservar estoque.
-- Encomendas de festas/eventos continuam totalmente editáveis com controle de estoque.
-- Botões de WhatsApp prontos para avisar cliente sobre pedido e encomenda.
-- Pedidos entregues/finalizados possuem botão para pedir avaliação no WhatsApp.
-- Nova área Depoimentos/Avaliações para acompanhar feedback e publicar/ocultar depoimentos.
-- Ordem A4/PDF de eventos usa o logo oficial da empresa.
-
-BACKEND / TESTES
-- RPC edit_store_order_v63 adicionada ao Supabase.
-- Política administrativa para gestão de public_testimonials adicionada.
-- Teste transacional do checkout concluído com sucesso.
-- Teste transacional de edição de pedido concluído com sucesso.
-- Teste transacional de avaliação + publicação de depoimento concluído com sucesso.
-- Teste transacional de criação, confirmação, edição e reserva de estoque de evento concluído com sucesso.
-- Scripts principais validados sintaticamente.
+- Logo oficial HQ com novo arquivo dedicado.
+- Loja pública usa logo oficial no cabeçalho, hero e rodapé.
+- Acompanhamento de pedido usa logo oficial.
+- Painel administrativo usa logo oficial no menu e na página inicial.
+- Login administrativo usa logo oficial.
+- Páginas de produtos, pedidos, eventos, relatórios e avaliações recebem o logo pelo menu administrativo comum.
+- Ordem de encomenda/PDF usa o logo oficial HQ.
+- Fallback automático para ícone da marca caso o navegador falhe ao carregar o WebP.
+- Arquivo legado logo-oficial.webp também foi substituído pela versão HQ para manter compatibilidade com páginas antigas.
+- Cache/PWA atualizado para v65.
+- Categoria Tradicional permanece habilitada com os sabores cadastrados.
