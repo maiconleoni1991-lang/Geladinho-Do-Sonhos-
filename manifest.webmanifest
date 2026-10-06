@@ -3,30 +3,15 @@
   "name": "Geladinho dos Sonhos",
   "short_name": "Geladinho",
   "description": "Peça e acompanhe seus geladinhos.",
-  "start_url": "./?source=pwa",
+  "start_url": "./?source=pwa&v=50",
   "scope": "./",
   "display": "standalone",
   "background_color": "#fff8fb",
   "theme_color": "#ff0f68",
   "prefer_related_applications": false,
   "icons": [
-    {
-      "src": "./assets/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./assets/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./assets/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    {"src": "./assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "./assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "./assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }
