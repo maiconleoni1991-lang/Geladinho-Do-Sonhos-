@@ -3,7 +3,7 @@ const V='62';
 const URL='https://qpqruhcspbdxjcnbhdhn.supabase.co',KEY='sb_publishable_JVYvfl7nrRmlm17qF_KI8A_1H8mtvLk';
 const sb=window.supabase.createClient(URL,KEY);
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 (function markAdminArea(){
  let meta=document.querySelector('meta[name="robots"]');
  if(!meta){meta=document.createElement('meta');meta.name='robots';document.head.appendChild(meta)}
