@@ -14,8 +14,8 @@ async function api(path,opt={}){
   return r.status===204?null:r.json();
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function loadCart(){try{return JSON.parse(localStorage.getItem('gds_cart_v61')||'{}')||{}}catch(_){return {}}}
-function saveCart(){localStorage.setItem('gds_cart_v61',JSON.stringify(cart));updateCartCount()}
+function loadCart(){try{return JSON.parse(localStorage.getItem('gds_cart_v63')||'{}')||{}}catch(_){return {}}}
+function saveCart(){localStorage.setItem('gds_cart_v63',JSON.stringify(cart));updateCartCount()}
 function cartQty(){return Object.values(cart).reduce((a,b)=>a+Number(b||0),0)}
 function updateCartCount(){const n=cartQty();document.querySelectorAll('[data-cart-count]').forEach(x=>x.textContent=n)}
 function subtotal(){return Object.entries(cart).reduce((sum,[slug,q])=>{const p=products.find(x=>x.slug===slug);return sum+(p?Number(p.price)*q:0)},0)}
@@ -55,7 +55,7 @@ function resetCartModal(){$('cartForm').hidden=false;$('success').hidden=true;cl
 function renderTestimonials(rows){if(!rows.length){$('testGrid').innerHTML='<div class="emptyBox" style="grid-column:1/-1">Ainda não há depoimentos publicados. Depois que os clientes avaliarem pedidos concluídos, eles aparecerão aqui.</div>';return}$('testGrid').innerHTML=rows.map(r=>`<article class="testCard"><div class="stars">${'★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5)))}</div><p>“${esc(r.comment||'')}”</p><small>Cliente verificado · ${new Date(r.created_at).toLocaleDateString('pt-BR')}</small></article>`).join('')}
 function restoreLastOrder(){try{const o=JSON.parse(localStorage.getItem('gds_last_order')||'null');if(!o?.token)return;const a=$('lastOrder');a.hidden=false;a.href='./acompanhar/?t='+encodeURIComponent(o.token);a.textContent='📍 Acompanhar '+(o.code||'pedido')}catch(_){}}
 function setupInstall(){window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').hidden=false});$('installBtn').onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installBtn').hidden=true}}
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=61');reg.update().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=63');reg.update().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 bind();updateCartCount();restoreLastOrder();setupInstall();replaceOldServiceWorker();loadStore();
 })();
