@@ -1,12 +1,32 @@
-Geladinho dos Sonhos — versão v62 SEPARAÇÃO LOJA / ADMIN
+Geladinho dos Sonhos — versão v63 OPERACIONAL
 Data: 2026-10-06
 
-Arquitetura atual:
-- Link público raiz: somente loja, cardápio, carrinho, checkout, acompanhamento e avaliações.
-- Link /admin/: somente administração, com login, MFA, estoque, pedidos, eventos e relatórios.
-- Loja e administração continuam usando o mesmo backend Supabase e os mesmos dados.
-- O service worker da loja ignora completamente /admin/ para evitar cache ou fallback cruzado.
-- /admin/ possui service worker próprio com escopo administrativo.
-- Área administrativa marcada para não ser indexada por mecanismos de busca quando o módulo comum é carregado.
-- Link “Loja” no painel administrativo abre a loja pública em nova aba.
-- Dados, estoque e pedidos existentes preservados.
+LOJA PÚBLICA
+- Loja pública separada da administração.
+- Fundo paisagem oficial aplicado à área principal de vendas.
+- Logo oficial mantido no cabeçalho, hero, rodapé, acompanhamento e documentos.
+- Catálogo, estoque real, carrinho, retirada, entrega e checkout ativos.
+- Mensagem do pedido enviada ao WhatsApp da loja com resumo e aviso de avaliação após a entrega.
+- Página de acompanhamento com atualização de status e avaliação de 1 a 5 estrelas.
+- Depoimentos públicos carregados da tabela public_testimonials.
+
+ADMINISTRAÇÃO
+- Painel protegido por autenticação/MFA.
+- Produtos e estoque editáveis.
+- Pedidos comuns agora possuem edição completa: cliente, WhatsApp, recebimento, endereço, observações, itens, quantidades e status.
+- Edição de pedido recalcula preço e estoque com segurança no backend.
+- Cancelamento devolve estoque; reabertura volta a reservar estoque.
+- Encomendas de festas/eventos continuam totalmente editáveis com controle de estoque.
+- Botões de WhatsApp prontos para avisar cliente sobre pedido e encomenda.
+- Pedidos entregues/finalizados possuem botão para pedir avaliação no WhatsApp.
+- Nova área Depoimentos/Avaliações para acompanhar feedback e publicar/ocultar depoimentos.
+- Ordem A4/PDF de eventos usa o logo oficial da empresa.
+
+BACKEND / TESTES
+- RPC edit_store_order_v63 adicionada ao Supabase.
+- Política administrativa para gestão de public_testimonials adicionada.
+- Teste transacional do checkout concluído com sucesso.
+- Teste transacional de edição de pedido concluído com sucesso.
+- Teste transacional de avaliação + publicação de depoimento concluído com sucesso.
+- Teste transacional de criação, confirmação, edição e reserva de estoque de evento concluído com sucesso.
+- Scripts principais validados sintaticamente.
