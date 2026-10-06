@@ -1,14 +1,20 @@
-Geladinho dos Sonhos — versão final v41
+Geladinho dos Sonhos — versão v45
 Data: 2026-10-05
 
 Inclui:
-- Loja cliente com fundo oficial estático e persistente.
+- Loja cliente com Home exibindo o fundo oficial de forma nítida.
+- Ao rolar para cardápio/opções, entra máscara clara com desfoque suave.
+- Fundo fixo não intercepta toques (pointer-events: none).
 - Logo oficial padronizada.
-- GDS Admin instalável e avisos em tempo real.
+- GDS Admin instalável, com correção de toque/foco mobile e avisos em tempo real.
 - Produtos / estoque, pedidos, relatórios e loja.
 - Festas / Eventos com agenda, estoque compartilhado, PDF/impressão e CSV.
-- Novos pedidos numerados PED-001, PED-002...
+- Acompanhamento atualizado para identidade v45 e códigos PED-001, PED-002...
 - Novos eventos numerados EVT-001, EVT-002...
 
-Imagem de fundo oficial armazenada em assets/store-background-final.jpg.
-SHA-256 da imagem original recebida: 1a1c6f83a3333883ead363d14d06ec3228a2c8d8e466fb02b6271feb13993517
+Fundo oficial persistente:
+- armazenado de forma íntegra nas partes assets/store-bg-v42-1.txt até assets/store-bg-v42-7.txt;
+- reconstrução validada como JPEG 384 x 576;
+- SHA-256 da reconstrução validada: 75139b62b17f542edfb7a6fcb5ab78fcd00aa9b399f3ea3fbf8c7188a131096b.
+
+Observação: assets/store-background-final.jpg é um arquivo legado corrompido e NÃO é utilizado pela v45. O fundo da v45 é carregado somente a partir das partes validadas acima.
