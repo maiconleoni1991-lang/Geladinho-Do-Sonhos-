@@ -1,9 +1,11 @@
-Geladinho dos Sonhos — versão v68
+Geladinho dos Sonhos — versão v69
 Data: 2026-10-06
 
-- Banner original HD enviado pelo proprietário aplicado no hero da loja.
-- Arquivo: assets/Banner de Geladinhos Gourmet com Frutas.png (~2,48 MB).
-- Mantido o layout aprovado sem caixa branca.
-- Nenhuma alteração em produtos, estoque, carrinho, pedidos, avaliações ou administração.
-- Logo oficial colorido preservado.
-- Cache atualizado para v68.
+- Mantido banner original HD aprovado.
+- Logo HD enviado pelo proprietário aplicado no topo, hero e rodapé.
+- Logo principal ampliado e equilibrado com o banner.
+- Conteúdo de boas-vindas centralizado no banner.
+- Novo título e texto comercial aplicados conforme solicitado.
+- Botões preservados.
+- Produtos, estoque, carrinho, pedidos, avaliações e administração preservados.
+- Cache atualizado para v69.
