@@ -1,9 +1,8 @@
 Geladinho dos Sonhos — versão v70
 Data: 2026-10-06
 
-- Aplicada no hero a arte final aprovada: assets/Geladinhos Gourmet_ Sabor da Infância.png (~2,59 MB).
-- Textos e logo HTML do hero ocultados para não duplicar o conteúdo já incorporado à arte.
-- Áreas clicáveis reais de Ver sabores e Acompanhar pedido preservadas sobre os botões desenhados na imagem.
-- Layout responsivo do hero ajustado em proporção 16:9.
-- Cardápio, estoque, preços, carrinho, pedidos, avaliações e administração preservados.
+- Arte final completa Geladinhos Gourmet: Sabor da Infância aplicada como banner principal.
+- Textos e logo incorporados visualmente na própria arte para fidelidade total.
+- Áreas clicáveis preservadas sobre Ver sabores e Acompanhar pedido.
+- Restante do site preservado.
 - Cache atualizado para v70.
