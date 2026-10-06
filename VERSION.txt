@@ -1,20 +1,10 @@
-Geladinho dos Sonhos — versão v45
-Data: 2026-10-05
+Geladinho dos Sonhos — versão v61 CLEAN
+Data: 2026-10-06
 
-Inclui:
-- Loja cliente com Home exibindo o fundo oficial de forma nítida.
-- Ao rolar para cardápio/opções, entra máscara clara com desfoque suave.
-- Fundo fixo não intercepta toques (pointer-events: none).
-- Logo oficial padronizada.
-- GDS Admin instalável, com correção de toque/foco mobile e avisos em tempo real.
-- Produtos / estoque, pedidos, relatórios e loja.
-- Festas / Eventos com agenda, estoque compartilhado, PDF/impressão e CSV.
-- Acompanhamento atualizado para identidade v45 e códigos PED-001, PED-002...
-- Novos eventos numerados EVT-001, EVT-002...
-
-Fundo oficial persistente:
-- armazenado de forma íntegra nas partes assets/store-bg-v42-1.txt até assets/store-bg-v42-7.txt;
-- reconstrução validada como JPEG 384 x 576;
-- SHA-256 da reconstrução validada: 75139b62b17f542edfb7a6fcb5ab78fcd00aa9b399f3ea3fbf8c7188a131096b.
-
-Observação: assets/store-background-final.jpg é um arquivo legado corrompido e NÃO é utilizado pela v45. O fundo da v45 é carregado somente a partir das partes validadas acima.
+Arquitetura pública reconstruída:
+- index.html é a loja real, sem redirect por JavaScript e sem document.write.
+- Loja pública autocontida: visual + catálogo + carrinho + checkout + depoimentos em um único HTML.
+- acompanhar/ também é autocontido e consulta pedidos/avaliações diretamente pelo Supabase.
+- sw.js não altera HTML; apenas cacheia arquivos locais com estratégia network-first.
+- Nenhum script antigo v30-v60 é necessário para a loja pública.
+- Backend Supabase e dados existentes preservados.
