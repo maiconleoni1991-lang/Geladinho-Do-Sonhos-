@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /Geladinho-Do-Sonhos-/admin/
+Allow: /Geladinho-Do-Sonhos-/
