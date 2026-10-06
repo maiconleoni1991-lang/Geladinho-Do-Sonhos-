@@ -7,9 +7,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="GDS Admin">
-<link rel="manifest" href="./manifest.webmanifest?v=46">
-<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png?v=46">
-<link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png?v=46">
+<link rel="manifest" href="./manifest.webmanifest?v=47">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png?v=47">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png?v=47">
 <title>Geladinho dos Sonhos — Administração</title>
 <style>
 :root{--p:#ff0f68;--w:#4a101e;--line:#efdde4;--muted:#78616a}
@@ -34,7 +34,7 @@ button,a,input,select,textarea{touch-action:manipulation}
 </head>
 <body>
 <div class="bar"><div class="top">
-  <img class="logo" src="../assets/logo-oficial.webp?v=46" alt="Geladinho dos Sonhos">
+  <img class="logo" src="../assets/logo-oficial.webp?v=47" alt="Geladinho dos Sonhos">
   <div class="brand"><b>Geladinho dos Sonhos</b><small>Painel administrativo</small></div>
   <div class="tabs">
     <button id="adminTab" class="on" type="button">⚙️ Produtos / Estoque</button>
@@ -46,31 +46,31 @@ button,a,input,select,textarea{touch-action:manipulation}
   </div>
 </div></div>
 <div class="stage">
-  <iframe id="adminFrame" class="view on" src="manage.html?v=46" title="Produtos e estoque"></iframe>
-  <iframe id="ordersFrame" class="view" src="orders-v30.html?v=46" title="Pedidos"></iframe>
-  <iframe id="eventsFrame" class="view" src="events-v41.html?v=46" title="Festas e eventos"></iframe>
-  <iframe id="reportsFrame" class="view" src="reports-v30.html?v=46" title="Relatórios"></iframe>
-  <iframe id="clientFrame" class="view" src="../?preview=1&v=46" title="Loja"></iframe>
+  <iframe id="adminFrame" class="view on" src="manage.html?v=47" title="Produtos e estoque"></iframe>
+  <iframe id="ordersFrame" class="view" src="orders-v30.html?v=47" title="Pedidos"></iframe>
+  <iframe id="eventsFrame" class="view" src="events-v41.html?v=47" title="Festas e eventos"></iframe>
+  <iframe id="reportsFrame" class="view" src="reports-v30.html?v=47" title="Relatórios"></iframe>
+  <iframe id="clientFrame" class="view" src="../?preview=1&v=47" title="Loja"></iframe>
 </div>
 <script>
 (()=>{
   const a=document.getElementById('adminFrame'),o=document.getElementById('ordersFrame'),ev=document.getElementById('eventsFrame'),r=document.getElementById('reportsFrame'),c=document.getElementById('clientFrame');
   const adminTab=document.getElementById('adminTab'),ordersTab=document.getElementById('ordersTab'),eventsTab=document.getElementById('eventsTab'),reportsTab=document.getElementById('reportsTab'),clientTab=document.getElementById('clientTab'),refreshBtn=document.getElementById('refreshBtn');
   const frames={admin:a,orders:o,events:ev,reports:r,client:c},tabs={admin:adminTab,orders:ordersTab,events:eventsTab,reports:reportsTab,client:clientTab};
-  function pv(){c.src='../?preview=1&v=46&t='+Date.now()}
+  function pv(){c.src='../?preview=1&v=47&t='+Date.now()}
   function cleanManage(){try{const d=a.contentDocument;if(!d)return;const oldOrders=d.querySelector('[data-panel="orders"]');if(oldOrders)oldOrders.style.display='none';const oldPanel=d.getElementById('orders');if(oldPanel)oldPanel.style.display='none';const oldCount=d.getElementById('sOrders');if(oldCount){const card=oldCount.closest('.stat');if(card)card.style.display='none'}const grid=d.querySelector('.grid4');if(grid)grid.style.gridTemplateColumns='repeat(auto-fit,minmax(180px,1fr))'}catch(_){}}
-  function show(name){Object.entries(frames).forEach(([k,f])=>f.classList.toggle('on',k===name));Object.entries(tabs).forEach(([k,b])=>b.classList.toggle('on',k===name));refreshBtn.classList.toggle('show',name==='client');if(name==='client')pv();if(name==='orders')o.src='orders-v30.html?v=46&t='+Date.now();if(name==='events')ev.src='events-v41.html?v=46&t='+Date.now();if(name==='reports')r.src='reports-v30.html?v=46&t='+Date.now();if(name==='admin')setTimeout(cleanManage,80)}
+  function show(name){Object.entries(frames).forEach(([k,f])=>f.classList.toggle('on',k===name));Object.entries(tabs).forEach(([k,b])=>b.classList.toggle('on',k===name));refreshBtn.classList.toggle('show',name==='client');if(name==='client')pv();if(name==='orders')o.src='orders-v30.html?v=47&t='+Date.now();if(name==='events')ev.src='events-v41.html?v=47&t='+Date.now();if(name==='reports')r.src='reports-v30.html?v=47&t='+Date.now();if(name==='admin')setTimeout(cleanManage,80)}
   a.addEventListener('load',cleanManage);
   adminTab.addEventListener('click',()=>show('admin'));ordersTab.addEventListener('click',()=>show('orders'));eventsTab.addEventListener('click',()=>show('events'));reportsTab.addEventListener('click',()=>show('reports'));clientTab.addEventListener('click',()=>show('client'));refreshBtn.addEventListener('click',pv);
 })();
 </script>
-<script src="../admin-touch-v46.js?v=46"></script>
-<script src="../admin-mfa-gate-v46.js?v=46"></script>
-<script src="../brand-fix-v42.js?v=46"></script>
-<script src="../admin-products-v32.js?v=46"></script>
-<script src="../admin-images-v34.js?v=46"></script>
-<script src="../admin-product-sort-v35.js?v=46"></script>
-<script src="../admin-price-fix-v38.js?v=46"></script>
-<script src="../admin-live-v39.js?v=46"></script>
+<script src="../admin-touch-v46.js?v=47"></script>
+<script src="../admin-mfa-router-v47.js?v=47"></script>
+<script src="../brand-fix-v42.js?v=47"></script>
+<script src="../admin-products-v32.js?v=47"></script>
+<script src="../admin-images-v34.js?v=47"></script>
+<script src="../admin-product-sort-v35.js?v=47"></script>
+<script src="../admin-price-fix-v38.js?v=47"></script>
+<script src="../admin-live-v39.js?v=47"></script>
 </body>
 </html>
