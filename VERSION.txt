@@ -1,10 +1,12 @@
-Geladinho dos Sonhos — versão v61 CLEAN
+Geladinho dos Sonhos — versão v62 SEPARAÇÃO LOJA / ADMIN
 Data: 2026-10-06
 
-Arquitetura pública reconstruída:
-- index.html é a loja real, sem redirect por JavaScript e sem document.write.
-- Loja pública autocontida: visual + catálogo + carrinho + checkout + depoimentos em um único HTML.
-- acompanhar/ também é autocontido e consulta pedidos/avaliações diretamente pelo Supabase.
-- sw.js não altera HTML; apenas cacheia arquivos locais com estratégia network-first.
-- Nenhum script antigo v30-v60 é necessário para a loja pública.
-- Backend Supabase e dados existentes preservados.
+Arquitetura atual:
+- Link público raiz: somente loja, cardápio, carrinho, checkout, acompanhamento e avaliações.
+- Link /admin/: somente administração, com login, MFA, estoque, pedidos, eventos e relatórios.
+- Loja e administração continuam usando o mesmo backend Supabase e os mesmos dados.
+- O service worker da loja ignora completamente /admin/ para evitar cache ou fallback cruzado.
+- /admin/ possui service worker próprio com escopo administrativo.
+- Área administrativa marcada para não ser indexada por mecanismos de busca quando o módulo comum é carregado.
+- Link “Loja” no painel administrativo abre a loja pública em nova aba.
+- Dados, estoque e pedidos existentes preservados.
