@@ -1,10 +1,9 @@
-Geladinho dos Sonhos — versão v66 HERO E RODAPÉ
+Geladinho dos Sonhos — versão v67
 Data: 2026-10-06
 
-- Removida a caixa branca/translúcida do conteúdo principal do topo.
-- Logo principal agora fica diretamente sobre a arte de fundo.
-- Imagem de fundo do topo permanece visível em desktop e mobile.
-- Removido filtro que transformava o logo do rodapé em silhueta branca.
-- Rodapé agora mostra o logo oficial colorido e completo.
-- Ajustado tamanho do logo do rodapé para desktop e mobile.
-- Cache da loja atualizado para v66.
+- Mantido o layout aprovado sem caixa branca no hero.
+- Fundo do topo alterado para a versão disponível de maior resolução/nitidez da mesma composição usada no projeto.
+- Reduzida a camada esbranquiçada sobre a arte para preservar detalhes visuais.
+- Ajuste aplicado em desktop e mobile.
+- Logo oficial colorido preservado no rodapé.
+- Cache da loja atualizado para v67.
