@@ -3,7 +3,7 @@
   "name": "Geladinho dos Sonhos Admin",
   "short_name": "GDS Admin",
   "description": "Painel administrativo do Geladinho dos Sonhos.",
-  "start_url": "./?source=pwa-admin&v=49",
+  "start_url": "./?source=pwa-admin&v=50",
   "scope": "./",
   "display": "standalone",
   "background_color": "#fff8fb",
