@@ -28,3 +28,9 @@ url('./assets/hero-gds-v63.webp?v=63') center/cover no-repeat!important}
  url('./assets/hero-gds-v63.webp?v=63') center/cover no-repeat!important}
  .heroCopy{width:calc(100% - 20px);margin:150px 10px 10px;padding:22px 17px;background:rgba(255,255,255,.88)}
 }
+
+/* v65 — logo oficial sempre visível e nítido */
+.brand img{width:112px;height:64px;object-fit:contain;display:block;opacity:1;visibility:visible}
+.heroLogo{width:min(320px,80vw);height:auto;max-height:190px;object-fit:contain;display:block;opacity:1;visibility:visible}
+.footer img{width:190px;max-width:70vw;height:auto;object-fit:contain;display:block}
+@media(max-width:680px){.brand img{width:94px;height:54px}.heroLogo{width:min(280px,76vw)}}
