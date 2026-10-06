@@ -1,14 +1,10 @@
-Geladinho dos Sonhos — versão v65 LOGO OFICIAL VISÍVEL
+Geladinho dos Sonhos — versão v66 HERO E RODAPÉ
 Data: 2026-10-06
 
-- Logo oficial HQ com novo arquivo dedicado.
-- Loja pública usa logo oficial no cabeçalho, hero e rodapé.
-- Acompanhamento de pedido usa logo oficial.
-- Painel administrativo usa logo oficial no menu e na página inicial.
-- Login administrativo usa logo oficial.
-- Páginas de produtos, pedidos, eventos, relatórios e avaliações recebem o logo pelo menu administrativo comum.
-- Ordem de encomenda/PDF usa o logo oficial HQ.
-- Fallback automático para ícone da marca caso o navegador falhe ao carregar o WebP.
-- Arquivo legado logo-oficial.webp também foi substituído pela versão HQ para manter compatibilidade com páginas antigas.
-- Cache/PWA atualizado para v65.
-- Categoria Tradicional permanece habilitada com os sabores cadastrados.
+- Removida a caixa branca/translúcida do conteúdo principal do topo.
+- Logo principal agora fica diretamente sobre a arte de fundo.
+- Imagem de fundo do topo permanece visível em desktop e mobile.
+- Removido filtro que transformava o logo do rodapé em silhueta branca.
+- Rodapé agora mostra o logo oficial colorido e completo.
+- Ajustado tamanho do logo do rodapé para desktop e mobile.
+- Cache da loja atualizado para v66.
