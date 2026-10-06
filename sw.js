@@ -1,5 +1,5 @@
-const CACHE='gds-v62-store-only';
-const CORE=['./','./index.html','./manifest.webmanifest','./assets/logo-oficial.webp','./assets/favicon-32.png','./assets/apple-touch-icon.png','./assets/icon-192.png','./assets/icon-512.png','./acompanhar/','./acompanhar/index.html'];
+const CACHE='gds-v63-store-only';
+const CORE=['./','./index.html','./manifest.webmanifest','./store-v61.css','./store-v61.js','./assets/logo-oficial.webp','./assets/hero-gds-v63.webp','./assets/favicon-32.png','./assets/apple-touch-icon.png','./assets/icon-192.png','./assets/icon-512.png','./acompanhar/','./acompanhar/index.html'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
