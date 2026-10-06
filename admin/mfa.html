@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ff0f68">
+<title>Verificação de segurança — Geladinho dos Sonhos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--p:#ff0f68;--p2:#ff4e8e;--w:#4a101e;--line:#efdde4;--muted:#78616a}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial;background:linear-gradient(180deg,#fff6fa,#fff);color:#29171d}
+body{display:grid;place-items:center;padding:18px;touch-action:auto}
+main{width:min(460px,100%);background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 28px 80px rgba(74,16,30,.14);text-align:center}
+.logo{width:88px;height:88px;object-fit:contain;margin-bottom:6px}
+h1{margin:6px 0 8px;color:var(--w);font-size:24px}
+p{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.5}
+label{display:block;text-align:left;color:var(--w);font-size:12px;font-weight:850;margin-bottom:6px}
+input{display:block;width:100%;height:58px;border:2px solid #edd6df;border-radius:14px;background:#fff;color:#29171d;font-size:26px;text-align:center;letter-spacing:.28em;padding:10px 12px;outline:none;pointer-events:auto!important;touch-action:auto!important;-webkit-user-select:text;user-select:text}
+input:focus{border-color:var(--p);box-shadow:0 0 0 4px rgba(255,15,104,.12)}
+button{width:100%;min-height:50px;border:0;border-radius:13px;font-weight:900;font-size:15px;pointer-events:auto!important;touch-action:auto!important;cursor:pointer}
+.primary{margin-top:12px;background:linear-gradient(90deg,var(--p),var(--p2));color:#fff}
+.secondary{margin-top:8px;background:#fff0f5;color:#6a1936}
+button:disabled{opacity:.55;cursor:not-allowed}
+.msg{min-height:22px;margin-top:12px;font-size:13px;color:#b02a42;line-height:1.4}.msg.ok{color:#128249}
+.hint{font-size:12px;color:#8a727b;margin-top:12px}
+</style>
+</head>
+<body>
+<main>
+<img class="logo" src="../assets/logo-oficial.webp?v=47" alt="Geladinho dos Sonhos">
+<h1>Confirmação de segurança</h1>
+<p>Digite o código de 6 dígitos do seu aplicativo autenticador para liberar o painel administrativo.</p>
+<form id="mfaForm" novalidate>
+<label for="mfaCode">Código do autenticador</label>
+<input id="mfaCode" name="mfaCode" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" enterkeyhint="done" maxlength="6" placeholder="000000" aria-label="Código de 6 dígitos">
+<button id="verifyBtn" class="primary" type="submit">Confirmar código e liberar painel</button>
+</form>
+<button id="logoutBtn" class="secondary" type="button">Sair da conta</button>
+<div id="msg" class="msg"></div>
+<div class="hint">Por segurança, não compartilhe este código com ninguém.</div>
+</main>
+<script>
+(()=>{
+ const SB_URL='https://qpqruhcspbdxjcnbhdhn.supabase.co',SB_KEY='sb_publishable_JVYvfl7nrRmlm17qF_KI8A_1H8mtvLk';
+ const sb=supabase.createClient(SB_URL,SB_KEY),code=document.getElementById('mfaCode'),form=document.getElementById('mfaForm'),btn=document.getElementById('verifyBtn'),msg=document.getElementById('msg'),logout=document.getElementById('logoutBtn');
+ let busy=false;
+ function setMsg(t,ok=false){msg.textContent=t||'';msg.className='msg'+(ok?' ok':'')}
+ function digits(){code.value=code.value.replace(/\D/g,'').slice(0,6)}
+ code.addEventListener('input',digits);
+ code.addEventListener('click',()=>code.focus());
+ code.addEventListener('touchend',()=>setTimeout(()=>code.focus(),0),{passive:true});
+ async function verifiedFactor(){const {data,error}=await sb.auth.mfa.listFactors();if(error)throw error;return data?.totp?.find(f=>f.status==='verified')||null}
+ async function initial(){
+   const {data:{session}}=await sb.auth.getSession();
+   if(!session){location.replace('./?v=47&login=1');return}
+   const aal=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+   if(aal.error){setMsg(aal.error.message);return}
+   if(aal.data?.currentLevel==='aal2'){location.replace('./?v=47&mfa=ok');return}
+   const f=await verifiedFactor().catch(e=>{setMsg(e.message);return null});
+   if(!f){setMsg('Nenhum autenticador verificado foi encontrado para esta conta.');return}
+   setTimeout(()=>code.focus(),180);
+ }
+ form.addEventListener('submit',async e=>{
+   e.preventDefault();if(busy)return;digits();
+   if(!/^\d{6}$/.test(code.value)){setMsg('Digite os 6 dígitos do aplicativo autenticador.');code.focus();return}
+   busy=true;btn.disabled=true;setMsg('Verificando código...');
+   try{
+     const f=await verifiedFactor();if(!f)throw new Error('Fator MFA verificado não encontrado.');
+     const ch=await sb.auth.mfa.challenge({factorId:f.id});if(ch.error)throw ch.error;
+     const vr=await sb.auth.mfa.verify({factorId:f.id,challengeId:ch.data.id,code:code.value});if(vr.error)throw vr.error;
+     const aal=await sb.auth.mfa.getAuthenticatorAssuranceLevel();if(aal.error)throw aal.error;
+     if(aal.data?.currentLevel!=='aal2')throw new Error('A sessão ainda não foi promovida para AAL2.');
+     setMsg('Código confirmado. Abrindo o painel...',true);
+     setTimeout(()=>location.replace('./?v=47&mfa=ok'),250);
+   }catch(err){setMsg(err?.message||'Não foi possível validar o código.');code.select();code.focus()}
+   finally{busy=false;btn.disabled=false}
+ });
+ logout.addEventListener('click',async()=>{await sb.auth.signOut();location.replace('./?v=47&login=1')});
+ initial();
+})();
+</script>
+</body>
+</html>
