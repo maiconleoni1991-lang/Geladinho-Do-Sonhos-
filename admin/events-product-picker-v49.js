@@ -36,7 +36,7 @@
     const sel=document.createElement('select');buildSelect(sel,pid);sel.value=pid;
     const qty=document.createElement('input');qty.type='number';qty.min='1';qty.step='1';qty.value='1';
     const del=document.createElement('button');del.type='button';del.textContent='×';del.onclick=()=>{line.remove();document.querySelector('#lines .line input')?.dispatchEvent(new Event('change',{bubbles:true}))};
-    [sel,qty].forEach(x=>x.addEventListener('change',()=>x.dispatchEvent(new Event('gds49change',{bubbles:true}))));
+    [sel,qty].forEach(x=>x.addEventListener('change',()=>x.dispatchEvent(new Event('gds-event-calc',{bubbles:true}))));
     line.append(sel,qty,del);$('lines')?.appendChild(line);
     qty.dispatchEvent(new Event('change',{bubbles:true}));flash(line);
   }
@@ -78,7 +78,7 @@
     loadProducts();
     const dlg=$('dlg');if(dlg)new MutationObserver(()=>{if(dlg.open){renderPicker();organizeLines()}}).observe(dlg,{attributes:true,attributeFilter:['open']});
     const lines=$('lines');if(lines)new MutationObserver(()=>organizeLines()).observe(lines,{childList:true,subtree:false});
-    document.addEventListener('gds49change',()=>{const first=document.querySelector('#lines .line input');if(first)first.dispatchEvent(new Event('change',{bubbles:true}))});
+    
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
