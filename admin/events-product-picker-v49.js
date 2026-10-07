@@ -31,14 +31,14 @@
   function addProduct(pid){
     const p=products.find(x=>x.id===pid);if(!p)return;
     let line=existingLine(pid);
-    if(line){const q=line.querySelector('input[type="number"]');q.value=Math.max(1,Number(q.value)||1)+1;q.dispatchEvent(new Event('change',{bubbles:true}));flash(line);return}
+    if(line){const q=line.querySelector('input[type="number"]');q.value=Math.max(1,Number(q.value)||1)+1;document.dispatchEvent(new Event('gds-event-calc'));flash(line);return}
     line=document.createElement('div');line.className='line';line.dataset.gds49='1';
     const sel=document.createElement('select');buildSelect(sel,pid);sel.value=pid;
     const qty=document.createElement('input');qty.type='number';qty.min='1';qty.step='1';qty.value='1';
-    const del=document.createElement('button');del.type='button';del.textContent='×';del.onclick=()=>{line.remove();document.querySelector('#lines .line input')?.dispatchEvent(new Event('change',{bubbles:true}))};
-    [sel,qty].forEach(x=>x.addEventListener('change',()=>x.dispatchEvent(new Event('gds-event-calc',{bubbles:true}))));
+    const del=document.createElement('button');del.type='button';del.textContent='×';del.onclick=()=>{line.remove();document.dispatchEvent(new Event('gds-event-calc'))};
+    [sel,qty].forEach(x=>x.addEventListener('change',()=>document.dispatchEvent(new Event('gds-event-calc'))));
     line.append(sel,qty,del);$('lines')?.appendChild(line);
-    qty.dispatchEvent(new Event('change',{bubbles:true}));flash(line);
+    document.dispatchEvent(new Event('gds-event-calc'));flash(line);
   }
   function renderPicker(){
     const host=document.querySelector('.lines');if(!host||$('gdsEventPicker49'))return;
