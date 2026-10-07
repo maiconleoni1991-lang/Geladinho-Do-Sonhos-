@@ -1,7 +1,7 @@
 (()=>{
 if(window.__gdsAdminStoreOpsV50)return;window.__gdsAdminStoreOpsV50=true;
 const LS='gds_admin_order_notifications_v50';
-let isOpen=false,channel=null,audioCtx=null,lastStateAt=0;
+let isOpen=false,channel=null,audioCtx=null,lastStateAt=0,alarmTimer=null,pendingCount=0;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function ready(){for(let i=0;i<40&&!window.GDS48;i++)await sleep(100);if(!window.GDS48)throw new Error('Admin indisponível');return GDS48}
 function addStyle(){if(document.getElementById('gdsOps50Style'))return;const s=document.createElement('style');s.id='gdsOps50Style';s.textContent=`
@@ -15,14 +15,39 @@ async function getState(){const g=await ready();const {data,error}=await g.sb.fr
 function unlockAudio(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;audioCtx=audioCtx||new AC();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(_){return null}}
 function tone(freq,start,dur,vol=.42){const c=unlockAudio();if(!c||c.state!=='running')return;const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(.0001,c.currentTime+start);g.gain.exponentialRampToValueAtTime(vol,c.currentTime+start+.015);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+start+dur);o.connect(g);g.connect(c.destination);o.start(c.currentTime+start);o.stop(c.currentTime+start+dur+.03)}
 function orderSound(){tone(784,0,.22,.50);tone(1047,.18,.24,.55);tone(1319,.40,.34,.60);setTimeout(()=>{tone(1047,0,.20,.48);tone(1319,.18,.34,.58)},760)}
+function startPersistentAlarm(){
+  if(!notificationsOn()||pendingCount<1)return;
+  unlockAudio();
+  if(alarmTimer)return;
+  orderSound();
+  if(navigator.vibrate)try{navigator.vibrate([260,100,260,100,520])}catch(_){}
+  alarmTimer=setInterval(()=>{
+    if(pendingCount<1){stopPersistentAlarm();return}
+    orderSound();
+    if(navigator.vibrate)try{navigator.vibrate([260,100,260,100,520])}catch(_){}
+  },2400)
+}
+function stopPersistentAlarm(){
+  if(alarmTimer){clearInterval(alarmTimer);alarmTimer=null}
+  if(navigator.vibrate)try{navigator.vibrate(0)}catch(_){}
+}
+async function refreshPendingAlarm(){
+  try{
+    const g=await ready();
+    const {count,error}=await g.sb.from('orders').select('id',{count:'exact',head:true}).eq('status','Pedido recebido').is('archived_at',null);
+    if(error)throw error;
+    pendingCount=Number(count||0);
+    pendingCount>0?startPersistentAlarm():stopPersistentAlarm()
+  }catch(e){console.warn('Contagem de pedidos pendentes indisponível',e)}
+}
 async function registerSw(){if(!('serviceWorker'in navigator))return null;try{return await navigator.serviceWorker.register('../sw.js?v=50')}catch(_){return null}}
 async function enableNotifications(showFeedback=true){unlockAudio();await registerSw();if(!('Notification'in window)){if(showFeedback)toast('Este navegador não oferece notificações do sistema.');return false}let p=Notification.permission;if(p==='default')p=await Notification.requestPermission();if(p!=='granted'){localStorage.setItem(LS,'0');render();if(showFeedback)toast('Notificações bloqueadas no Android/navegador.');return false}localStorage.setItem(LS,'1');render();if(showFeedback)toast('Notificações de novos pedidos ativadas.');return true}
-async function toggleNotifications(){if(notificationsOn()){localStorage.setItem(LS,'0');render();toast('Notificações de pedidos desligadas.');return}await enableNotifications(true)}
+async function toggleNotifications(){if(notificationsOn()){localStorage.setItem(LS,'0');stopPersistentAlarm();render();toast('Notificações de pedidos desligadas.');return}await enableNotifications(true);await refreshPendingAlarm()}
 async function showSystem(title,body,tag,url){if(!notificationsOn())return;try{const reg=await navigator.serviceWorker.ready;await reg.showNotification(title,{body,icon:new URL('../assets/icon-192.png?v=50',location.href).href,badge:new URL('../assets/favicon-32.png?v=50',location.href).href,tag,renotify:true,requireInteraction:true,silent:false,vibrate:[220,90,220,90,420],data:{url:url||location.href}})}catch(e){console.warn('GDS notificação',e)}}
 async function testNotification(){const ok=await enableNotifications(false);if(!ok){toast('Permita as notificações do GDS Admin para testar o aviso.');return}orderSound();if(navigator.vibrate)try{navigator.vibrate([220,90,220,90,420])}catch(_){}await showSystem('🍧 GELADINHO DOS SONHOS — NOVO PEDIDO','PED-TESTE • Esta é uma demonstração do aviso de novo pedido.','gds-order-test-v50',location.href);toast('Aviso de teste enviado. Verifique som, vibração e notificação do celular.')}
 async function toggleStore(){const g=await ready();const session=await g.ensure('orders');const next=!isOpen;if(next)await enableNotifications(false);const now=new Date().toISOString(),payload={is_open:next,updated_at:now,updated_by:session.user.id,opened_at:next?now:null,closed_at:next?null:now};const {error}=await g.sb.from('store_settings').update(payload).eq('id','main');if(error){toast('Não foi possível alterar a loja: '+error.message);return}isOpen=next;if(!next)localStorage.setItem(LS,'0');else if('Notification'in window&&Notification.permission==='granted')localStorage.setItem(LS,'1');render();toast(next?'🟢 Vendas online abertas.':'🔴 Vendas online fechadas.');}
-async function notifyOrder(o){if(!notificationsOn()||!o?.id)return;const key='gds_admin_order_notified_v50_'+o.id;if(localStorage.getItem(key)==='1')return;localStorage.setItem(key,'1');orderSound();if(navigator.vibrate)try{navigator.vibrate([220,90,220,90,420])}catch(_){}const code=o.public_code||'NOVO PEDIDO',name=o.customer_name||'Cliente',total=window.GDS48?GDS48.money(o.total):Number(o.total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});const title='🍧 GELADINHO DOS SONHOS — NOVO PEDIDO',body=`${code} • ${name} • ${total}`;toast('🔔 '+title+' — '+body);await showSystem(title,body,'gds-new-order-'+o.id,new URL('orders-v48.html?v=50',location.href).href)}
-async function subscribe(){const g=await ready();let session;try{session=await g.ensure('')}catch(_){return}if(session?.access_token)try{g.sb.realtime.setAuth(session.access_token)}catch(_){}if(channel)try{await g.sb.removeChannel(channel)}catch(_){}channel=g.sb.channel('gds-admin-order-alerts-v50-'+Date.now()).on('postgres_changes',{event:'INSERT',schema:'public',table:'orders'},p=>notifyOrder(p.new)).subscribe();}
-async function start(){addStyle();inject();try{await getState()}catch(e){console.warn('Estado da loja indisponível',e)}try{await subscribe()}catch(e){console.warn('Avisos de pedidos indisponíveis',e)}setInterval(()=>{if(Date.now()-lastStateAt>12000)getState().catch(()=>{})},13000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)getState().catch(()=>{})});window.addEventListener('focus',()=>getState().catch(()=>{}));['pointerdown','touchstart','keydown'].forEach(ev=>addEventListener(ev,unlockAudio,{capture:true,passive:true}))}
+async function notifyOrder(o){if(!notificationsOn()||!o?.id)return;const key='gds_admin_order_notified_v83_'+o.id;const first=localStorage.getItem(key)!=='1';if(first)localStorage.setItem(key,'1');pendingCount=Math.max(1,pendingCount);startPersistentAlarm();if(!first)return;if(navigator.vibrate)try{navigator.vibrate([220,90,220,90,420])}catch(_){}const code=o.public_code||'NOVO PEDIDO',name=o.customer_name||'Cliente',total=window.GDS48?GDS48.money(o.total):Number(o.total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});const title='🍧 GELADINHO DOS SONHOS — NOVO PEDIDO',body=`${code} • ${name} • ${total}`;toast('🔔 '+title+' — '+body);await showSystem(title,body,'gds-new-order-'+o.id,new URL('orders-v48.html?v=50',location.href).href)}
+async function subscribe(){const g=await ready();let session;try{session=await g.ensure('')}catch(_){return}if(session?.access_token)try{g.sb.realtime.setAuth(session.access_token)}catch(_){}if(channel)try{await g.sb.removeChannel(channel)}catch(_){}channel=g.sb.channel('gds-admin-order-alerts-v83-'+Date.now()).on('postgres_changes',{event:'*',schema:'public',table:'orders'},async p=>{if(p.eventType==='INSERT')await notifyOrder(p.new);await refreshPendingAlarm()}).subscribe();}
+async function start(){addStyle();inject();try{await getState()}catch(e){console.warn('Estado da loja indisponível',e)}try{await refreshPendingAlarm();await subscribe()}catch(e){console.warn('Avisos de pedidos indisponíveis',e)}setInterval(()=>{if(Date.now()-lastStateAt>12000)getState().catch(()=>{})},13000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)getState().catch(()=>{})});window.addEventListener('focus',()=>getState().catch(()=>{}));['pointerdown','touchstart','keydown'].forEach(ev=>addEventListener(ev,unlockAudio,{capture:true,passive:true}))}
 start();
 })();
