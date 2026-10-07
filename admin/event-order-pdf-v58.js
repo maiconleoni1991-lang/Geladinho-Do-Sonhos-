@@ -2,7 +2,8 @@
   if(window.__gdsEventOrderPdfV58)return;window.__gdsEventOrderPdfV58=true;
   const ROOT=new URL('../',location.href),STORE={name:'Geladinho dos Sonhos',address:'Rua Aparecida Marchetti Guzzo, 161 - Vale dos Sonhos - Monte Alto/SP',phone:'(16) 99254-2888'};
   let libPromise,logoPromise,pixPromise;
-  const clean=s=>String(s??'').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();
+  const winAnsiSafe=s=>Array.from(String(s??'')).map(ch=>{const cp=ch.codePointAt(0);if(cp<=255)return ch;const m={'€':'EUR','•':'-','–':'-','—':'-','‘':"'",'’':"'",'“':'"','”':'"','…':'...','™':'TM','Œ':'OE','œ':'oe','Š':'S','š':'s','Ž':'Z','ž':'z','Ÿ':'Y'};return m[ch]??''}).join('');
+  const clean=s=>winAnsiSafe(s).replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();
   const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const dateBR=v=>{if(!v)return'Nao informado';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'Nao informado':d.toLocaleDateString('pt-BR')};
   const dateTimeBR=v=>{if(!v)return'A combinar';const d=new Date(v);return Number.isNaN(d.getTime())?'A combinar':d.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})};
