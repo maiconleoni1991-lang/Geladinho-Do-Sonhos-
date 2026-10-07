@@ -54,6 +54,4 @@
   }
   async function downloadOrder(id){const ev=window.event,btn=ev?.target;try{if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Gerando PDF...'}const {event,products}=await getOrder(id),bytes=await buildPdf(event,products),blob=new Blob([bytes],{type:'application/pdf'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${event.event_code||'GDS-EVT'}_${safeName(event.customer_name)}.pdf`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}catch(err){console.error(err);alert('Nao foi possivel gerar o PDF: '+(err.message||err))}finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Baixar PDF A4'}}}
   window.printE=downloadOrder;
-  function relabel(){document.querySelectorAll('.actions button').forEach(b=>{if(/PDF|Ordem A4/i.test(b.textContent||''))b.textContent='Baixar PDF A4'})}
-  new MutationObserver(relabel).observe(document.documentElement,{childList:true,subtree:true});relabel();
 })();
