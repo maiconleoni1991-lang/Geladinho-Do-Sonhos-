@@ -58,13 +58,13 @@
     rect(cols[0],startY,cols[5]-cols[0],17,wine,wine,0);['Categoria','Sabor','Qtd.','Unit.','Total'].forEach((h,i)=>txt(h,cols[i]+5,startY+5,6.7,bold,white));let y=startY-rowItemH;
     items.forEach((i,idx)=>{const p=products.find(x=>x.id===i.product_id);rect(cols[0],y,cols[5]-cols[0],rowItemH,idx%2?pale:white,line,.35);fit(catLabel(p?.category||i.category),cols[0]+5,y+3,cols[1]-cols[0]-10,fontSize,reg,wine);fit(i.product_name,cols[1]+5,y+3,cols[2]-cols[1]-10,fontSize,reg,wine);fit(String(Number(i.quantity||0)),cols[2]+8,y+3,cols[3]-cols[2]-14,fontSize,reg,wine);fit(money(i.unit_price),cols[3]+5,y+3,cols[4]-cols[3]-8,fontSize,reg,wine);fit(money(Number(i.unit_price||0)*Number(i.quantity||0)),cols[4]+5,y+3,cols[5]-cols[4]-8,fontSize,bold,wine);y-=rowItemH});
 
-    const qty=items.reduce((n,i)=>n+Number(i.quantity||0),0),subtotal=Number(e.subtotal||0),fee=Number(e.delivery_fee||0),deposit=Number(e.deposit_amount||0),total=subtotal+fee,balance=Number(e.balance_amount??Math.max(total-deposit,0)),totalY=y-27;
+    const qty=items.reduce((n,i)=>n+Number(i.quantity||0),0),subtotal=Number(e.subtotal||0),fee=Number(e.delivery_fee||0),deposit=Number(e.deposit_amount||0),total=subtotal+fee,balance=e.payment_status==='Pago'?0:Number(e.balance_amount??Math.max(total-deposit,0)),totalY=y-27;
     rect(22,totalY,W-44,23,pale,line,.7);fit(`${qty} unidades`,32,totalY+7,95,8,bold,wine);fit(`Produtos: ${money(subtotal)}`,140,totalY+7,130,8,bold,wine);fit(`Entrega: ${money(fee)}`,282,totalY+7,110,8,bold,wine);rect(404,totalY+3,167,17,pink,pink,0);fit(`TOTAL ${money(total)}`,418,totalY+7,140,9,bold,white);
 
     txt('PAGAMENTO, PIX E OBSERVACOES',24,totalY-18,8,bold,pink);page.drawLine({start:{x:24,y:totalY-22},end:{x:W-24,y:totalY-22},thickness:.7,color:line});
     const payY=totalY-99,payH=70;
     rect(22,payY,344,payH,white,line,.7);txt('PAGAMENTO',34,payY+55,6.5,bold,muted);
-    field(32,payY+27,150,23,'FORMA',e.payment_method||'A combinar');field(190,payY+27,164,23,'SITUACAO',balance<=0&&total>0?'Pago integralmente':deposit>0?'Entrada paga':'Pendente');
+    field(32,payY+27,150,23,'FORMA',e.payment_method||'A combinar');field(190,payY+27,164,23,'SITUACAO',e.payment_status==='Pago'?'Pagamento confirmado':'Pagamento pendente');
     field(32,payY+3,150,23,'SINAL',money(deposit));field(190,payY+3,164,23,'SALDO',money(balance));
     rect(374,payY,197,payH,cream,pink,1);txt('PAGAMENTO VIA PIX',386,payY+55,6.7,bold,pink);page.drawImage(pix,{x:386,y:payY+8,width:40,height:40});wrap(bold,'Escaneie o QR Code e envie o comprovante para confirmacao.',5.9,128,4).forEach((l,i)=>txt(l,437,payY+37-i*8,5.9,bold,wine));
 
