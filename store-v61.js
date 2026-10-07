@@ -50,7 +50,7 @@ async function loadStore(){
     ]);
     products=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
     const catOrder={Tradicional:0,Cremoso:1,Gourmet:2,Trufado:3};
-    products.sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99)||(Number(a.sort_order)||999)-(Number(b.sort_order)||999)||String(a.name).localeCompare(String(b.name),'pt-BR'));
+    products.sort((a,b)=>(a.stock<=0?1:0)-(b.stock<=0?1:0)||(catOrder[a.category]??99)-(catOrder[b.category]??99)||(Number(a.sort_order)||999)-(Number(b.sort_order)||999)||String(a.name).localeCompare(String(b.name),'pt-BR'));
     storeOpen=!!s?.[0]?.is_open;
     renderStatus();renderFilters();renderProducts();renderTestimonials(Array.isArray(t)?t:[]);cleanCart();
   }catch(e){
