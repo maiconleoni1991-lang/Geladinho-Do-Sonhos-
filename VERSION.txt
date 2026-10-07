@@ -1,8 +1,10 @@
-Geladinho dos Sonhos — versão v70
-Data: 2026-10-06
+Geladinho dos Sonhos — versão v94
+Data: 2026-10-07
 
-- Arte final completa Geladinhos Gourmet: Sabor da Infância aplicada como banner principal.
-- Textos e logo incorporados visualmente na própria arte para fidelidade total.
-- Áreas clicáveis preservadas sobre Ver sabores e Acompanhar pedido.
-- Restante do site preservado.
-- Cache atualizado para v70.
+- Corrigida a tela de pagamento do pedido online.
+- Total a pagar exibido em destaque no bloco de pagamento.
+- QR Code Pix liberado após a loja aceitar o pedido.
+- Pix pendente permanece identificado até confirmação da loja.
+- Após confirmação de pagamento, a tela informa pagamento confirmado.
+- Pedido cancelado bloqueia orientação de pagamento.
+- Cache da loja renovado para publicar a correção.
