@@ -60,4 +60,4 @@ async function load(){
 $('apply').onclick=render;$('refresh').onclick=load;document.querySelectorAll('[data-range]').forEach(b=>b.onclick=()=>setRange(b.dataset.range));
 const today=spDate();$('from').value=today;$('to').value=today;
 try{await GDS48.ensure('reports');await load()}catch(err){if(!['NO_SESSION','MFA_REQUIRED'].includes(err.message))setMsg('Erro de acesso: '+err.message,'err')}
-})();</script></body></html>
+})();</script><script src="reports-date-v99.js?v=99"></script></body></html>
