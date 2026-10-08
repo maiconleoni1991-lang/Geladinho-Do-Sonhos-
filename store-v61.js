@@ -90,9 +90,55 @@ async function verifyCartStock(){
 }
 function renderStatus(custom){const b=$('storeStatus');b.className='statusbar '+(custom?'closed':storeOpen?'open':'closed');b.textContent=custom|| (storeOpen?'● Vendas online abertas · Faça seu pedido pelo site.':'● Vendas online fechadas · Cardápio disponível somente para consulta.');const c=$('checkoutBtn');if(c){c.disabled=!storeOpen;c.textContent=storeOpen?'Confirmar pedido e abrir WhatsApp':'Loja fechada para pedidos online'}}
 function renderFilters(){const base=['Tradicional','Cremoso','Gourmet','Trufado'];const extras=[...new Set(products.map(p=>p.category).filter(Boolean).filter(c=>!base.includes(c)))];const cats=['Todos',...base,...extras];$('filters').innerHTML=cats.map(c=>`<button class="filter ${filter===c?'on':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');$('filters').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{filter=b.dataset.cat;renderFilters();renderProducts()})}
-function renderProducts(){const q=term.trim().toLowerCase();const list=products.filter(p=>(filter==='Todos'||p.category===filter)&&(!q||`${p.name} ${p.category} ${p.description||''}`.toLowerCase().includes(q)));if(!list.length){$('products').innerHTML='<div class="emptyBox" style="grid-column:1/-1">Nenhum sabor encontrado.</div>';return}$('products').innerHTML=list.map(p=>`<article class="product"><div class="photo">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:''}${p.stock<=0?'<div class="sold">ESGOTADO</div>':''}</div><div class="body"><div class="cat">${esc(p.category)}</div><h3>${esc(p.name)}</h3><div class="desc">${esc(p.description||'Geladinho preparado com muito sabor e cremosidade.')}</div><div class="meta"><div class="price">${money(p.price)}</div><div class="stock ${p.stock<=5&&p.stock>0?'low':''}">${p.stock>0?`${p.stock} em estoque`:'Sem estoque'}</div></div><button class="add" data-add="${esc(p.slug)}" ${p.stock<=0||!storeOpen?'disabled':''}>${!storeOpen?'Loja fechada':p.stock<=0?'Esgotado':'Adicionar ao pedido'}</button></div></article>`).join('');$('products').querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addToCart(b.dataset.add,b))}
-function addToCart(slug,button){const p=products.find(x=>x.slug===slug);if(!p||p.stock<=0)return;const next=(cart[slug]||0)+1;if(next>p.stock)return alert(`Temos ${p.stock} unidade(s) de ${p.name} em estoque.`);cart[slug]=next;saveCart();if($('cartOverlay')?.classList.contains('show'))renderCart();if(button){const old=button.textContent;button.textContent=`✓ Adicionado · ${next} no carrinho`;button.disabled=true;setTimeout(()=>{if(document.body.contains(button)){button.textContent=old;button.disabled=!storeOpen||p.stock<=0}},850)}const fc=$('floatCart');if(fc&&fc.animate)fc.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:320,easing:'ease-out'})}
-function changeQty(slug,d){const p=products.find(x=>x.slug===slug);if(!p)return;const n=(cart[slug]||0)+d;if(n<=0)delete cart[slug];else if(n<=p.stock)cart[slug]=n;else return alert(`Estoque disponível: ${p.stock}`);saveCart();renderCart()}
+function renderProducts(){
+  const q=term.trim().toLowerCase();
+  const list=products.filter(p=>(filter==='Todos'||p.category===filter)&&(!q||`${p.name} ${p.category} ${p.description||''}`.toLowerCase().includes(q)));
+  if(!list.length){$('products').innerHTML='<div class="emptyBox" style="grid-column:1/-1">Nenhum sabor encontrado.</div>';return}
+  $('products').innerHTML=list.map(p=>{
+    const selected=Number(cart[p.slug]||0);
+    const blocked=p.stock<=0||!storeOpen;
+    return `<article class="product">
+      <div class="photo">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:''}${p.stock<=0?'<div class="sold">ESGOTADO</div>':''}</div>
+      <div class="body">
+        <div class="cat">${esc(p.category)}</div>
+        <h3>${esc(p.name)}</h3>
+        <div class="desc">${esc(p.description||'Geladinho preparado com muito sabor e cremosidade.')}</div>
+        <div class="meta"><div class="price">${money(p.price)}</div><div class="stock ${p.stock<=5&&p.stock>0?'low':''}">${p.stock>0?`${p.stock} em estoque`:'Sem estoque'}</div></div>
+        <div class="pickLabel">${blocked?(!storeOpen?'Loja fechada':'Indisponível'):'Escolha a quantidade'}</div>
+        <div class="pickQty ${selected>0?'selected':''}">
+          <button type="button" data-card-dec="${esc(p.slug)}" aria-label="Diminuir ${esc(p.name)}" ${blocked||selected<=0?'disabled':''}>−</button>
+          <div class="pickCount"><b>${selected}</b><small>${selected===1?'unidade':'unidades'}</small></div>
+          <button type="button" data-card-inc="${esc(p.slug)}" aria-label="Adicionar ${esc(p.name)}" ${blocked||selected>=p.stock?'disabled':''}>+</button>
+        </div>
+      </div>
+    </article>`
+  }).join('');
+  $('products').querySelectorAll('[data-card-dec]').forEach(b=>b.onclick=()=>cardAdjust(b.dataset.cardDec,-1));
+  $('products').querySelectorAll('[data-card-inc]').forEach(b=>b.onclick=()=>cardAdjust(b.dataset.cardInc,1));
+}
+function cardAdjust(slug,d){
+  const p=products.find(x=>x.slug===slug);
+  if(!p||p.stock<=0||!storeOpen)return;
+  const current=Number(cart[slug]||0),next=current+d;
+  if(next<=0)delete cart[slug];
+  else if(next<=p.stock)cart[slug]=next;
+  else return alert(`Estoque disponível: ${p.stock}`);
+  saveCart();
+  renderProducts();
+  if($('cartOverlay')?.classList.contains('show'))renderCart();
+  const fc=$('floatCart');
+  if(d>0&&fc&&fc.animate)fc.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:260,easing:'ease-out'});
+}
+function addToCart(slug){cardAdjust(slug,1)}
+function changeQty(slug,d){
+  const p=products.find(x=>x.slug===slug);
+  if(!p)return;
+  const n=(cart[slug]||0)+d;
+  if(n<=0)delete cart[slug];
+  else if(n<=p.stock)cart[slug]=n;
+  else return alert(`Estoque disponível: ${p.stock}`);
+  saveCart();renderProducts();renderCart();
+}
 function renderCart(){const rows=Object.entries(cart).filter(([,q])=>q>0);$('cartRows').innerHTML=rows.length?rows.map(([slug,q])=>{const p=products.find(x=>x.slug===slug);if(!p)return'';return `<div class="cartRow"><div><b>${esc(p.name)}</b><small>${esc(p.category)} · ${q} unidade(s)</small><div class="qty"><button data-dec="${esc(slug)}">−</button><span>${q}</span><button data-inc="${esc(slug)}">+</button></div></div><div class="rowPrice">${money(p.price*q)}</div></div>`}).join(''):'<div class="emptyBox">Seu carrinho está vazio.</div>';$('cartRows').querySelectorAll('[data-dec]').forEach(b=>b.onclick=()=>changeQty(b.dataset.dec,-1));$('cartRows').querySelectorAll('[data-inc]').forEach(b=>b.onclick=()=>changeQty(b.dataset.inc,1));updateTotals();renderStatus()}
 function updateTotals(){const sub=subtotal(),delivery=fulfillment()==='entrega';$('subtotal').textContent=money(sub);$('feeRow').hidden=!delivery;$('fee').textContent=money(delivery?DELIVERY_FEE:0);$('total').textContent=money(sub+(delivery?DELIVERY_FEE:0));$('addressFields').classList.toggle('show',delivery)}
 function openCart(){setPresenceActivity(cartQty()>0?'visualizando carrinho':'visualizando carrinho');renderCart();$('cartOverlay').classList.add('show');document.body.style.overflow='hidden'}
@@ -105,7 +151,7 @@ function resetCartModal(){$('cartForm').hidden=false;$('success').hidden=true;cl
 function renderTestimonials(rows){if(!rows.length){$('testGrid').innerHTML='<div class="emptyBox" style="grid-column:1/-1">Ainda não há depoimentos publicados. Depois que os clientes avaliarem pedidos concluídos, eles aparecerão aqui.</div>';return}$('testGrid').innerHTML=rows.map(r=>`<article class="testCard"><div class="stars">${'★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5)))}</div><p>“${esc(r.comment||'')}”</p><small>Cliente verificado · ${new Date(r.created_at).toLocaleDateString('pt-BR')}</small></article>`).join('')}
 function restoreLastOrder(){try{const o=JSON.parse(localStorage.getItem('gds_last_order')||'null');if(!o?.token)return;const a=$('lastOrder');a.hidden=false;a.href='./acompanhar/?t='+encodeURIComponent(o.token);a.textContent='📍 Acompanhar '+(o.code||'pedido')}catch(_){}}
 function setupInstall(){window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').hidden=false});$('installBtn').onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installBtn').hidden=true}}
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=101');reg.update().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=102');reg.update().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 bind();updateCartCount();restoreLastOrder();setupInstall();replaceOldServiceWorker();startPresence();loadStore();setInterval(()=>{if(document.visibilityState==='visible')refreshStockOnly().catch(()=>{})},10000);window.addEventListener('focus',()=>refreshStockOnly().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshStockOnly().catch(()=>{})});
 })();
