@@ -10,7 +10,7 @@
   const catLabel=c=>{const s=String(c||'').toLowerCase();if(s.includes('trad'))return'Tradicional';if(s.includes('crem'))return'Cremoso';if(s.includes('gour'))return'Gourmet';if(s.includes('truf'))return'Trufado';return c||'-'};
   function loadPdfLib(){if(window.PDFLib)return Promise.resolve(window.PDFLib);if(libPromise)return libPromise;libPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';s.onload=()=>window.PDFLib?resolve(window.PDFLib):reject(new Error('Biblioteca PDF indisponivel'));s.onerror=()=>reject(new Error('Nao foi possivel carregar o gerador de PDF'));document.head.appendChild(s)});return libPromise}
   async function chunks(prefix,n,mime){const p=await Promise.all(Array.from({length:n},(_,i)=>fetch(new URL(`assets/${prefix}-${i+1}.txt?v=58`,ROOT),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Arquivo visual indisponivel');return r.text()})));return`data:${mime};base64,`+p.join('').replace(/\s+/g,'')}
-  function logoData(){return logoPromise||(logoPromise=Promise.resolve('/Geladinho-Do-Sonhos-/assets/logo-oficial-hq-v65.webp?v=80'))}
+  function logoData(){return logoPromise||(logoPromise=Promise.resolve('/assets/logo-oficial-hq-v65.webp?v=80'))}
   function pixData(){return pixPromise||(pixPromise=fetch(new URL('assets/pix-qr-v55.txt?v=65',ROOT),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('QR PIX indisponivel');return r.text()}).then(t=>'data:image/png;base64,'+t.trim()))}
   async function dataUrlToPngBytes(src){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{try{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.drawImage(img,0,0);c.toBlob(async b=>b?resolve(new Uint8Array(await b.arrayBuffer())):reject(new Error('Falha ao incorporar o logo')),'image/png',1)}catch(e){reject(e)}};img.onerror=()=>reject(new Error('Logo da marca nao carregou'));img.src=src})}
   function dataUrlBytes(src){const b64=src.split(',')[1]||'',bin=atob(b64),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
@@ -24,7 +24,7 @@
     const pixSrc=await pixData();
     let logoBytes;
     try{logoBytes=await dataUrlToPngBytes(await logoData())}
-    catch(_){logoBytes=await dataUrlToPngBytes('/Geladinho-Do-Sonhos-/assets/icon-512.png?v=80')}
+    catch(_){logoBytes=await dataUrlToPngBytes('/assets/icon-512.png?v=80')}
     const pixBytes=dataUrlBytes(pixSrc);
     const pdf=await PDFDocument.create();pdf.setTitle(`Ordem de Encomenda ${e.event_code||''}`);pdf.setAuthor(STORE.name);pdf.setSubject('Ordem de encomenda e confirmacao de pedido');
     const page=pdf.addPage([595.28,841.89]),W=page.getWidth(),H=page.getHeight(),reg=await pdf.embedFont(StandardFonts.Helvetica),bold=await pdf.embedFont(StandardFonts.HelveticaBold),logo=await pdf.embedPng(logoBytes),pix=await pdf.embedPng(pixBytes);
