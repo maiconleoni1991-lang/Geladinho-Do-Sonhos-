@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-09",
+  "currency": "BRL",
+  "notes": "Links de fornecedores preferenciais são referências; confira SKU, preço e frete antes de recomprar. Liga neutra do kit M10 pode não ser a mesma formulação da liga neutra do anúncio 'Original'.",
+  "purchases": [
+    {
+      "id": "marvi-kit-001",
+      "seller": "Émeu.Net",
+      "item": "Kit Liga Neutra M10 + Glucose em Pó Marvi",
+      "product_total": 69.99,
+      "order_total": 78.7,
+      "classification": "pedido_comprado",
+      "allocation_method": "proporcional_aos_precos_de_referencia",
+      "contents": [
+        {
+          "id": "liga_marvi_m10",
+          "grams": 1000,
+          "reference_price": 29.99,
+          "allocated_item_cost": 29.16,
+          "allocated_landed_cost": 32.79,
+          "reference_variant_warning": true
+        },
+        {
+          "id": "glucose_marvi",
+          "grams": 1000,
+          "reference_price": 41.99,
+          "allocated_item_cost": 40.83,
+          "allocated_landed_cost": 45.91
+        }
+      ]
+    }
+  ],
+  "suppliers": [
+    {
+      "id": "liga_marvi_m10",
+      "name": "Liga Neutra Marvi Original 1kg",
+      "preferred_for": "liga neutra",
+      "shop": "CHOCOLESTE CHOCOEXPRESS",
+      "url": "https://shopee.com.br/Liga-Neutra-Marvi-Original-1kg-Base-para-Sorvete-Profissional-Sorveteria-Geladinho-Gourmet-A%C3%A7a%C3%AD-i.1468631533.23198696425",
+      "reference_price": 29.99,
+      "reference_weight_g": 1000,
+      "price_status": "preco_publicado_no_anuncio_verificar_antes_de_comprar",
+      "same_as_kit_m10": "nao_confirmado"
+    },
+    {
+      "id": "glucose_marvi",
+      "name": "Açúcar de Milho Glucose em Pó Marvi 1kg",
+      "shop": "Émeu.Net (confirmar vendedor deste anúncio)",
+      "url": "https://shopee.com.br/A%C3%A7%C3%BAcar-de-Milho-Glucose-em-P%C3%B3-Marvi-para-Sorvete-Doce-Sobremesa-1kg-i.537588025.22799424804",
+      "reference_price": 41.99,
+      "reference_weight_g": 1000,
+      "price_status": "preco_informado_pelo_usuario",
+      "purchase_note": "Já incluída no kit Marvi; não lançar outra compra."
+    }
+  ]
+}
