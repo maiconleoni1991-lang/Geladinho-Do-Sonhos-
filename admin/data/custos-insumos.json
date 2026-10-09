@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-09",
+  "description": "Cadastro de custos de aquisição e referências, sem comprovação de recebimento. Custo de estoque real exige controle de lotes no Supabase.",
+  "items": [
+    {
+      "id": "acucar",
+      "name": "Açúcar",
+      "brand": "Genérico",
+      "source": "comércio local de Monte Alto",
+      "pack_quantity": 5000,
+      "unit": "g",
+      "pack_cost": 12,
+      "status": "referencia_local"
+    },
+    {
+      "id": "glucose",
+      "name": "Glucose em pó Marvi",
+      "brand": "Marvi",
+      "source": "kit Shopee Émeu.Net",
+      "pack_quantity": 1000,
+      "unit": "g",
+      "pack_cost": 45.91,
+      "status": "custo_rateado_pedido"
+    },
+    {
+      "id": "gordura",
+      "name": "Gordura de palma Tauá",
+      "brand": "Tauá",
+      "source": "Shopee",
+      "pack_quantity": 3200,
+      "unit": "g",
+      "pack_cost": 117.69,
+      "status": "custo_total_pedido"
+    },
+    {
+      "id": "emulsificante",
+      "name": "Emulsificante Gel Plus",
+      "brand": "Marvi",
+      "source": "valor informado",
+      "pack_quantity": 850,
+      "unit": "g",
+      "pack_cost": 38,
+      "status": "valor_informado_frete_desconhecido"
+    },
+    {
+      "id": "liga_duporto",
+      "name": "Liga Neutra",
+      "brand": "Du Porto",
+      "source": "Shopee Jotapan",
+      "pack_quantity": 1000,
+      "unit": "g",
+      "pack_cost": 30.7,
+      "status": "preco_produto_sem_rateio"
+    },
+    {
+      "id": "liga_marvi",
+      "name": "Liga Neutra M10",
+      "brand": "Marvi",
+      "source": "kit Shopee Émeu.Net",
+      "pack_quantity": 1000,
+      "unit": "g",
+      "pack_cost": 32.79,
+      "status": "custo_rateado_pedido"
+    }
+  ]
+}
