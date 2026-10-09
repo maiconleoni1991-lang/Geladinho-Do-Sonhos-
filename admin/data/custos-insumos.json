@@ -62,6 +62,78 @@
       "unit": "g",
       "pack_cost": 32.79,
       "status": "custo_rateado_pedido"
+    },
+    {
+      "id": "chocolate_fracionado",
+      "name": "Chocolate fracionado",
+      "brand": "A definir",
+      "source": "A cadastrar",
+      "pack_quantity": null,
+      "unit": "g",
+      "pack_cost": null,
+      "status": "preco_e_embalagem_pendentes",
+      "group": "insumos_mais_utilizados",
+      "usage": "complementos_recheios_coberturas"
+    },
+    {
+      "id": "geleia_morango",
+      "name": "Geleia de morango",
+      "brand": "A definir",
+      "source": "A cadastrar",
+      "pack_quantity": null,
+      "unit": "g",
+      "pack_cost": null,
+      "status": "preco_e_embalagem_pendentes",
+      "group": "insumos_mais_utilizados",
+      "usage": "complementos_recheios_coberturas"
+    },
+    {
+      "id": "geleia_maracuja",
+      "name": "Geleia de maracujá",
+      "brand": "A definir",
+      "source": "A cadastrar",
+      "pack_quantity": null,
+      "unit": "g",
+      "pack_cost": null,
+      "status": "preco_e_embalagem_pendentes",
+      "group": "insumos_mais_utilizados",
+      "usage": "complementos_recheios_coberturas"
+    },
+    {
+      "id": "chocolate_branco_fracionado",
+      "name": "Chocolate branco fracionado",
+      "brand": "A definir",
+      "source": "A cadastrar",
+      "pack_quantity": null,
+      "unit": "g",
+      "pack_cost": null,
+      "status": "preco_e_embalagem_pendentes",
+      "group": "insumos_mais_utilizados",
+      "usage": "complementos_recheios_coberturas"
+    },
+    {
+      "id": "chocolate_meio_amargo",
+      "name": "Chocolate meio amargo",
+      "brand": "A definir",
+      "source": "A cadastrar",
+      "pack_quantity": null,
+      "unit": "g",
+      "pack_cost": null,
+      "status": "preco_e_embalagem_pendentes",
+      "group": "insumos_mais_utilizados",
+      "usage": "complementos_recheios_coberturas"
+    },
+    {
+      "id": "oreo",
+      "name": "Bolacha Oreo (pacote)",
+      "brand": "A definir",
+      "source": "A cadastrar",
+      "pack_quantity": null,
+      "unit": "g",
+      "pack_cost": null,
+      "status": "preco_e_embalagem_pendentes",
+      "group": "insumos_mais_utilizados",
+      "usage": "complementos_recheios_coberturas"
     }
   ]
 }
