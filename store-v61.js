@@ -4,6 +4,7 @@ const SB='https://qpqruhcspbdxjcnbhdhn.supabase.co';
 const KEY='sb_publishable_JVYvfl7nrRmlm17qF_KI8A_1H8mtvLk';
 const WHATS='5516992542888';
 const DELIVERY_FEE=6;
+const VAPID_PUBLIC_KEY='BOJ0jB7oR4VvBDiU0ejprYRayZeWHFEOdb8DliQNXpWf5TzXAo8CJbpy3879L1MioYEF393gc3ri1iauqD3vPmw';
 const $=id=>document.getElementById(id);
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 let products=[],cart=loadCart(),filter='Todos',term='',storeOpen=false,installPrompt=null,stockRefreshBusy=false;
@@ -151,7 +152,69 @@ function resetCartModal(){$('cartForm').hidden=false;$('success').hidden=true;cl
 function renderTestimonials(rows){if(!rows.length){$('testGrid').innerHTML='<div class="emptyBox" style="grid-column:1/-1">Ainda não há depoimentos publicados. Depois que os clientes avaliarem pedidos concluídos, eles aparecerão aqui.</div>';return}$('testGrid').innerHTML=rows.map(r=>`<article class="testCard"><div class="stars">${'★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5)))}</div><p>“${esc(r.comment||'')}”</p><small>Cliente verificado · ${new Date(r.created_at).toLocaleDateString('pt-BR')}</small></article>`).join('')}
 function restoreLastOrder(){try{const o=JSON.parse(localStorage.getItem('gds_last_order')||'null');if(!o?.token)return;const a=$('lastOrder');a.hidden=false;a.href='./acompanhar/?t='+encodeURIComponent(o.token);a.textContent='📍 Acompanhar '+(o.code||'pedido')}catch(_){}}
 function setupInstall(){window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').hidden=false});$('installBtn').onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installBtn').hidden=true}}
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=102');reg.update().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
-function bind(){$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData=atob(base64);
+  return Uint8Array.from([...rawData].map(ch=>ch.charCodeAt(0)));
+}
+function pushSupported(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window}
+async function getPushSubscription(){
+  if(!pushSupported())return null;
+  const reg=await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+async function syncPushUi(){
+  const box=$('pushPrompt'),btn=$('pushBtn'),txt=$('pushText');
+  if(!box||!btn||!txt)return;
+  if(!pushSupported()){box.hidden=true;return}
+  box.hidden=false;
+  const sub=await getPushSubscription().catch(()=>null);
+  if(sub){
+    btn.textContent='🔔 Avisos ativados';
+    btn.disabled=true;
+    txt.textContent='Você será avisado no celular quando a loja abrir.';
+  }else{
+    btn.textContent='🔔 Avise-me quando abrir';
+    btn.disabled=false;
+    txt.textContent='Ative a notificação para receber um aviso quando abrirmos a loja.';
+  }
+}
+async function enableStoreOpenPush(){
+  if(!pushSupported())return alert('Este aparelho ou navegador não oferece notificações push.');
+  const btn=$('pushBtn');
+  const old=btn?.textContent;
+  if(btn){btn.disabled=true;btn.textContent='Ativando…'}
+  try{
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted')throw new Error('Permissão de notificação não concedida.');
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      sub=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    const json=sub.toJSON();
+    await api('/rest/v1/rpc/subscribe_store_push_v107',{
+      method:'POST',
+      body:JSON.stringify({
+        p_endpoint:sub.endpoint,
+        p_p256dh:json.keys?.p256dh||'',
+        p_auth:json.keys?.auth||'',
+        p_user_agent:navigator.userAgent
+      })
+    });
+    await syncPushUi();
+    alert('Pronto! Você receberá uma notificação quando a loja abrir.');
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent=old||'🔔 Avise-me quando abrir'}
+    alert(e.message||'Não foi possível ativar as notificações.');
+  }
+}
+
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=107');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 bind();updateCartCount();restoreLastOrder();setupInstall();replaceOldServiceWorker();startPresence();loadStore();setInterval(()=>{if(document.visibilityState==='visible')refreshStockOnly().catch(()=>{})},10000);window.addEventListener('focus',()=>refreshStockOnly().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshStockOnly().catch(()=>{})});
 })();
