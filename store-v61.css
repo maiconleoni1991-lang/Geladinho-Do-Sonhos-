@@ -271,3 +271,9 @@ footer .footer img{
 .pickCount b{font-size:18px;color:var(--wine)}
 .pickCount small{font-size:10px;color:var(--muted);margin-top:3px}
 @media(max-width:680px){.pickQty{grid-template-columns:40px 1fr 40px}.pickQty button{height:42px}.pickCount b{font-size:17px}}
+
+
+/* v107 — notificações de abertura */
+.pushPrompt{max-width:1180px;margin:12px auto 0;padding:13px 16px;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(74,16,30,.06)}
+.pushPrompt[hidden]{display:none!important}.pushPrompt>div{min-width:0;flex:1}.pushPrompt b{display:block;color:var(--wine);margin-bottom:3px}.pushPrompt span{display:block;color:var(--muted);font-size:12px;line-height:1.4}.pushPrompt button{border:0;border-radius:12px;padding:11px 14px;background:var(--pink);color:#fff;font-weight:950;min-height:44px}.pushPrompt button:disabled{background:#e5dce0;color:#6f6267;cursor:default}
+@media(max-width:680px){.pushPrompt{margin:10px 10px 0;flex-direction:column;align-items:stretch}.pushPrompt button{width:100%}}
