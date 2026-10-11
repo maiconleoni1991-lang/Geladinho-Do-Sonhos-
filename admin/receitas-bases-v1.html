@@ -234,6 +234,59 @@ const units=lots*yieldOne,total=(costBase+costComplements+yieldOne*packUnit+over
 el('costAll',money(total));el('costUnit',money(total/units));el('unitsTotal',String(units));el('revenue',money(gross));el('commissionValue',money(fee));el('profit',money(profit));el('margin',money(profit/units)+' / '+fmt(gross?profit/gross*100:0)+'%');
 $('calcMessage').textContent='✅ Cálculo completo com os valores informados. Produção de '+lots+' receita(s), total de '+units+' geladinhos.';$('calcMessage').className='msg ok';
 }
+
+function renderPowderPicker(){
+const line=currentItems().find(i=>i.item_key==='saborizante'),panel=$('powderPickerPanel');
+panel.hidden=!line;
+if(!line)return;
+const ordered=powderMaterials();
+$('powderChoice').innerHTML='<option value="">Escolha Du Porto ou Marvi e o sabor</option>'+ordered.map(m=>'<option value="'+esc(m.id)+'" '+(line.material_id===m.id?'selected':'')+'>'+esc(m.brand+' — '+flavorName(m))+'</option>').join('');
+renderPowderRecipeInfo();
+}
+function renderPowderRecipeInfo(){
+const line=currentItems().find(i=>i.item_key==='saborizante'),target=$('powderRecipeInfo');
+if(!line)return;
+const m=material(line.material_id),p=powderStock(line.material_id);
+if(!m||!p){target.textContent='Selecione um pó da Du Porto ou Marvi. Depois indique na receita quantos gramas usa.';return;}
+const bought=num(p.purchased_g),used=num(p.consumed_g),q=num(line.quantity_used),lots=val('lots'),required=q===null||lots===null?null:q*lots;
+const pack=num(m.pack_quantity),price=num(m.pack_cost),unitCost=pack>0&&price!==null?precise(price/pack):'Preço pendente';
+let details=m.brand+' — '+flavorName(m)+' | Comprado: '+fmt(bought)+' g | Preço por grama: '+unitCost+'. ';
+if(used===null)details+='Consumo ainda não conferido; saldo disponível pendente.';
+else{const balance=bought-used;details+='Já utilizado: '+fmt(used)+' g | Saldo estimado: '+fmt(balance)+' g.';
+if(required!==null&&required>=0){details+=' Esta simulação utiliza '+fmt(required)+' g.';if(required>balance)details+=' ⚠️ Quantidade planejada maior que o saldo estimado.';}}
+target.textContent=details;
+}
+function renderPowders(){
+const brands=['Du Porto','Marvi'],all=powderMaterials();
+$('powderSummary').innerHTML=brands.map(brand=>{
+const a=all.filter(m=>m.brand===brand),bought=a.reduce((n,m)=>n+Number(powderStock(m.id)?.purchased_g||0),0),unchecked=a.filter(m=>num(powderStock(m.id)?.consumed_g)===null).length;
+return '<div class="metric"><small>'+esc(brand)+' — '+a.length+' sabores</small><b>'+fmt(bought)+' g</b><small>Comprados '+(unchecked?'• '+unchecked+' saldos a conferir':'• saldos conferidos')+'</small></div>';
+}).join('');
+const search=$('powderSearch').value.toLocaleLowerCase('pt-BR'),brand=$('powderBrand').value;
+const matches=all.filter(m=>(!brand||m.brand===brand)&&(m.name+' '+m.brand).toLocaleLowerCase('pt-BR').includes(search));
+$('powderCards').innerHTML=matches.map(m=>{
+const p=powderStock(m.id),bought=num(p.purchased_g),used=num(p.consumed_g),known=used!==null,balance=known?bought-used:null,price=num(m.pack_cost),grams=num(m.pack_quantity);
+return '<article class="powder-card" data-powder="'+esc(m.id)+'"><div><h3>'+esc(flavorName(m))+'</h3><div class="powder-meta">'+esc(m.brand)+' • '+(grams===null?'peso do pacote pendente':fmt(grams)+' g/pacote')+' • '+(price===null?'preço pendente':money(price)+'/pacote')+'</div></div>'+
+'<div class="powder-controls"><label class="field">Total comprado (g)<input data-field="purchased_g" type="number" min="0" step="0.1" inputmode="decimal" value="'+fmtInput(bought)+'"></label>'+
+'<label class="field">Total já utilizado (g)<input data-field="consumed_g" type="number" min="0" step="0.1" inputmode="decimal" value="'+fmtInput(used)+'" placeholder="Não informado"></label></div>'+
+'<div class="powder-balance '+(known?'ok':'')+'">'+(known?'Saldo estimado: '+fmt(balance)+' g':'Saldo a conferir: consumo não informado')+'</div>'+
+'<button type="button" data-save-powder="'+esc(m.id)+'">💾 Salvar estoque do sabor</button></article>';
+}).join('')||'<p class="small">Nenhum pó encontrado.</p>';
+}
+async function savePowder(id){
+const row=[...document.querySelectorAll('#powderCards [data-powder]')].find(el=>el.dataset.powder===id);if(!row)return;
+const purchased=num(row.querySelector('[data-field="purchased_g"]').value),used=num(row.querySelector('[data-field="consumed_g"]').value);
+if(purchased===null||purchased<0)return alert('Informe quanto comprou em gramas.');
+if(used!==null&&(used<0||used>purchased))return alert('A quantidade utilizada deve ser positiva e não pode ultrapassar o comprado. Deixe vazio se não souber.');
+const btn=row.querySelector('[data-save-powder]');btn.disabled=true;
+try{
+ const res=await sb.from('gds_powder_inventory').update({purchased_g:purchased,consumed_g:used,updated_at:new Date().toISOString()}).eq('material_id',id).select('material_id,purchased_g,consumed_g').single();
+ if(res.error)throw res.error;
+ const i=state.powders.findIndex(z=>z.material_id===id);if(i>=0)state.powders[i]={...state.powders[i],...res.data};
+ renderPowders();note('✅ Estoque de '+(material(id)?.name||'pó')+' atualizado no Supabase.');
+}catch(e){note('Erro ao salvar estoque: '+e.message,true)}finally{btn.disabled=false}
+}
+
 function renderCatalog(){
 $('materialCount').textContent=state.materials.length+' produtos';
 const search=$('materialSearch').value.toLowerCase().trim();const list=state.materials.filter(m=>(m.name+' '+(m.brand||'')).toLowerCase().includes(search));
@@ -244,12 +297,12 @@ return '<div class="product-card"><strong>'+esc(m.name)+'</strong><span class="s
 }
 function clearMaterial(){
 state.materialEditing=null;$('materialFormTitle').textContent='Cadastrar produto / material';
-['matName','matBrand','matQty','matPrice'].forEach(id=>$(id).value='');$('matType').value='Ingrediente';$('matUnit').value='g';updatePricePreview();
+['matName','matBrand','matQty','matPrice'].forEach(id=>$(id).value='');$('matType').value='Ingrediente';$('matUnit').value='g';$('matPowder').checked=false;updatePricePreview();
 }
 function editMaterial(id){
 const m=material(id);if(!m)return;
 state.materialEditing=m.id;$('materialFormTitle').textContent='Editar: '+m.name;
-$('matName').value=m.name;$('matBrand').value=m.brand||'';$('matType').value=m.material_type;$('matUnit').value=m.unit;$('matQty').value=fmtInput(m.pack_quantity);$('matPrice').value=fmtInput(m.pack_cost);updatePricePreview();
+$('matName').value=m.name;$('matBrand').value=m.brand||'';$('matType').value=m.material_type;$('matUnit').value=m.unit;$('matQty').value=fmtInput(m.pack_quantity);$('matPrice').value=fmtInput(m.pack_cost);$('matPowder').checked=isPowder(m.id);updatePricePreview();
 $('materialFormTitle').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function updatePricePreview(){
@@ -261,12 +314,17 @@ const btn=$('saveMaterial'),name=field('matName').trim(),qty=val('matQty'),price
 if(!name)return alert('Informe o nome do produto.');
 if(qty!==null&&qty<=0)return alert('Peso deve ser maior que zero.');
 if(price!==null&&price<0)return alert('Preço não pode ser negativo.');
+if($('matPowder').checked&&field('matUnit')!=='g')return alert('Controle de pós deve usar gramas como unidade.');
 const obj={name,brand:field('matBrand').trim()||null,material_type:field('matType'),unit:field('matUnit'),pack_quantity:qty,pack_cost:price,updated_at:new Date().toISOString()};
 btn.disabled=true;try{
 let res=state.materialEditing?await sb.from('gds_materials').update(obj).eq('id',state.materialEditing).select('id').single():await sb.from('gds_materials').insert(obj).select('id').single();
 if(res.error)throw res.error;
-const loaded=await sb.from('gds_materials').select('*').order('name');if(loaded.error)throw loaded.error;
-state.materials=loaded.data||[];clearMaterial();renderCatalog();note('✅ Material salvo no Supabase. Os cálculos das receitas vinculadas usarão o novo preço.');
+if($('matPowder').checked&&!isPowder(res.data.id)){
+ const added=await sb.from('gds_powder_inventory').insert({material_id:res.data.id,purchased_g:0,consumed_g:null,note:'Novo pó cadastrado. Atualize compras e consumo na aba Estoque de pós.'});
+ if(added.error)throw added.error;
+}
+const [loaded,pow]=await Promise.all([sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*')]);if(loaded.error)throw loaded.error;if(pow.error)throw pow.error;
+state.materials=loaded.data||[];state.powders=pow.data||[];clearMaterial();renderCatalog();note('✅ Produto salvo. Pós saborizantes podem ter o estoque conferido na aba Estoque de pós.');
 }catch(e){note('Erro ao salvar produto: '+e.message,true)}finally{btn.disabled=false;}
 }
 function onRowInput(e){
