@@ -56,7 +56,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .actions button{flex:1;min-width:160px}
 .badge{background:#fff0f6;color:#842246;border-radius:30px;padding:4px 10px;font-size:12px;font-weight:750}
 .note{background:#f5f9fd;border:1px solid #dfeaf5;padding:12px;border-radius:12px;color:#38536c;font-size:13px}
-#recipePanel[hidden],#materialsPanel[hidden],#powdersPanel[hidden],#powderPickerPanel[hidden]{display:none}
+#recipePanel[hidden],#materialsPanel[hidden],#powdersPanel[hidden],#powderPickerPanel[hidden],#complementsPanel[hidden],#compWeightField[hidden]{display:none}
 .powder-card{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:9px;background:#fff}
 .powder-card h3{margin:0;color:var(--dark)}.powder-card .powder-meta{font-size:12px;color:var(--muted)}
 .powder-card .powder-balance{border-radius:9px;padding:9px;background:#fff1f5;color:#642840;font-weight:800;font-size:13px}
@@ -71,7 +71,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <main>
 <section class="hero"><img src="../assets/logo-oficial-hq-v65.webp" alt="Geladinho dos Sonhos" onerror="this.onerror=null;this.src='../assets/icon-512.png'"><div><h1>Receitas e custos de produção</h1><p>Cadastro de matérias-primas, bases e cálculo de lucro por receita e por geladinho.</p></div></section>
 <div class="tabbar" id="tabs" role="tablist" aria-label="Receitas-base e materiais">
-<button type="button" data-tab="premium_1">Base Premium 1</button><button type="button" data-tab="premium_2">Base Premium 2</button><button type="button" data-tab="gourmet_nova">Base Gourmet</button><button type="button" data-tab="materials">📦 Produtos e materiais</button><button type="button" data-tab="powders">🎨 Estoque de pós</button>
+<button type="button" data-tab="premium_1">Base Premium 1</button><button type="button" data-tab="premium_2">Base Premium 2</button><button type="button" data-tab="gourmet_nova">Base Gourmet</button><button type="button" data-tab="materials">📦 Produtos e materiais</button><button type="button" data-tab="powders">🎨 Estoque de pós</button><button type="button" data-tab="complements">🍫 Recheios e complementos</button>
 </div>
 <div id="status" class="msg">Conectando com segurança ao Supabase...</div>
 <section id="recipePanel" hidden>
@@ -99,7 +99,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div>
 <div class="panel">
 <div class="flex"><div><h2>🍍 Complementos, sabores e recheios</h2><p class="small">Adicione abacaxi, Cookies de Alpino, Paçoquita, Nutella, caldas e outros materiais sem misturar com a fórmula da base. Cada complemento pode ser ativado ou desativado.</p></div><button type="button" id="addComplement" class="secondary">+ Acrescentar complemento</button></div>
-<div id="complementLines" class="lines"></div><p class="hint">Exemplo: comprou um pacote de 350 g? Cadastre peso 350 g e preço total do pacote; na receita, indique apenas os gramas usados. Se usa a caixa ou o pacote inteiro, escolha a unidade caixa/pacote e quantidade 1.</p>
+<div id="complementLines" class="lines"></div><p class="hint"><a href="#complements" id="openComplementCatalog">Cadastrar novo recheio / complemento</a>. Exemplo: comprou um pacote de 350 g? Cadastre peso 350 g e preço total do pacote; na receita, indique apenas os gramas usados. Se usa a caixa ou o pacote inteiro, escolha a unidade caixa/pacote e quantidade 1.</p>
 </div>
 <div class="panel"><h2>Resultado financeiro da produção</h2>
 <div class="metrics">
@@ -132,6 +132,29 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="panel"><div class="flex"><h2>Materiais cadastrados</h2><span id="materialCount" class="badge">—</span></div>
 <label class="field">Buscar um produto<input id="materialSearch" type="search" placeholder="Buscar pelo nome ou marca"></label>
 <div id="catalog" class="catalog-list"></div>
+</div>
+</section>
+<section id="complementsPanel" hidden>
+<div class="panel">
+<div class="flex"><div><h2 id="compFormTitle">🍫 Cadastrar recheio ou complemento</h2><p class="small">Cadastro separado da base e dos geladinhos à venda. O produto poderá ser usado em diversas receitas.</p></div><span class="badge">Cadastro financeiro</span></div>
+<div class="cols">
+<label class="field">Nome do produto<input id="compName" placeholder="Ex.: Nutella, Abacaxi, Cookies de Alpino" autocomplete="off"></label>
+<label class="field">Marca<input id="compBrand" placeholder="Ex.: Ferrero, Paçoquita ou sem marca"></label>
+<label class="field">Forma de compra<select id="compFormat"><option value="peso">Por peso (gramas)</option><option value="caixa">Caixa</option><option value="pacote">Pacote</option></select></label>
+<label class="field"><span id="compQtyLabel">Peso total comprado (g)</span><input id="compQty" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 350"></label>
+<label class="field" id="compWeightField" hidden>Peso por caixa/pacote (g) <small>Preencha se usar apenas uma parte em gramas. Deixe vazio se usa caixas/pacotes inteiros.</small><input id="compWeight" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 350"></label>
+<label class="field">Valor total pago (R$)<input id="compPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Informe o custo da compra"></label>
+</div>
+<div class="note" style="margin-top:12px">
+<div class="flex"><span>Quantidade para cálculo: <strong id="compNorm">—</strong></span><span>Custo unitário: <strong id="compUnitCost">—</strong></span></div>
+<p class="hint" style="margin:8px 0 0">Se comprar uma caixa ou pacote e usar somente 30 g, informe o peso por embalagem: o custo será calculado por grama. Se usar o pacote inteiro, deixe esse campo vazio e a receita contará por caixa ou pacote.</p>
+</div>
+<div class="actions"><button type="button" id="compSave">💾 Salvar complemento</button><button type="button" id="compClear" class="secondary">+ Novo complemento</button></div>
+</div>
+<div class="panel">
+<div class="flex"><h2>Recheios e complementos cadastrados</h2><span id="compCount" class="badge">—</span></div>
+<label class="field">Buscar por nome ou marca<input id="compSearch" type="search" placeholder="Pesquisar recheio..."></label>
+<div id="compCatalog" class="catalog-list"></div>
 </div>
 </section>
 <section id="powdersPanel" hidden>
