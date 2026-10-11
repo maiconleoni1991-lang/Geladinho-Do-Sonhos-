@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#ff0f68"><title>Receitas e custos | Geladinho dos Sonhos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--rose:#f20f69;--dark:#48152c;--line:#f2dfe7;--muted:#765768;--green:#167447}
+*{box-sizing:border-box}
+body{font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;background:#fff8fb;color:#2d1a24;margin:0}
+main{max-width:1240px;padding:16px 12px 90px;margin:auto}
+.hero{border-radius:22px;background:linear-gradient(125deg,#47152d,#9e235e);padding:21px;color:#fff;display:flex;gap:15px;align-items:center}
+.hero img{width:105px;max-width:27%;height:85px;object-fit:contain}
+.hero h1{margin:0 0 4px;font-size:26px}.hero p{color:#ffe8f0;margin:0}
+.panel{background:#fff;border:1px solid var(--line);padding:17px;border-radius:18px;margin-top:13px;box-shadow:0 8px 24px #47152d09}
+h2{font-size:19px;color:var(--dark);margin:0 0 12px}h3{font-size:16px;margin:0 0 10px}
+.small,.hint{font-size:12px;color:var(--muted)}.hint{margin:8px 0 0}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0;border-radius:11px;padding:11px 13px;font-weight:750;background:var(--rose);color:#fff}
+button:disabled{opacity:.5;cursor:wait}
+button.secondary{background:#fff0f6;color:#8a2350;border:1px solid var(--line)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f99bbd;outline-offset:1px}
+.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tabbar button{background:#fff;border:1px solid #eccbd8;color:#6f2b49;flex:1;min-width:130px}
+.tabbar button.active{background:var(--dark);border-color:var(--dark);color:#fff}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:11px}
+.field{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700;color:var(--dark)}
+.field input,.field select{width:100%;border:1px solid #dac3cf;background:#fff;color:#211720;border-radius:10px;padding:11px;min-height:44px}
+.field small{font-size:11px;color:var(--muted);font-weight:400}
+.field input:read-only{background:#fff7fa;color:#65525c}
+.flex{display:flex;align-items:center;gap:9px;justify-content:space-between;flex-wrap:wrap}
+.lines{display:grid;gap:10px}
+.line{border:1px solid var(--line);background:#fffafd;border-radius:14px;padding:12px}
+.line-top{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px}
+.line-top strong{color:var(--dark)}
+.line-grid{display:grid;grid-template-columns:minmax(135px,1.7fr) minmax(135px,1.5fr) minmax(105px,1fr) 70px minmax(100px,1fr) minmax(100px,1fr);gap:8px;align-items:end}
+.line-result{display:flex;justify-content:space-between;gap:10px;border-top:1px dashed #e9d4df;margin-top:10px;padding-top:9px;font-size:13px}
+.line-result b{color:var(--green)}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.metric{padding:15px;border-radius:13px;background:#fff2f7;min-width:0}
+.metric small{display:block;color:#7b5467;font-size:12px}
+.metric b{display:block;font-size:22px;overflow-wrap:anywhere}
+.metric.good{background:#edfaef}.metric.good b{color:var(--green)}
+.metric.warn{background:#fff6e6}
+.msg{border-radius:12px;background:#fff3dc;color:#775017;padding:12px;margin-top:12px;font-size:13px}
+.msg.ok{background:#edf9f0;color:#17693d}.msg.err{background:#fff0f0;color:#b12035}
+.catalog-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:10px;margin-top:14px}
+.product-card{border:1px solid var(--line);border-radius:13px;padding:13px;display:grid;gap:6px}
+.product-card strong{color:var(--dark)}.product-card button{justify-self:start}
+.price{font-size:18px;color:var(--green);font-weight:800}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.actions button{flex:1;min-width:160px}
+.badge{background:#fff0f6;color:#842246;border-radius:30px;padding:4px 10px;font-size:12px;font-weight:750}
+.note{background:#f5f9fd;border:1px solid #dfeaf5;padding:12px;border-radius:12px;color:#38536c;font-size:13px}
+#recipePanel[hidden],#materialsPanel[hidden]{display:none}
+@media(max-width:1010px){.line-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.hero{align-items:flex-start}.hero img{width:80px;height:78px}.hero h1{font-size:21px}.line-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric b{font-size:20px}}
+</style></head><body>
+<script src="admin-common-v48.js?v=106"></script>
+<main>
+<section class="hero"><img src="../assets/logo-oficial-hq-v65.webp" alt="Geladinho dos Sonhos" onerror="this.onerror=null;this.src='../assets/icon-512.png'"><div><h1>Receitas e custos de produção</h1><p>Cadastro de matérias-primas, bases e cálculo de lucro por receita e por geladinho.</p></div></section>
+<div class="tabbar" id="tabs" role="tablist" aria-label="Receitas-base e materiais">
+<button type="button" data-tab="premium_1">Base Premium 1</button><button type="button" data-tab="premium_2">Base Premium 2</button><button type="button" data-tab="gourmet_nova">Base Gourmet</button><button type="button" data-tab="materials">📦 Produtos e materiais</button>
+</div>
+<div id="status" class="msg">Conectando com segurança ao Supabase...</div>
+<section id="recipePanel" hidden>
+<div class="panel"><div class="flex"><h2 id="baseTitle">Ficha da receita</h2><span id="baseFlag" class="badge">Cadastro editável</span></div>
+<p id="baseDescription" class="small"></p>
+<div class="cols">
+<label class="field">Preço de venda (R$ / geladinho)<input id="salePrice" type="number" inputmode="decimal" min="0" step="0.01"></label>
+<label class="field">Rendimento por receita (unidades)<input id="yieldUnits" type="number" inputmode="numeric" min="1" step="1" placeholder="Ex.: 20"></label>
+<label class="field">Embalagem por unidade (R$)<input id="packaging" type="number" inputmode="decimal" min="0" step="0.0001" placeholder="Custo por saquinho/etiqueta"></label>
+<label class="field">Energia e outros custos por receita (R$)<input id="overhead" type="number" inputmode="decimal" min="0" step="0.01"></label>
+<label class="field">Comissão de ponto de venda (%)<input id="commission" type="number" inputmode="decimal" min="0" max="100" step="0.1"></label>
+<label class="field">Quantas receitas produzir? <small>Multiplica todos os ingredientes e o resultado.</small><input id="lots" type="number" inputmode="numeric" min="1" step="1" value="1"></label>
+</div>
+</div>
+<div class="panel">
+<div class="flex"><div><h2>Ingredientes da receita-base</h2><p class="small">Quantidade usada, peso do pacote, preço pago, custo por grama/ml e custo total de cada item.</p></div><button type="button" id="addLine" class="secondary">+ Acrescentar ingrediente</button></div>
+<div id="lines" class="lines"></div>
+<div class="actions"><button type="button" id="saveRecipe">💾 Salvar receita e valores</button><button type="button" id="goMaterials" class="secondary">+ Cadastrar produto separadamente</button></div>
+<div class="note" style="margin-top:13px">Quando um ingrediente está vinculado ao cadastro de produtos, o peso e o preço são atualizados na aba <strong>Produtos e materiais</strong> e aproveitados nas receitas. Materiais sem vínculo podem ter preço e peso digitados na própria receita.</div>
+</div>
+<div class="panel"><h2>Resultado financeiro da produção</h2>
+<div class="metrics">
+<div class="metric"><small>Custo total da base (1 receita)</small><b id="costBase">—</b></div>
+<div class="metric"><small>Custo total de produção</small><b id="costAll">—</b></div>
+<div class="metric"><small>Custo por geladinho</small><b id="costUnit">—</b></div>
+<div class="metric"><small>Unidades a produzir</small><b id="unitsTotal">—</b></div>
+<div class="metric"><small>Faturamento previsto</small><b id="revenue">—</b></div>
+<div class="metric"><small>Comissão total</small><b id="commissionValue">—</b></div>
+<div class="metric good"><small>Lucro estimado do lote</small><b id="profit">—</b></div>
+<div class="metric good"><small>Lucro por unidade / margem</small><b id="margin">—</b></div>
+</div><div id="calcMessage" class="msg"></div><p class="hint">Lucro estimado considera os valores informados de ingredientes, embalagens, custos extras e comissão. Impostos ou despesas não cadastradas não entram no cálculo. Este módulo não movimenta estoque.</p>
+</div>
+</section>
+<section id="materialsPanel" hidden>
+<div class="panel"><div class="flex"><div><h2 id="materialFormTitle">Cadastrar produto / material</h2><p class="small">Cada embalagem é cadastrada uma vez; você escolhe quanto utiliza nas receitas.</p></div><span class="badge">Separado dos geladinhos à venda</span></div>
+<div class="cols">
+<label class="field">Produto / ingrediente<input id="matName" placeholder="Ex.: Nutella, pó saborizante, coco"></label>
+<label class="field">Marca (opcional)<input id="matBrand" placeholder="Ex.: Marvi"></label>
+<label class="field">Categoria<select id="matType"><option>Ingrediente</option><option>Complemento</option><option>Embalagem</option></select></label>
+<label class="field">Peso / quantidade da embalagem<input id="matQty" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 1000"></label>
+<label class="field">Unidade<select id="matUnit"><option value="g">Gramas (g)</option><option value="ml">Mililitros (ml)</option><option value="un">Unidades (un)</option></select></label>
+<label class="field">Quanto pagou (R$)<input id="matPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 38,20"></label>
+</div>
+<div class="panel" style="margin-top:12px;background:#fff8fb"><div class="flex"><span>Preço por <span id="priceUnit">g</span>:</span><strong id="pricePer" class="price">Preencha peso e preço</strong></div></div>
+<div class="actions"><button type="button" id="saveMaterial">💾 Salvar produto</button><button type="button" id="clearMaterial" class="secondary">Limpar / novo produto</button></div>
+</div>
+<div class="panel"><div class="flex"><h2>Materiais cadastrados</h2><span id="materialCount" class="badge">—</span></div>
+<label class="field">Buscar um produto<input id="materialSearch" type="search" placeholder="Buscar pelo nome ou marca"></label>
+<div id="catalog" class="catalog-list"></div>
+</div>
+</section>
+</main>
+<script>
+(function(){'use strict';
+const $=id=>document.getElementById(id),sb=GDS48.sb,esc=GDS48.esc;
+const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),fmt=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:5});
+const num=v=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
+const val=id=>num($(id).value),field=id=>$(id).value;
+const fmtInput=n=>n===null||n===undefined?'':String(n);
+const codes=['premium_1','premium_2','gourmet_nova'];let state={active:'gourmet_nova',bases:[],items:[],materials:[],deletions:[],materialEditing:null};
+const currentBase=()=>state.bases.find(x=>x.code===state.active),currentItems=()=>state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
+const material=id=>state.materials.find(m=>m.id===id);
+const note=(s,bad=false)=>{const x=$('status');x.textContent=s;x.className='msg '+(bad?'err':'ok')};
+const pending=()=>note('✏️ Alterações na receita ainda não salvas. Clique em Salvar receita e valores.');
+async function load(){
+const [b,i,m]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name')]);
+if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;
+state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];
+if(!codes.every(code=>state.bases.some(b=>b.code===code)))throw Error('As três bases não foram encontradas.');render();
+}
+function render(){
+document.querySelectorAll('[data-tab]').forEach(b=>{const active=b.dataset.tab===state.active;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
+const isMaterial=state.active==='materials';$('materialsPanel').hidden=!isMaterial;$('recipePanel').hidden=isMaterial;
+if(isMaterial){renderCatalog();return;}renderBase();
+}
+function renderBase(){
+const b=currentBase();$('baseTitle').textContent=b.name;$('baseDescription').textContent=b.description||'';
+$('baseFlag').textContent=b.code==='gourmet_nova'?'Nova base Gourmet':'Base existente • referência';
+[['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']].forEach(p=>{$(p[0]).value=fmtInput(b[p[1]])});
+renderRows();calc();
+}
+function renderRows(){
+const ms=state.materials,rows=currentItems();
+$('lines').innerHTML=rows.map((r,index)=>{
+const m=material(r.material_id);
+const qty=num(r.quantity_used),pack=m?num(m.pack_quantity):num(r.purchase_quantity),price=m?num(m.pack_cost):num(r.purchase_cost);
+let opts='<option value="">Sem vínculo — preencher preço aqui</option>'+ms.map(x=>'<option value="'+esc(x.id)+'" '+(r.material_id===x.id?'selected':'')+'>'+esc(x.name+(x.brand?' — '+x.brand:''))+'</option>').join('');
+const locked=m?'readonly':'';
+return '<div class="line" data-key="'+esc(r.item_key)+'"><div class="line-top"><strong>'+(index+1)+'. '+esc(r.ingredient_name)+'</strong>'+(r.item_key.startsWith('extra_')?'<button type="button" class="secondary" data-del="'+esc(r.item_key)+'">Remover</button>':'<span class="small">Ingrediente-base</span>')+'</div>'+
+'<div class="line-grid">'+
+'<label class="field">Produto / insumo<input data-field="ingredient_name" value="'+esc(r.ingredient_name)+'" '+(m?'readonly':'')+'></label>'+
+'<label class="field">Vincular ao produto cadastrado<select data-field="material_id">'+opts+'</select></label>'+
+'<label class="field">Quantidade usada na receita<input data-field="quantity_used" type="number" min="0" step="any" inputmode="decimal" value="'+fmtInput(qty)+'" placeholder="Informe"></label>'+
+'<label class="field">Unidade<select data-field="measure_unit" '+(m?'disabled':'')+'><option value="g" '+(r.measure_unit==='g'?'selected':'')+'>g</option><option value="ml" '+(r.measure_unit==='ml'?'selected':'')+'>ml</option><option value="un" '+(r.measure_unit==='un'?'selected':'')+'>un</option></select></label>'+
+'<label class="field">Peso do pacote ('+esc(r.measure_unit)+')<input data-field="purchase_quantity" type="number" min="0" step="any" inputmode="decimal" value="'+fmtInput(pack)+'" placeholder="Ex.: 1000" '+locked+'></label>'+
+'<label class="field">Preço pago no pacote (R$)<input data-field="purchase_cost" type="number" min="0" step="any" inputmode="decimal" value="'+fmtInput(price)+'" placeholder="R$" '+locked+'></label>'+
+'</div><div class="line-result"><span>Custo por '+esc(r.measure_unit)+': <b data-unitcost>—</b></span><span>Custo na receita: <b data-linecost>—</b></span></div>'+
+(m?'<p class="hint">Preço vinculado ao cadastro de materiais. Para alterar, abra a aba Produtos e materiais.</p>':'')+'</div>';
+}).join('');
+updateLineCosts();
+}
+function itemCalc(r){
+const m=material(r.material_id),q=num(r.quantity_used),pack=m?num(m.pack_quantity):num(r.purchase_quantity),price=m?num(m.pack_cost):num(r.purchase_cost),unit=m?.unit||r.measure_unit;
+if(q===null||q<0)return {ok:false,reason:r.ingredient_name+': informe a quantidade usada'};
+if(q===0)return {ok:true,base:0,unitcost:pack>0&&price!==null?price/pack:null};
+if(!(pack>0)||price===null||price<0)return{ok:false,reason:r.ingredient_name+': falta peso ou preço de compra'};
+if(unit!==r.measure_unit)return{ok:false,reason:r.ingredient_name+': unidade de medida incompatível'};
+return{ok:true,base:q*price/pack,unitcost:price/pack};
+}
+function updateLineCosts(){
+document.querySelectorAll('.line').forEach(el=>{const r=currentItems().find(x=>x.item_key===el.dataset.key);if(!r)return;const x=itemCalc(r);
+el.querySelector('[data-unitcost]').textContent=x.unitcost===null||x.unitcost===undefined?'—':money(x.unitcost);
+el.querySelector('[data-linecost]').textContent=x.ok?money(x.base):'Pendente';
+});
+}
+function calc(){
+const b=currentBase(),r=currentItems(),missing=[],lots=val('lots'),yieldOne=val('yieldUnits'),sale=val('salePrice'),packUnit=val('packaging'),overhead=val('overhead'),commission=val('commission');
+let costBase=0;for(const x of r){const c=itemCalc(x);if(!c.ok)missing.push(c.reason);else costBase+=c.base}
+if(!r.length)missing.push('Adicione os ingredientes da receita');
+if(!(yieldOne>0&&Number.isInteger(yieldOne)))missing.push('Informe rendimento em unidades inteiras');
+if(!(lots>0&&Number.isInteger(lots)))missing.push('Informe número de receitas inteiro');
+if(sale===null||sale<0)missing.push('Informe o preço de venda');
+if(packUnit===null||packUnit<0)missing.push('Informe custo da embalagem (pode ser zero)');
+if(overhead===null||overhead<0)missing.push('Informe outros custos (pode ser zero)');
+if(commission===null||commission<0||commission>100)missing.push('Informe a comissão de 0% a 100%');
+updateLineCosts();
+const el=(id,v)=>$(id).textContent=v;
+el('costBase',missing.some(s=>s.includes('falta peso')||s.includes('quantidade')||s.includes('unidade')||s.includes('Adicione'))?'Parcial: '+money(costBase):money(costBase));
+if(missing.length){['costAll','costUnit','revenue','commissionValue','profit','margin'].forEach(id=>el(id,'—'));el('unitsTotal',yieldOne>0&&lots>0?String(yieldOne*lots):'—');$('calcMessage').className='msg';$('calcMessage').textContent='⚠️ Para calcular o lucro com segurança, complete: '+missing.join('; ')+'.';return;}
+const units=lots*yieldOne,total=(costBase+yieldOne*packUnit+overhead)*lots,gross=units*sale,fee=gross*commission/100,profit=gross-total-fee;
+el('costAll',money(total));el('costUnit',money(total/units));el('unitsTotal',String(units));el('revenue',money(gross));el('commissionValue',money(fee));el('profit',money(profit));el('margin',money(profit/units)+' / '+fmt(gross?profit/gross*100:0)+'%');
+$('calcMessage').textContent='✅ Cálculo completo com os valores informados. Produção de '+lots+' receita(s), total de '+units+' geladinhos.';$('calcMessage').className='msg ok';
+}
+function renderCatalog(){
+$('materialCount').textContent=state.materials.length+' produtos';
+const search=$('materialSearch').value.toLowerCase().trim();const list=state.materials.filter(m=>(m.name+' '+(m.brand||'')).toLowerCase().includes(search));
+$('catalog').innerHTML=list.map(m=>{
+const pack=num(m.pack_quantity),price=num(m.pack_cost),known=pack>0&&price!==null;
+return '<div class="product-card"><strong>'+esc(m.name)+'</strong><span class="small">'+esc(m.brand||'Sem marca')+' • '+esc(m.material_type)+'</span><span>Peso / quantidade: '+(pack===null?'Pendente':fmt(pack)+' '+esc(m.unit))+'</span><span>Preço do pacote: '+(price===null?'Pendente':money(price))+'</span><span class="price">'+(known?money(price/pack)+' / '+esc(m.unit):'Custo unitário pendente')+'</span><button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button></div>';
+}).join('')||'<p class="small">Nenhum material encontrado.</p>';
+}
+function clearMaterial(){
+state.materialEditing=null;$('materialFormTitle').textContent='Cadastrar produto / material';
+['matName','matBrand','matQty','matPrice'].forEach(id=>$(id).value='');$('matType').value='Ingrediente';$('matUnit').value='g';updatePricePreview();
+}
+function editMaterial(id){
+const m=material(id);if(!m)return;
+state.materialEditing=m.id;$('materialFormTitle').textContent='Editar: '+m.name;
+$('matName').value=m.name;$('matBrand').value=m.brand||'';$('matType').value=m.material_type;$('matUnit').value=m.unit;$('matQty').value=fmtInput(m.pack_quantity);$('matPrice').value=fmtInput(m.pack_cost);updatePricePreview();
+$('materialFormTitle').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function updatePricePreview(){
+const q=val('matQty'),p=val('matPrice');$('priceUnit').textContent=field('matUnit');
+$('pricePer').textContent=q>0&&p!==null&&p>=0?money(p/q):'Preencha peso e preço';
+}
+async function saveMaterial(){
+const btn=$('saveMaterial'),name=field('matName').trim(),qty=val('matQty'),price=val('matPrice');
+if(!name)return alert('Informe o nome do produto.');
+if(qty!==null&&qty<=0)return alert('Peso deve ser maior que zero.');
+if(price!==null&&price<0)return alert('Preço não pode ser negativo.');
+const obj={name,brand:field('matBrand').trim()||null,material_type:field('matType'),unit:field('matUnit'),pack_quantity:qty,pack_cost:price,updated_at:new Date().toISOString()};
+btn.disabled=true;try{
+let res=state.materialEditing?await sb.from('gds_materials').update(obj).eq('id',state.materialEditing).select('id').single():await sb.from('gds_materials').insert(obj).select('id').single();
+if(res.error)throw res.error;
+const loaded=await sb.from('gds_materials').select('*').order('name');if(loaded.error)throw loaded.error;
+state.materials=loaded.data||[];clearMaterial();renderCatalog();note('✅ Material salvo no Supabase. Os cálculos das receitas vinculadas usarão o novo preço.');
+}catch(e){note('Erro ao salvar produto: '+e.message,true)}finally{btn.disabled=false;}
+}
+function onRowInput(e){
+const el=e.target,row=el.closest('.line'),key=row?.dataset.key;if(!row||!key||!el.dataset.field)return;
+const item=currentItems().find(x=>x.item_key===key),fieldName=el.dataset.field;
+if(!item)return;
+if(fieldName==='material_id'){
+const m=material(el.value);item.material_id=m?.id||null;
+if(m){item.ingredient_name=m.name;item.measure_unit=m.unit}
+renderRows();
+}else if(['quantity_used','purchase_quantity','purchase_cost'].includes(fieldName)){item[fieldName]=num(el.value)}
+else{item[fieldName]=el.value}
+calc();pending();
+}
+async function saveRecipe(){
+const b=currentBase(),rows=currentItems(),btn=$('saveRecipe'),y=val('yieldUnits'),pr=val('salePrice'),pk=val('packaging'),ov=val('overhead'),cp=val('commission');
+if(y!==null&&(!(y>0)||!Number.isInteger(y)))return alert('Rendimento precisa ser um inteiro positivo.');
+if(pr===null||pr<0||ov===null||ov<0||cp===null||cp<0||cp>100)return alert('Informe preço, custos extras e comissão válidos.');
+if(pk!==null&&pk<0)return alert('Custo da embalagem inválido.');
+for(const x of rows){if(x.quantity_used!==null&&x.quantity_used<0)return alert('Quantidade negativa: '+x.ingredient_name);if(x.quantity_used>0&&!x.material_id&&(x.purchase_quantity!==null&&x.purchase_quantity<=0))return alert('Peso inválido para '+x.ingredient_name);}
+btn.disabled=true;
+try{
+const change={sale_price:pr,yield_units:y,packaging_unit_cost:pk,overhead_cost:ov,commission_percent:cp,updated_at:new Date().toISOString()};
+let res=await sb.from('gds_recipe_bases').update(change).eq('id',b.id).select('id').single();if(res.error)throw res.error;
+if(rows.length){
+const payload=rows.map(x=>({recipe_id:b.id,item_key:x.item_key,ingredient_name:x.ingredient_name,quantity_used:x.quantity_used,measure_unit:x.measure_unit,purchase_quantity:x.material_id?null:x.purchase_quantity,purchase_cost:x.material_id?null:x.purchase_cost,material_id:x.material_id,sort_order:x.sort_order}));
+res=await sb.from('gds_recipe_base_items').upsert(payload,{onConflict:'recipe_id,item_key'});if(res.error)throw res.error;
+}
+for(const id of state.deletions){res=await sb.from('gds_recipe_base_items').delete().eq('id',id);if(res.error)throw res.error;}
+state.deletions=[];await load();note('✅ Receita salva no Supabase! Quantidades, compras e cálculos cadastrados.');
+}catch(e){note('Erro ao salvar receita: '+e.message,true)}finally{btn.disabled=false}
+}
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){state.active=b.dataset.tab;render();}});
+$('goMaterials').onclick=()=>{state.active='materials';render();window.scrollTo({top:0,behavior:'smooth'})};
+$('addLine').onclick=()=>{
+const b=currentBase(),id='extra_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
+state.items.push({id:null,recipe_id:b.id,item_key:id,ingredient_name:'Novo ingrediente',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,sort_order:currentItems().length+1});
+renderRows();calc();pending();
+};
+$('lines').addEventListener('input',onRowInput);$('lines').addEventListener('change',e=>{if(e.target.dataset.field==='material_id'||e.target.dataset.field==='measure_unit')onRowInput(e)});
+$('lines').addEventListener('click',e=>{const btn=e.target.closest('[data-del]');if(!btn)return;const x=currentItems().find(z=>z.item_key===btn.dataset.del);if(!x)return;if(x.id)state.deletions.push(x.id);state.items=state.items.filter(z=>z!==x);renderRows();calc();pending()});
+const map=[['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']];
+map.forEach(([id,k])=>$(id).addEventListener('input',()=>{currentBase()[k]=val(id);calc();pending()}));
+$('lots').addEventListener('input',calc);
+$('saveRecipe').onclick=saveRecipe;
+['matQty','matPrice','matUnit'].forEach(id=>$(id).addEventListener('input',updatePricePreview));
+$('saveMaterial').onclick=saveMaterial;$('clearMaterial').onclick=clearMaterial;$('materialSearch').addEventListener('input',renderCatalog);
+$('catalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit]');if(btn)editMaterial(btn.dataset.edit)});
+(async()=>{try{await GDS48.ensure('home');await load();note('✅ Acesso administrativo confirmado • três bases e catálogo conectados ao Supabase.');}catch(e){note('Não foi possível abrir a gestão de receitas: '+e.message,true)}})();
+})();
+</script></body></html>
