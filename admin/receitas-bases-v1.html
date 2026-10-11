@@ -337,7 +337,7 @@ if(m){item.ingredient_name=m.name;item.measure_unit=m.unit}
 renderRows();
 }else if(['quantity_used','purchase_quantity','purchase_cost'].includes(fieldName)){item[fieldName]=num(el.value)}
 else{item[fieldName]=el.value}
-calc();pending();
+calc();renderPowderRecipeInfo();pending();
 }
 async function saveRecipe(){
 const b=currentBase(),rows=currentItems(),btn=$('saveRecipe'),y=val('yieldUnits'),pr=val('salePrice'),pk=val('packaging'),ov=val('overhead'),cp=val('commission');
@@ -357,6 +357,16 @@ for(const entry of state.deletions.filter(x=>x.recipe_id===b.id)){res=await sb.f
 state.deletions=state.deletions.filter(x=>x.recipe_id!==b.id);await load();note('✅ Receita salva no Supabase! Quantidades, compras e cálculos cadastrados.');
 }catch(e){note('Erro ao salvar receita: '+e.message,true)}finally{btn.disabled=false}
 }
+$('powderChoice').addEventListener('change',e=>{
+const line=currentItems().find(i=>i.item_key==='saborizante');if(!line)return;
+const m=material(e.target.value);
+line.material_id=m?.id||null;line.ingredient_name=m?.name||'Pó saborizante';line.measure_unit=m?.unit||'g';
+renderRows();calc();renderPowderRecipeInfo();pending();
+});
+$('openPowderStock').onclick=()=>{state.active='powders';render();window.scrollTo({top:0,behavior:'smooth'})};
+$('powderBrand').addEventListener('change',renderPowders);$('powderSearch').addEventListener('input',renderPowders);
+$('powderRefresh').onclick=async()=>{try{const r=await sb.from('gds_powder_inventory').select('*');if(r.error)throw r.error;state.powders=r.data||[];renderPowders();note('✅ Estoque de pós atualizado.')}catch(e){note('Erro ao carregar estoque: '+e.message,true)}};
+$('powderCards').addEventListener('click',e=>{const btn=e.target.closest('[data-save-powder]');if(btn)savePowder(btn.dataset.savePowder)});
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){state.active=b.dataset.tab;render();}});
 $('goMaterials').onclick=()=>{state.active='materials';render();window.scrollTo({top:0,behavior:'smooth'})};
 $('addLine').onclick=()=>{
@@ -385,7 +395,7 @@ $(area).addEventListener('click',e=>{const btn=e.target.closest('[data-del]');if
 });
 const map=[['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']];
 map.forEach(([id,k])=>$(id).addEventListener('input',()=>{currentBase()[k]=val(id);calc();pending()}));
-$('lots').addEventListener('input',calc);
+$('lots').addEventListener('input',()=>{calc();renderPowderRecipeInfo()});
 $('saveRecipe').onclick=saveRecipe;
 ['matQty','matPrice','matUnit'].forEach(id=>$(id).addEventListener('input',updatePricePreview));
 $('saveMaterial').onclick=saveMaterial;$('clearMaterial').onclick=clearMaterial;$('materialSearch').addEventListener('input',renderCatalog);
