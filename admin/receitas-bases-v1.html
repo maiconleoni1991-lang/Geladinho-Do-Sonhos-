@@ -173,7 +173,7 @@ const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'
 const num=v=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
-const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],deletions:[],materialEditing:null};
+const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders','complements'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],deletions:[],materialEditing:null,complementEditing:null};
 const currentBase=()=>state.bases.find(x=>x.code===state.active),currentItems=()=>state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
 const material=id=>state.materials.find(m=>m.id===id);
 const powderStock=id=>state.powders.find(p=>p.material_id===id);
@@ -192,8 +192,10 @@ if(!codes.every(code=>state.bases.some(b=>b.code===code)))throw Error('As três 
 }
 function render(){
 document.querySelectorAll('[data-tab]').forEach(b=>{const active=b.dataset.tab===state.active;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
-const isMaterial=state.active==='materials',powderPage=state.active==='powders';$('materialsPanel').hidden=!isMaterial;$('powdersPanel').hidden=!powderPage;$('recipePanel').hidden=isMaterial||powderPage;
-if(isMaterial){renderCatalog();return;}if(powderPage){renderPowders();return;}renderBase();
+const isMaterial=state.active==='materials',powderPage=state.active==='powders',complementPage=state.active==='complements';
+$('materialsPanel').hidden=!isMaterial;$('powdersPanel').hidden=!powderPage;$('complementsPanel').hidden=!complementPage;
+$('recipePanel').hidden=isMaterial||powderPage||complementPage;
+if(isMaterial){renderCatalog();return;}if(powderPage){renderPowders();return;}if(complementPage){renderComplementCatalog();return;}renderBase();
 }
 function renderBase(){
 const b=currentBase();$('baseTitle').textContent=b.name;$('baseDescription').textContent=b.description||'';
@@ -206,7 +208,8 @@ const ms=state.materials;
 const renderPart=rows=>rows.map((r,index)=>{
 const m=material(r.material_id);
 const qty=num(r.quantity_used),pack=m?num(m.pack_quantity):num(r.purchase_quantity),price=m?num(m.pack_cost):num(r.purchase_cost);
-let opts='<option value="">Sem vínculo — preencher preço aqui</option>'+ms.map(x=>'<option value="'+esc(x.id)+'" '+(r.material_id===x.id?'selected':'')+'>'+esc(x.name+(x.brand?' — '+x.brand:''))+'</option>').join('');
+const materialChoices=r.item_type==='complemento'?[...ms].sort((a,b)=>Number(b.material_type==='Complemento')-Number(a.material_type==='Complemento')||a.name.localeCompare(b.name,'pt-BR')):ms;
+let opts='<option value="">Sem vínculo — preencher preço aqui</option>'+materialChoices.map(x=>'<option value="'+esc(x.id)+'" '+(r.material_id===x.id?'selected':'')+'>'+esc(x.name+(x.brand?' — '+x.brand:''))+'</option>').join('');
 const locked=m?'readonly':'';
 return '<div class="line '+(r.is_active===false?'inactive':'')+'" data-key="'+esc(r.item_key)+'"><div class="line-top"><strong>'+(index+1)+'. '+esc(r.ingredient_name)+'</strong><label class="ingredient-switch"><input type="checkbox" data-active="1" '+(r.is_active!==false?'checked':'')+' aria-label="Usar '+esc(r.ingredient_name)+' nesta receita"> Usar na receita</label>'+((r.item_type==='complemento'||r.item_key.startsWith('extra_'))?'<button type="button" class="secondary" data-del="'+esc(r.item_key)+'">Remover</button>':'<span class="small">Ingrediente-base</span>')+'</div>'+
 '<div class="line-grid">'+
@@ -310,6 +313,84 @@ try{
 }catch(e){note('Erro ao salvar estoque: '+e.message,true)}finally{btn.disabled=false}
 }
 
+
+function compFormat(){return field('compFormat')}
+function compComputed(){
+const q=val('compQty'),weight=val('compWeight'),price=val('compPrice'),format=compFormat();
+const requiresInteger=format!=='peso';
+if(!(q>0)||requiresInteger&&!Number.isInteger(q))return {valid:false,message:'Informe a quantidade comprada corretamente.'};
+if(weight!==null&&weight<=0)return{valid:false,message:'O peso por embalagem precisa ser maior que zero.'};
+if(format==='peso')return {valid:true,qty:q,unit:'g',purchaseUnits:q,unitWeight:null,price};
+return {valid:true,qty:weight>0?q*weight:q,unit:weight>0?'g':format==='caixa'?'cx':'pct',purchaseUnits:q,unitWeight:weight>0?weight:null,price};
+}
+function updateComplementForm(){
+const f=compFormat(),packed=f!=='peso';
+$('compWeightField').hidden=!packed;
+$('compQtyLabel').textContent=f==='peso'?'Peso total comprado (g)':f==='caixa'?'Quantidade de caixas compradas':'Quantidade de pacotes comprados';
+$('compQty').step=packed?'1':'any';$('compQty').placeholder=packed?'Ex.: 2':'Ex.: 350';
+const c=compComputed();
+$('compNorm').textContent=c.valid?fmt(c.qty)+' '+c.unit:'Informe a quantidade';
+$('compUnitCost').textContent=c.valid&&c.price!==null?precise(c.price/c.qty)+' / '+c.unit:'Preço pendente';
+}
+function clearComplement(){
+state.complementEditing=null;
+$('compFormTitle').textContent='🍫 Cadastrar recheio ou complemento';
+['compName','compBrand','compQty','compWeight','compPrice'].forEach(id=>$(id).value='');
+$('compFormat').value='peso';updateComplementForm();
+}
+function editComplement(id){
+const m=material(id);if(!m||m.material_type!=='Complemento')return;
+state.complementEditing=id;$('compFormTitle').textContent='Editar complemento: '+m.name;
+$('compName').value=m.name;$('compBrand').value=m.brand||'';
+const inferred=m.unit==='cx'?'caixa':m.unit==='pct'?'pacote':'peso';
+const form=m.purchase_format||inferred;
+$('compFormat').value=form;
+let purchased=num(m.purchase_units);
+if(purchased===null&&form==='peso'&&m.unit==='g')purchased=num(m.pack_quantity);
+if(purchased===null&&form==='caixa'&&m.unit==='cx')purchased=num(m.pack_quantity);
+if(purchased===null&&form==='pacote'&&m.unit==='pct')purchased=num(m.pack_quantity);
+$('compQty').value=fmtInput(purchased);
+$('compWeight').value=fmtInput(m.unit_weight_g);
+$('compPrice').value=fmtInput(m.pack_cost);
+updateComplementForm();
+$('compFormTitle').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function renderComplementCatalog(){
+const search=field('compSearch').trim().toLocaleLowerCase('pt-BR');
+const all=state.materials.filter(m=>m.material_type==='Complemento');
+const list=all.filter(m=>(m.name+' '+(m.brand||'')).toLocaleLowerCase('pt-BR').includes(search));
+$('compCount').textContent=all.length+' itens';
+$('compCatalog').innerHTML=list.map(m=>{
+const q=num(m.pack_quantity),price=num(m.pack_cost),format=m.purchase_format||(m.unit==='cx'?'caixa':m.unit==='pct'?'pacote':'peso');
+const formLabel={peso:'Por peso',caixa:'Caixa',pacote:'Pacote'}[format]||format;
+const available=q>0&&price!==null;
+return '<article class="product-card"><strong>'+esc(m.name)+'</strong><span class="small">Marca: '+esc(m.brand||'Não informada')+'</span><span class="small">Compra: '+esc(formLabel)+(m.purchase_units!==null?' • '+fmt(m.purchase_units)+' '+(format==='peso'?'g':format==='caixa'?'caixa(s)':'pacote(s)'):'')+'</span>'+
+(m.unit_weight_g?'<span class="small">Peso por embalagem: '+fmt(m.unit_weight_g)+' g</span>':'')+
+'<span>Quantidade para cálculo: '+(q>0?fmt(q)+' '+esc(m.unit):'Pendente')+'</span><span>Valor pago: '+(price!==null?money(price):'Pendente')+'</span>'+
+'<span class="price">'+(available?precise(price/q)+' / '+esc(m.unit):'Custo unitário pendente')+'</span><button type="button" class="secondary" data-edit-complement="'+esc(m.id)+'">✏️ Editar complemento</button></article>';
+}).join('')||'<p class="small">Nenhum complemento encontrado. Cadastre um novo produto acima.</p>';
+}
+async function saveComplement(){
+const btn=$('compSave'),name=field('compName').trim(),brand=field('compBrand').trim(),c=compComputed();
+if(!name)return alert('Informe o nome do recheio ou complemento.');
+if(!c.valid)return alert(c.message);
+if(c.price!==null&&c.price<0)return alert('O preço da compra não pode ser negativo.');
+if(!state.complementEditing&&state.materials.some(m=>m.material_type==='Complemento'&&m.name.toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR')&&(m.brand||'').toLocaleLowerCase('pt-BR')===brand.toLocaleLowerCase('pt-BR')))
+return alert('Este complemento já está cadastrado com a mesma marca. Edite o cadastro existente.');
+const item={name,brand:brand||null,material_type:'Complemento',unit:c.unit,pack_quantity:c.qty,pack_cost:c.price,
+purchase_format:compFormat(),purchase_units:c.purchaseUnits,unit_weight_g:c.unitWeight,updated_at:new Date().toISOString()};
+btn.disabled=true;
+try{
+const r=state.complementEditing
+ ?await sb.from('gds_materials').update(item).eq('id',state.complementEditing).select('id').single()
+ :await sb.from('gds_materials').insert(item).select('id').single();
+if(r.error)throw r.error;
+const reload=await sb.from('gds_materials').select('*').order('name');if(reload.error)throw reload.error;
+state.materials=reload.data||[];clearComplement();renderComplementCatalog();
+note('✅ Recheio/complemento salvo no Supabase. Seu custo estará disponível nas fichas das receitas.');
+}catch(e){note('Não foi possível salvar complemento: '+e.message,true)}
+finally{btn.disabled=false}
+}
 function renderCatalog(){
 $('materialCount').textContent=state.materials.length+' produtos';
 const search=$('materialSearch').value.toLowerCase().trim();const list=state.materials.filter(m=>(m.name+' '+(m.brand||'')).toLowerCase().includes(search));
