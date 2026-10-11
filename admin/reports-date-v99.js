@@ -15,7 +15,7 @@ function fmt(s){const [y,m,d]=s.split('-');return d+'/'+m+'/'+y}
 function inRange(day,a,b){return day&&day>=a&&day<=b}
 function orderDay(x){return spDate(new Date(x.created_at))}
 function eventDay(x){if(x.payment_confirmed_at)return spDate(new Date(x.payment_confirmed_at));if(x.created_at)return spDate(new Date(x.created_at));return x.event_date||''}
-function soldOrder(x){return !x.deleted_at&&x.status!=='Cancelado'&&soldStatuses.includes(x.status)}
+function soldOrder(x){return !x.deleted_at&&x.status!=='Cancelado'&&soldStatuses.includes(x.status)&&!(x.payment_method==='Fiado'&&x.payment_status==='Pendente')}
 function inject(){
   if($('gdsDateSales99'))return;
   const style=document.createElement('style');
@@ -72,7 +72,7 @@ async function run(){
   async function load(){
     $('gdsDateMsg99').textContent='Carregando vendas…';
     const [o,e]=await Promise.all([
-      GDS48.sb.from('orders').select('status,total,created_at,deleted_at,sales_channel'),
+      GDS48.sb.from('orders').select('status,total,created_at,deleted_at,sales_channel,payment_status,payment_method'),
       GDS48.sb.from('events').select('status,subtotal,delivery_fee,payment_status,payment_confirmed_at,created_at,event_date')
     ]);
     if(o.error||e.error){$('gdsDateMsg99').textContent='Erro: '+(o.error||e.error).message;return}
