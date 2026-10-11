@@ -150,7 +150,7 @@ const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'
 const num=v=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
-const codes=['premium_1','premium_2','gourmet_nova'];let state={active:'gourmet_nova',bases:[],items:[],materials:[],powders:[],deletions:[],materialEditing:null};
+const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],deletions:[],materialEditing:null};
 const currentBase=()=>state.bases.find(x=>x.code===state.active),currentItems=()=>state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
 const material=id=>state.materials.find(m=>m.id===id);
 const powderStock=id=>state.powders.find(p=>p.material_id===id);
@@ -334,7 +334,7 @@ if(!item)return;
 if(fieldName==='material_id'){
 const m=material(el.value);item.material_id=m?.id||null;
 if(m){item.ingredient_name=m.name;item.measure_unit=m.unit}
-renderRows();
+renderRows();renderPowderPicker();
 }else if(['quantity_used','purchase_quantity','purchase_cost'].includes(fieldName)){item[fieldName]=num(el.value)}
 else{item[fieldName]=el.value}
 calc();renderPowderRecipeInfo();pending();
@@ -363,12 +363,12 @@ const m=material(e.target.value);
 line.material_id=m?.id||null;line.ingredient_name=m?.name||'Pó saborizante';line.measure_unit=m?.unit||'g';
 renderRows();calc();renderPowderRecipeInfo();pending();
 });
-$('openPowderStock').onclick=()=>{state.active='powders';render();window.scrollTo({top:0,behavior:'smooth'})};
+$('openPowderStock').onclick=()=>{state.active='powders';location.hash='powders';render();window.scrollTo({top:0,behavior:'smooth'})};
 $('powderBrand').addEventListener('change',renderPowders);$('powderSearch').addEventListener('input',renderPowders);
 $('powderRefresh').onclick=async()=>{try{const r=await sb.from('gds_powder_inventory').select('*');if(r.error)throw r.error;state.powders=r.data||[];renderPowders();note('✅ Estoque de pós atualizado.')}catch(e){note('Erro ao carregar estoque: '+e.message,true)}};
 $('powderCards').addEventListener('click',e=>{const btn=e.target.closest('[data-save-powder]');if(btn)savePowder(btn.dataset.savePowder)});
-document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){state.active=b.dataset.tab;render();}});
-$('goMaterials').onclick=()=>{state.active='materials';render();window.scrollTo({top:0,behavior:'smooth'})};
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){state.active=b.dataset.tab;location.hash=state.active;render();}});
+$('goMaterials').onclick=()=>{state.active='materials';location.hash='materials';render();window.scrollTo({top:0,behavior:'smooth'})};
 $('addLine').onclick=()=>{
 const b=currentBase(),id='extra_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
 state.items.push({id:null,recipe_id:b.id,item_key:id,ingredient_name:'Novo ingrediente',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,item_type:'base',is_active:true,sort_order:currentItems().length+1});
