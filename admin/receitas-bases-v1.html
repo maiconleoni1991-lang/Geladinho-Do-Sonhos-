@@ -29,7 +29,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .lines{display:grid;gap:10px}
 .line{border:1px solid var(--line);background:#fffafd;border-radius:14px;padding:12px}
 .line-top{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px}
-.line-top strong{color:var(--dark)}
+.line-top strong{color:var(--dark);flex:1;min-width:115px}
+.line-top{flex-wrap:wrap}
+.ingredient-switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;min-height:42px;padding:6px 11px;border:1px solid #e8cbd7;background:#fff;border-radius:11px;color:#55293e;font-size:13px;font-weight:750;white-space:nowrap}
+.ingredient-switch input{width:20px;height:20px;accent-color:var(--rose);cursor:pointer}
+.line.inactive{background:#f5f3f5;border-color:#e0dce0}
+.line.inactive .line-grid{opacity:.64}
+.line.inactive .line-result b{color:#756b71}
+.line.inactive .line-top strong{color:#847780}
 .line-grid{display:grid;grid-template-columns:minmax(135px,1.7fr) minmax(135px,1.5fr) minmax(105px,1fr) 70px minmax(100px,1fr) minmax(100px,1fr);gap:8px;align-items:end}
 .line-result{display:flex;justify-content:space-between;gap:10px;border-top:1px dashed #e9d4df;margin-top:10px;padding-top:9px;font-size:13px}
 .line-result b{color:var(--green)}
@@ -73,7 +80,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div>
 </div>
 <div class="panel">
-<div class="flex"><div><h2>Ingredientes da receita-base</h2><p class="small">Quantidade usada, peso do pacote, preço pago, custo por grama/ml e custo total de cada item.</p></div><button type="button" id="addLine" class="secondary">+ Acrescentar ingrediente</button></div>
+<div class="flex"><div><h2>Ingredientes da receita-base</h2><p class="small">Quantidade usada, peso do pacote, preço pago, custo por grama/ml e custo total de cada item. Desmarque <strong>Usar na receita</strong> para desativar um ingrediente sem apagá-lo ou alterar as outras bases.</p></div><button type="button" id="addLine" class="secondary">+ Acrescentar ingrediente</button></div>
 <div id="lines" class="lines"></div>
 <div class="actions"><button type="button" id="saveRecipe">💾 Salvar receita e valores</button><button type="button" id="goMaterials" class="secondary">+ Cadastrar produto separadamente</button></div>
 <div class="note" style="margin-top:13px">Quando um ingrediente está vinculado ao cadastro de produtos, o peso e o preço são atualizados na aba <strong>Produtos e materiais</strong> e aproveitados nas receitas. Materiais sem vínculo podem ter preço e peso digitados na própria receita.</div>
@@ -146,7 +153,7 @@ const m=material(r.material_id);
 const qty=num(r.quantity_used),pack=m?num(m.pack_quantity):num(r.purchase_quantity),price=m?num(m.pack_cost):num(r.purchase_cost);
 let opts='<option value="">Sem vínculo — preencher preço aqui</option>'+ms.map(x=>'<option value="'+esc(x.id)+'" '+(r.material_id===x.id?'selected':'')+'>'+esc(x.name+(x.brand?' — '+x.brand:''))+'</option>').join('');
 const locked=m?'readonly':'';
-return '<div class="line" data-key="'+esc(r.item_key)+'"><div class="line-top"><strong>'+(index+1)+'. '+esc(r.ingredient_name)+'</strong>'+(r.item_key.startsWith('extra_')?'<button type="button" class="secondary" data-del="'+esc(r.item_key)+'">Remover</button>':'<span class="small">Ingrediente-base</span>')+'</div>'+
+return '<div class="line '+(r.is_active===false?'inactive':'')+'" data-key="'+esc(r.item_key)+'"><div class="line-top"><strong>'+(index+1)+'. '+esc(r.ingredient_name)+'</strong><label class="ingredient-switch"><input type="checkbox" data-active="1" '+(r.is_active!==false?'checked':'')+' aria-label="Usar '+esc(r.ingredient_name)+' nesta receita"> Usar na receita</label>'+(r.item_key.startsWith('extra_')?'<button type="button" class="secondary" data-del="'+esc(r.item_key)+'">Remover</button>':'<span class="small">Ingrediente-base</span>')+'</div>'+
 '<div class="line-grid">'+
 '<label class="field">Produto / insumo<input data-field="ingredient_name" value="'+esc(r.ingredient_name)+'" '+(m?'readonly':'')+'></label>'+
 '<label class="field">Vincular ao produto cadastrado<select data-field="material_id">'+opts+'</select></label>'+
@@ -160,6 +167,7 @@ return '<div class="line" data-key="'+esc(r.item_key)+'"><div class="line-top"><
 updateLineCosts();
 }
 function itemCalc(r){
+if(r.is_active===false)return{ok:true,base:0,unitcost:null,inactive:true};
 const m=material(r.material_id),q=num(r.quantity_used),pack=m?num(m.pack_quantity):num(r.purchase_quantity),price=m?num(m.pack_cost):num(r.purchase_cost),unit=m?.unit||r.measure_unit;
 if(q===null||q<0)return {ok:false,reason:r.ingredient_name+': informe a quantidade usada'};
 if(q===0)return {ok:true,base:0,unitcost:pack>0&&price!==null?price/pack:null};
@@ -169,14 +177,14 @@ return{ok:true,base:q*price/pack,unitcost:price/pack};
 }
 function updateLineCosts(){
 document.querySelectorAll('.line').forEach(el=>{const r=currentItems().find(x=>x.item_key===el.dataset.key);if(!r)return;const x=itemCalc(r);
-el.querySelector('[data-unitcost]').textContent=x.unitcost===null||x.unitcost===undefined?'—':precise(x.unitcost);
-el.querySelector('[data-linecost]').textContent=x.ok?money(x.base):'Pendente';
+el.querySelector('[data-unitcost]').textContent=x.inactive?'Não utilizado':x.unitcost===null||x.unitcost===undefined?'—':precise(x.unitcost);
+el.querySelector('[data-linecost]').textContent=x.inactive?'Não incluído':x.ok?money(x.base):'Pendente';
 });
 }
 function calc(){
 const b=currentBase(),r=currentItems(),missing=[],lots=val('lots'),yieldOne=val('yieldUnits'),sale=val('salePrice'),packUnit=val('packaging'),overhead=val('overhead'),commission=val('commission');
 let costBase=0;for(const x of r){const c=itemCalc(x);if(!c.ok)missing.push(c.reason);else costBase+=c.base}
-if(!r.length)missing.push('Adicione os ingredientes da receita');
+if(!r.some(x=>x.is_active!==false))missing.push('Ative pelo menos um ingrediente da receita');
 if(!(yieldOne>0&&Number.isInteger(yieldOne)))missing.push('Informe rendimento em unidades inteiras');
 if(!(lots>0&&Number.isInteger(lots)))missing.push('Informe número de receitas inteiro');
 if(sale===null||sale<0)missing.push('Informe o preço de venda');
@@ -249,7 +257,7 @@ try{
 const change={sale_price:pr,yield_units:y,packaging_unit_cost:pk,overhead_cost:ov,commission_percent:cp,updated_at:new Date().toISOString()};
 let res=await sb.from('gds_recipe_bases').update(change).eq('id',b.id).select('id').single();if(res.error)throw res.error;
 if(rows.length){
-const payload=rows.map(x=>({recipe_id:b.id,item_key:x.item_key,ingredient_name:x.ingredient_name,quantity_used:x.quantity_used,measure_unit:x.measure_unit,purchase_quantity:x.material_id?null:x.purchase_quantity,purchase_cost:x.material_id?null:x.purchase_cost,material_id:x.material_id,sort_order:x.sort_order}));
+const payload=rows.map(x=>({recipe_id:b.id,item_key:x.item_key,ingredient_name:x.ingredient_name,quantity_used:x.quantity_used,measure_unit:x.measure_unit,purchase_quantity:x.material_id?null:x.purchase_quantity,purchase_cost:x.material_id?null:x.purchase_cost,material_id:x.material_id,sort_order:x.sort_order,is_active:x.is_active!==false}));
 res=await sb.from('gds_recipe_base_items').upsert(payload,{onConflict:'recipe_id,item_key'});if(res.error)throw res.error;
 }
 for(const entry of state.deletions.filter(x=>x.recipe_id===b.id)){res=await sb.from('gds_recipe_base_items').delete().eq('id',entry.id);if(res.error)throw res.error;}
@@ -260,10 +268,19 @@ document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.cl
 $('goMaterials').onclick=()=>{state.active='materials';render();window.scrollTo({top:0,behavior:'smooth'})};
 $('addLine').onclick=()=>{
 const b=currentBase(),id='extra_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
-state.items.push({id:null,recipe_id:b.id,item_key:id,ingredient_name:'Novo ingrediente',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,sort_order:currentItems().length+1});
+state.items.push({id:null,recipe_id:b.id,item_key:id,ingredient_name:'Novo ingrediente',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,is_active:true,sort_order:currentItems().length+1});
 renderRows();calc();pending();
 };
-$('lines').addEventListener('input',onRowInput);$('lines').addEventListener('change',e=>{if(e.target.dataset.field==='material_id'||e.target.dataset.field==='measure_unit')onRowInput(e)});
+$('lines').addEventListener('input',onRowInput);$('lines').addEventListener('change',e=>{
+if(e.target.matches('[data-active]')){
+ const row=e.target.closest('.line'),item=currentItems().find(x=>x.item_key===row?.dataset.key);
+ if(!item)return;
+ item.is_active=e.target.checked;
+ row.classList.toggle('inactive',!item.is_active);
+ calc();pending();return;
+}
+if(e.target.dataset.field==='material_id'||e.target.dataset.field==='measure_unit')onRowInput(e);
+});
 $('lines').addEventListener('click',e=>{const btn=e.target.closest('[data-del]');if(!btn)return;const x=currentItems().find(z=>z.item_key===btn.dataset.del);if(!x)return;if(x.id)state.deletions.push({id:x.id,recipe_id:x.recipe_id});state.items=state.items.filter(z=>z!==x);renderRows();calc();pending()});
 const map=[['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']];
 map.forEach(([id,k])=>$(id).addEventListener('input',()=>{currentBase()[k]=val(id);calc();pending()}));
