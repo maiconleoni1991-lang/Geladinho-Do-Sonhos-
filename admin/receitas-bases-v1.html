@@ -113,7 +113,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <script>
 (function(){'use strict';
 const $=id=>document.getElementById(id),sb=GDS48.sb,esc=GDS48.esc;
-const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),fmt=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:5});
+const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),precise=n=>'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:6}),fmt=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:5});
 const num=v=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
@@ -169,7 +169,7 @@ return{ok:true,base:q*price/pack,unitcost:price/pack};
 }
 function updateLineCosts(){
 document.querySelectorAll('.line').forEach(el=>{const r=currentItems().find(x=>x.item_key===el.dataset.key);if(!r)return;const x=itemCalc(r);
-el.querySelector('[data-unitcost]').textContent=x.unitcost===null||x.unitcost===undefined?'—':money(x.unitcost);
+el.querySelector('[data-unitcost]').textContent=x.unitcost===null||x.unitcost===undefined?'—':precise(x.unitcost);
 el.querySelector('[data-linecost]').textContent=x.ok?money(x.base):'Pendente';
 });
 }
@@ -211,7 +211,7 @@ $('materialFormTitle').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function updatePricePreview(){
 const q=val('matQty'),p=val('matPrice');$('priceUnit').textContent=field('matUnit');
-$('pricePer').textContent=q>0&&p!==null&&p>=0?money(p/q):'Preencha peso e preço';
+$('pricePer').textContent=q>0&&p!==null&&p>=0?precise(p/q):'Preencha peso e preço';
 }
 async function saveMaterial(){
 const btn=$('saveMaterial'),name=field('matName').trim(),qty=val('matQty'),price=val('matPrice');
@@ -252,8 +252,8 @@ if(rows.length){
 const payload=rows.map(x=>({recipe_id:b.id,item_key:x.item_key,ingredient_name:x.ingredient_name,quantity_used:x.quantity_used,measure_unit:x.measure_unit,purchase_quantity:x.material_id?null:x.purchase_quantity,purchase_cost:x.material_id?null:x.purchase_cost,material_id:x.material_id,sort_order:x.sort_order}));
 res=await sb.from('gds_recipe_base_items').upsert(payload,{onConflict:'recipe_id,item_key'});if(res.error)throw res.error;
 }
-for(const id of state.deletions){res=await sb.from('gds_recipe_base_items').delete().eq('id',id);if(res.error)throw res.error;}
-state.deletions=[];await load();note('✅ Receita salva no Supabase! Quantidades, compras e cálculos cadastrados.');
+for(const entry of state.deletions.filter(x=>x.recipe_id===b.id)){res=await sb.from('gds_recipe_base_items').delete().eq('id',entry.id);if(res.error)throw res.error;}
+state.deletions=state.deletions.filter(x=>x.recipe_id!==b.id);await load();note('✅ Receita salva no Supabase! Quantidades, compras e cálculos cadastrados.');
 }catch(e){note('Erro ao salvar receita: '+e.message,true)}finally{btn.disabled=false}
 }
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){state.active=b.dataset.tab;render();}});
@@ -264,7 +264,7 @@ state.items.push({id:null,recipe_id:b.id,item_key:id,ingredient_name:'Novo ingre
 renderRows();calc();pending();
 };
 $('lines').addEventListener('input',onRowInput);$('lines').addEventListener('change',e=>{if(e.target.dataset.field==='material_id'||e.target.dataset.field==='measure_unit')onRowInput(e)});
-$('lines').addEventListener('click',e=>{const btn=e.target.closest('[data-del]');if(!btn)return;const x=currentItems().find(z=>z.item_key===btn.dataset.del);if(!x)return;if(x.id)state.deletions.push(x.id);state.items=state.items.filter(z=>z!==x);renderRows();calc();pending()});
+$('lines').addEventListener('click',e=>{const btn=e.target.closest('[data-del]');if(!btn)return;const x=currentItems().find(z=>z.item_key===btn.dataset.del);if(!x)return;if(x.id)state.deletions.push({id:x.id,recipe_id:x.recipe_id});state.items=state.items.filter(z=>z!==x);renderRows();calc();pending()});
 const map=[['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']];
 map.forEach(([id,k])=>$(id).addEventListener('input',()=>{currentBase()[k]=val(id);calc();pending()}));
 $('lots').addEventListener('input',calc);
