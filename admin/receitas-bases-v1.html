@@ -120,7 +120,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="cols">
 <label class="field">Produto / ingrediente<input id="matName" placeholder="Ex.: Nutella, pó saborizante, coco"></label>
 <label class="field">Marca (opcional)<input id="matBrand" placeholder="Ex.: Marvi"></label>
-<label class="field">Categoria<select id="matType"><option>Ingrediente</option><option>Complemento</option><option>Embalagem</option></select></label>
+<label class="field">Categoria<select id="matType"><option>Ingrediente</option><option>Embalagem</option></select></label>
 <label class="field">Peso ou quantidade comprada<input id="matQty" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 1000"></label>
 <label class="field">Unidade de cálculo<select id="matUnit"><option value="g">Gramas (g)</option><option value="cx">Caixas (cx)</option><option value="pct">Pacotes (pct)</option><option value="ml">Mililitros (ml)</option><option value="un">Unidades (un)</option></select></label>
 <label class="field">Quanto pagou (R$)<input id="matPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 38,20"></label>
@@ -392,8 +392,9 @@ note('✅ Recheio/complemento salvo no Supabase. Seu custo estará disponível n
 finally{btn.disabled=false}
 }
 function renderCatalog(){
-$('materialCount').textContent=state.materials.length+' produtos';
-const search=$('materialSearch').value.toLowerCase().trim();const list=state.materials.filter(m=>(m.name+' '+(m.brand||'')).toLowerCase().includes(search));
+const basics=state.materials.filter(m=>m.material_type!=='Complemento');
+$('materialCount').textContent=basics.length+' produtos';
+const search=$('materialSearch').value.toLowerCase().trim();const list=basics.filter(m=>(m.name+' '+(m.brand||'')).toLowerCase().includes(search));
 $('catalog').innerHTML=list.map(m=>{
 const pack=num(m.pack_quantity),price=num(m.pack_cost),known=pack>0&&price!==null;
 return '<div class="product-card"><strong>'+esc(m.name)+'</strong><span class="small">'+esc(m.brand||'Sem marca')+' • '+esc(m.material_type)+'</span><span>Peso / quantidade: '+(pack===null?'Pendente':fmt(pack)+' '+esc(m.unit))+'</span><span>Preço do pacote: '+(price===null?'Pendente':money(price))+'</span><span class="price">'+(known?money(price/pack)+' / '+esc(m.unit):'Custo unitário pendente')+'</span><button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button></div>';
@@ -471,6 +472,12 @@ $('openPowderStock').onclick=()=>{state.active='powders';location.hash='powders'
 $('powderBrand').addEventListener('change',renderPowders);$('powderSearch').addEventListener('input',renderPowders);
 $('powderRefresh').onclick=async()=>{try{const r=await sb.from('gds_powder_inventory').select('*');if(r.error)throw r.error;state.powders=r.data||[];renderPowders();note('✅ Estoque de pós atualizado.')}catch(e){note('Erro ao carregar estoque: '+e.message,true)}};
 $('powderCards').addEventListener('click',e=>{const btn=e.target.closest('[data-save-powder]');if(btn)savePowder(btn.dataset.savePowder)});
+$('openComplementCatalog').addEventListener('click',e=>{e.preventDefault();state.active='complements';location.hash='complements';render();window.scrollTo({top:0,behavior:'smooth'})});
+$('compFormat').addEventListener('change',updateComplementForm);
+['compQty','compWeight','compPrice'].forEach(id=>$(id).addEventListener('input',updateComplementForm));
+$('compSave').onclick=saveComplement;$('compClear').onclick=clearComplement;
+$('compSearch').addEventListener('input',renderComplementCatalog);
+$('compCatalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit-complement]');if(btn)editComplement(btn.dataset.editComplement)});
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){state.active=b.dataset.tab;location.hash=state.active;render();}});
 $('goMaterials').onclick=()=>{state.active='materials';location.hash='materials';render();window.scrollTo({top:0,behavior:'smooth'})};
 $('addLine').onclick=()=>{
