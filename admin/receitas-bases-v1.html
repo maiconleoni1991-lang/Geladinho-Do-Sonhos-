@@ -85,9 +85,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="actions"><button type="button" id="saveRecipe">💾 Salvar receita e valores</button><button type="button" id="goMaterials" class="secondary">+ Cadastrar produto separadamente</button></div>
 <div class="note" style="margin-top:13px">Quando um ingrediente está vinculado ao cadastro de produtos, o peso e o preço são atualizados na aba <strong>Produtos e materiais</strong> e aproveitados nas receitas. Materiais sem vínculo podem ter preço e peso digitados na própria receita.</div>
 </div>
+<div class="panel">
+<div class="flex"><div><h2>🍍 Complementos, sabores e recheios</h2><p class="small">Adicione abacaxi, Cookies de Alpino, Paçoquita, Nutella, caldas e outros materiais sem misturar com a fórmula da base. Cada complemento pode ser ativado ou desativado.</p></div><button type="button" id="addComplement" class="secondary">+ Acrescentar complemento</button></div>
+<div id="complementLines" class="lines"></div><p class="hint">Exemplo: comprou um pacote de 350 g? Cadastre peso 350 g e preço total do pacote; na receita, indique apenas os gramas usados. Se usa a caixa ou o pacote inteiro, escolha a unidade caixa/pacote e quantidade 1.</p>
+</div>
 <div class="panel"><h2>Resultado financeiro da produção</h2>
 <div class="metrics">
 <div class="metric"><small>Custo total da base (1 receita)</small><b id="costBase">—</b></div>
+<div class="metric"><small>Complementos (1 receita)</small><b id="costComplements">—</b></div>
 <div class="metric"><small>Custo total de produção</small><b id="costAll">—</b></div>
 <div class="metric"><small>Custo por geladinho</small><b id="costUnit">—</b></div>
 <div class="metric"><small>Unidades a produzir</small><b id="unitsTotal">—</b></div>
@@ -104,10 +109,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <label class="field">Produto / ingrediente<input id="matName" placeholder="Ex.: Nutella, pó saborizante, coco"></label>
 <label class="field">Marca (opcional)<input id="matBrand" placeholder="Ex.: Marvi"></label>
 <label class="field">Categoria<select id="matType"><option>Ingrediente</option><option>Complemento</option><option>Embalagem</option></select></label>
-<label class="field">Peso / quantidade da embalagem<input id="matQty" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 1000"></label>
-<label class="field">Unidade<select id="matUnit"><option value="g">Gramas (g)</option><option value="ml">Mililitros (ml)</option><option value="un">Unidades (un)</option></select></label>
+<label class="field">Peso ou quantidade comprada<input id="matQty" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 1000"></label>
+<label class="field">Unidade de cálculo<select id="matUnit"><option value="g">Gramas (g)</option><option value="cx">Caixas (cx)</option><option value="pct">Pacotes (pct)</option><option value="ml">Mililitros (ml)</option><option value="un">Unidades (un)</option></select></label>
 <label class="field">Quanto pagou (R$)<input id="matPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 38,20"></label>
-</div>
+</div><p class="hint">Informe a quantidade conforme a unidade utilizada. Ex.: leite condensado, 1 caixa por R$ 6,00 → 1 cx. Cookies, 1 pacote por R$ 12,00 → 1 pct. Nutella, pote de 350 g por R$ 24,00 → 350 g. Os valores são exemplos, não preços cadastrados.</p>
 <div class="panel" style="margin-top:12px;background:#fff8fb"><div class="flex"><span>Preço por <span id="priceUnit">g</span>:</span><strong id="pricePer" class="price">Preencha peso e preço</strong></div></div>
 <div class="actions"><button type="button" id="saveMaterial">💾 Salvar produto</button><button type="button" id="clearMaterial" class="secondary">Limpar / novo produto</button></div>
 </div>
@@ -127,6 +132,8 @@ const fmtInput=n=>n===null||n===undefined?'':String(n);
 const codes=['premium_1','premium_2','gourmet_nova'];let state={active:'gourmet_nova',bases:[],items:[],materials:[],deletions:[],materialEditing:null};
 const currentBase=()=>state.bases.find(x=>x.code===state.active),currentItems=()=>state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
 const material=id=>state.materials.find(m=>m.id===id);
+const recipeItems=type=>currentItems().filter(i=>(i.item_type||'base')===type);
+const unitLabel=u=>({g:'g',ml:'ml',un:'un',cx:'caixa',pct:'pacote'})[u]||u;
 const note=(s,bad=false)=>{const x=$('status');x.textContent=s;x.className='msg '+(bad?'err':'ok')};
 const pending=()=>note('✏️ Alterações na receita ainda não salvas. Clique em Salvar receita e valores.');
 async function load(){
@@ -147,23 +154,25 @@ $('baseFlag').textContent=b.code==='gourmet_nova'?'Nova base Gourmet':'Base exis
 renderRows();calc();
 }
 function renderRows(){
-const ms=state.materials,rows=currentItems();
-$('lines').innerHTML=rows.map((r,index)=>{
+const ms=state.materials;
+const renderPart=rows=>rows.map((r,index)=>{
 const m=material(r.material_id);
 const qty=num(r.quantity_used),pack=m?num(m.pack_quantity):num(r.purchase_quantity),price=m?num(m.pack_cost):num(r.purchase_cost);
 let opts='<option value="">Sem vínculo — preencher preço aqui</option>'+ms.map(x=>'<option value="'+esc(x.id)+'" '+(r.material_id===x.id?'selected':'')+'>'+esc(x.name+(x.brand?' — '+x.brand:''))+'</option>').join('');
 const locked=m?'readonly':'';
-return '<div class="line '+(r.is_active===false?'inactive':'')+'" data-key="'+esc(r.item_key)+'"><div class="line-top"><strong>'+(index+1)+'. '+esc(r.ingredient_name)+'</strong><label class="ingredient-switch"><input type="checkbox" data-active="1" '+(r.is_active!==false?'checked':'')+' aria-label="Usar '+esc(r.ingredient_name)+' nesta receita"> Usar na receita</label>'+(r.item_key.startsWith('extra_')?'<button type="button" class="secondary" data-del="'+esc(r.item_key)+'">Remover</button>':'<span class="small">Ingrediente-base</span>')+'</div>'+
+return '<div class="line '+(r.is_active===false?'inactive':'')+'" data-key="'+esc(r.item_key)+'"><div class="line-top"><strong>'+(index+1)+'. '+esc(r.ingredient_name)+'</strong><label class="ingredient-switch"><input type="checkbox" data-active="1" '+(r.is_active!==false?'checked':'')+' aria-label="Usar '+esc(r.ingredient_name)+' nesta receita"> Usar na receita</label>'+((r.item_type==='complemento'||r.item_key.startsWith('extra_'))?'<button type="button" class="secondary" data-del="'+esc(r.item_key)+'">Remover</button>':'<span class="small">Ingrediente-base</span>')+'</div>'+
 '<div class="line-grid">'+
 '<label class="field">Produto / insumo<input data-field="ingredient_name" value="'+esc(r.ingredient_name)+'" '+(m?'readonly':'')+'></label>'+
 '<label class="field">Vincular ao produto cadastrado<select data-field="material_id">'+opts+'</select></label>'+
 '<label class="field">Quantidade usada na receita<input data-field="quantity_used" type="number" min="0" step="any" inputmode="decimal" value="'+fmtInput(qty)+'" placeholder="Informe"></label>'+
-'<label class="field">Unidade<select data-field="measure_unit" '+(m?'disabled':'')+'><option value="g" '+(r.measure_unit==='g'?'selected':'')+'>g</option><option value="ml" '+(r.measure_unit==='ml'?'selected':'')+'>ml</option><option value="un" '+(r.measure_unit==='un'?'selected':'')+'>un</option></select></label>'+
-'<label class="field">Peso do pacote ('+esc(r.measure_unit)+')<input data-field="purchase_quantity" type="number" min="0" step="any" inputmode="decimal" value="'+fmtInput(pack)+'" placeholder="Ex.: 1000" '+locked+'></label>'+
+'<label class="field">Unidade<select data-field="measure_unit" '+(m?'disabled':'')+'><option value="g" '+(r.measure_unit==='g'?'selected':'')+'>g</option><option value="cx" '+(r.measure_unit==='cx'?'selected':'')+'>Caixa</option><option value="pct" '+(r.measure_unit==='pct'?'selected':'')+'>Pacote</option><option value="ml" '+(r.measure_unit==='ml'?'selected':'')+'>ml</option><option value="un" '+(r.measure_unit==='un'?'selected':'')+'>un</option></select></label>'+
+'<label class="field">Peso / unidades compradas ('+esc(r.measure_unit)+')<input data-field="purchase_quantity" type="number" min="0" step="any" inputmode="decimal" value="'+fmtInput(pack)+'" placeholder="Ex.: 1000" '+locked+'></label>'+
 '<label class="field">Preço pago no pacote (R$)<input data-field="purchase_cost" type="number" min="0" step="any" inputmode="decimal" value="'+fmtInput(price)+'" placeholder="R$" '+locked+'></label>'+
 '</div><div class="line-result"><span>Custo por '+esc(r.measure_unit)+': <b data-unitcost>—</b></span><span>Custo na receita: <b data-linecost>—</b></span></div>'+
 (m?'<p class="hint">Preço vinculado ao cadastro de materiais. Para alterar, abra a aba Produtos e materiais.</p>':'')+'</div>';
 }).join('');
+$('lines').innerHTML=renderPart(recipeItems('base'));
+$('complementLines').innerHTML=renderPart(recipeItems('complemento'))||'<p class="small">Nenhum complemento nesta receita. Clique em Acrescentar complemento para começar.</p>';
 updateLineCosts();
 }
 function itemCalc(r){
@@ -183,7 +192,7 @@ el.querySelector('[data-linecost]').textContent=x.inactive?'Não incluído':x.ok
 }
 function calc(){
 const b=currentBase(),r=currentItems(),missing=[],lots=val('lots'),yieldOne=val('yieldUnits'),sale=val('salePrice'),packUnit=val('packaging'),overhead=val('overhead'),commission=val('commission');
-let costBase=0;for(const x of r){const c=itemCalc(x);if(!c.ok)missing.push(c.reason);else costBase+=c.base}
+let costBase=0,costComplements=0;for(const x of r){const c=itemCalc(x);if(!c.ok)missing.push(c.reason);else if(x.item_type==='complemento')costComplements+=c.base;else costBase+=c.base}
 if(!r.some(x=>x.is_active!==false))missing.push('Ative pelo menos um ingrediente da receita');
 if(!(yieldOne>0&&Number.isInteger(yieldOne)))missing.push('Informe rendimento em unidades inteiras');
 if(!(lots>0&&Number.isInteger(lots)))missing.push('Informe número de receitas inteiro');
@@ -193,9 +202,10 @@ if(overhead===null||overhead<0)missing.push('Informe outros custos (pode ser zer
 if(commission===null||commission<0||commission>100)missing.push('Informe a comissão de 0% a 100%');
 updateLineCosts();
 const el=(id,v)=>$(id).textContent=v;
-el('costBase',missing.some(s=>s.includes('falta peso')||s.includes('quantidade')||s.includes('unidade')||s.includes('Adicione'))?'Parcial: '+money(costBase):money(costBase));
+el('costBase',missing.length?'Parcial: '+money(costBase):money(costBase));
+el('costComplements',missing.length?'Parcial: '+money(costComplements):money(costComplements));
 if(missing.length){['costAll','costUnit','revenue','commissionValue','profit','margin'].forEach(id=>el(id,'—'));el('unitsTotal',yieldOne>0&&lots>0?String(yieldOne*lots):'—');$('calcMessage').className='msg';$('calcMessage').textContent='⚠️ Para calcular o lucro com segurança, complete: '+missing.join('; ')+'.';return;}
-const units=lots*yieldOne,total=(costBase+yieldOne*packUnit+overhead)*lots,gross=units*sale,fee=gross*commission/100,profit=gross-total-fee;
+const units=lots*yieldOne,total=(costBase+costComplements+yieldOne*packUnit+overhead)*lots,gross=units*sale,fee=gross*commission/100,profit=gross-total-fee;
 el('costAll',money(total));el('costUnit',money(total/units));el('unitsTotal',String(units));el('revenue',money(gross));el('commissionValue',money(fee));el('profit',money(profit));el('margin',money(profit/units)+' / '+fmt(gross?profit/gross*100:0)+'%');
 $('calcMessage').textContent='✅ Cálculo completo com os valores informados. Produção de '+lots+' receita(s), total de '+units+' geladinhos.';$('calcMessage').className='msg ok';
 }
@@ -257,7 +267,7 @@ try{
 const change={sale_price:pr,yield_units:y,packaging_unit_cost:pk,overhead_cost:ov,commission_percent:cp,updated_at:new Date().toISOString()};
 let res=await sb.from('gds_recipe_bases').update(change).eq('id',b.id).select('id').single();if(res.error)throw res.error;
 if(rows.length){
-const payload=rows.map(x=>({recipe_id:b.id,item_key:x.item_key,ingredient_name:x.ingredient_name,quantity_used:x.quantity_used,measure_unit:x.measure_unit,purchase_quantity:x.material_id?null:x.purchase_quantity,purchase_cost:x.material_id?null:x.purchase_cost,material_id:x.material_id,sort_order:x.sort_order,is_active:x.is_active!==false}));
+const payload=rows.map(x=>({recipe_id:b.id,item_key:x.item_key,ingredient_name:x.ingredient_name,quantity_used:x.quantity_used,measure_unit:x.measure_unit,purchase_quantity:x.material_id?null:x.purchase_quantity,purchase_cost:x.material_id?null:x.purchase_cost,material_id:x.material_id,sort_order:x.sort_order,is_active:x.is_active!==false,item_type:x.item_type||'base'}));
 res=await sb.from('gds_recipe_base_items').upsert(payload,{onConflict:'recipe_id,item_key'});if(res.error)throw res.error;
 }
 for(const entry of state.deletions.filter(x=>x.recipe_id===b.id)){res=await sb.from('gds_recipe_base_items').delete().eq('id',entry.id);if(res.error)throw res.error;}
@@ -268,10 +278,17 @@ document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.cl
 $('goMaterials').onclick=()=>{state.active='materials';render();window.scrollTo({top:0,behavior:'smooth'})};
 $('addLine').onclick=()=>{
 const b=currentBase(),id='extra_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
-state.items.push({id:null,recipe_id:b.id,item_key:id,ingredient_name:'Novo ingrediente',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,is_active:true,sort_order:currentItems().length+1});
+state.items.push({id:null,recipe_id:b.id,item_key:id,ingredient_name:'Novo ingrediente',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,item_type:'base',is_active:true,sort_order:currentItems().length+1});
 renderRows();calc();pending();
 };
-$('lines').addEventListener('input',onRowInput);$('lines').addEventListener('change',e=>{
+$('addComplement').onclick=()=>{
+const b=currentBase(),key='comp_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
+state.items.push({id:null,recipe_id:b.id,item_key:key,ingredient_name:'Novo complemento',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,item_type:'complemento',is_active:true,sort_order:currentItems().length+1});
+renderRows();calc();pending();
+};
+['lines','complementLines'].forEach(area=>{
+$(area).addEventListener('input',onRowInput);
+$(area).addEventListener('change',e=>{
 if(e.target.matches('[data-active]')){
  const row=e.target.closest('.line'),item=currentItems().find(x=>x.item_key===row?.dataset.key);
  if(!item)return;
@@ -281,7 +298,8 @@ if(e.target.matches('[data-active]')){
 }
 if(e.target.dataset.field==='material_id'||e.target.dataset.field==='measure_unit')onRowInput(e);
 });
-$('lines').addEventListener('click',e=>{const btn=e.target.closest('[data-del]');if(!btn)return;const x=currentItems().find(z=>z.item_key===btn.dataset.del);if(!x)return;if(x.id)state.deletions.push({id:x.id,recipe_id:x.recipe_id});state.items=state.items.filter(z=>z!==x);renderRows();calc();pending()});
+$(area).addEventListener('click',e=>{const btn=e.target.closest('[data-del]');if(!btn)return;const x=currentItems().find(z=>z.item_key===btn.dataset.del);if(!x)return;if(x.id)state.deletions.push({id:x.id,recipe_id:x.recipe_id});state.items=state.items.filter(z=>z!==x);renderRows();calc();pending()});
+});
 const map=[['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']];
 map.forEach(([id,k])=>$(id).addEventListener('input',()=>{currentBase()[k]=val(id);calc();pending()}));
 $('lots').addEventListener('input',calc);
