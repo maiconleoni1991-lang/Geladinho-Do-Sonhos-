@@ -15,7 +15,7 @@ function fmt(s){const [y,m,d]=s.split('-');return d+'/'+m+'/'+y}
 function inRange(day,a,b){return day&&day>=a&&day<=b}
 function orderDay(x){return spDate(new Date(x.created_at))}
 function eventDay(x){if(x.payment_confirmed_at)return spDate(new Date(x.payment_confirmed_at));if(x.created_at)return spDate(new Date(x.created_at));return x.event_date||''}
-function soldOrder(x){return !x.deleted_at&&x.status!=='Cancelado'&&soldStatuses.includes(x.status)&&!(x.payment_method==='Fiado'&&x.payment_status==='Pendente')}
+function soldOrder(x){return !x.deleted_at&&x.status!=='Cancelado'&&soldStatuses.includes(x.status)&&Number(x.paid_amount||0)>0}
 function inject(){
   if($('gdsDateSales99'))return;
   const style=document.createElement('style');
@@ -72,7 +72,7 @@ async function run(){
   async function load(){
     $('gdsDateMsg99').textContent='Carregando vendas…';
     const [o,e]=await Promise.all([
-      GDS48.sb.from('orders').select('status,total,created_at,deleted_at,sales_channel,payment_status,payment_method'),
+      GDS48.sb.from('orders').select('status,total,paid_amount,created_at,deleted_at,sales_channel,payment_status,payment_method'),
       GDS48.sb.from('events').select('status,subtotal,delivery_fee,payment_status,payment_confirmed_at,created_at,event_date')
     ]);
     if(o.error||e.error){$('gdsDateMsg99').textContent='Erro: '+(o.error||e.error).message;return}
@@ -85,13 +85,13 @@ async function run(){
     const paidEvents=events.filter(x=>x.status!=='Cancelado'&&x.payment_status==='Pago'&&inRange(eventDay(x),a,b));
     const online=sold.filter(x=>(x.sales_channel||'online')!=='local');
     const local=sold.filter(x=>x.sales_channel==='local');
-    const onlineValue=online.reduce((n,x)=>n+(Number(x.total)||0),0);
-    const localValue=local.reduce((n,x)=>n+(Number(x.total)||0),0);
+    const onlineValue=online.reduce((n,x)=>n+(Number(x.paid_amount)||0),0);
+    const localValue=local.reduce((n,x)=>n+(Number(x.paid_amount)||0),0);
     const eventValue=paidEvents.reduce((n,x)=>n+(Number(x.subtotal)||0)+(Number(x.delivery_fee)||0),0);
     const grand=onlineValue+localValue+eventValue;
     $('gdsDateTotal99').textContent=money(grand);$('gdsDateOnline99').textContent=money(onlineValue);$('gdsDateLocal99').textContent=money(localValue);$('gdsDateEvents99').textContent=money(eventValue);$('gdsDateCount99').textContent=sold.length+paidEvents.length;
     const map={};
-    sold.forEach(x=>{const d=orderDay(x);map[d]??={count:0,online:0,local:0,event:0};map[d].count++;if(x.sales_channel==='local')map[d].local+=Number(x.total)||0;else map[d].online+=Number(x.total)||0});
+    sold.forEach(x=>{const d=orderDay(x);map[d]??={count:0,online:0,local:0,event:0};map[d].count++;if(x.sales_channel==='local')map[d].local+=Number(x.paid_amount)||0;else map[d].online+=Number(x.paid_amount)||0});
     paidEvents.forEach(x=>{const d=eventDay(x);map[d]??={count:0,online:0,local:0,event:0};map[d].count++;map[d].event+=(Number(x.subtotal)||0)+(Number(x.delivery_fee)||0)});
     const days=Object.keys(map).sort((x,y)=>y.localeCompare(x));
     $('gdsDateRows99').innerHTML=days.length?days.map(d=>{const v=map[d],t=v.online+v.local+v.event;return '<tr><td>'+fmt(d)+'</td><td>'+v.count+'</td><td>'+money(v.online)+'</td><td>'+money(v.local)+'</td><td>'+money(v.event)+'</td><td><b>'+money(t)+'</b></td></tr>'}).join(''):'<tr><td colspan="6" style="text-align:center;color:#78616a">Nenhuma venda neste período.</td></tr>';
