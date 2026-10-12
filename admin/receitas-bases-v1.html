@@ -567,6 +567,86 @@ function renderProductionHistory(){
  }).join('')||'<p class="small">Nenhuma produção registrada ainda. As produções aparecerão aqui por sabor e data.</p>';
 }
 
+
+function todayLocal(){
+ const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function productionFigure(){
+ const b=state.book.find(x=>x.id===state.selectedBookId),batches=val('productionBatches'),units=val('productionUnits');
+ const extra=val('productionExtra')??0;
+ if(!b)return{valid:false,error:'Selecione uma receita do livro.'};
+ if([b.cost_base,b.cost_complements,b.packaging_unit_cost,b.overhead_cost,b.commission_percent,b.sale_price].some(x=>num(x)===null)||!(num(b.yield_units)>0))
+ return {valid:false,error:'A ficha "'+b.recipe_name+'" ainda está incompleta. Corrija ingredientes, preços e rendimento na calculadora e salve novamente no livro.'};
+ if(!(batches>0&&Number.isInteger(batches)))return{valid:false,error:'Informe quantas receitas foram preparadas.'};
+ if(!(units>0&&Number.isInteger(units)))return{valid:false,error:'Informe o número real e inteiro de geladinhos já embalados.'};
+ if(extra<0)return{valid:false,error:'O custo adicional não pode ser negativo.'};
+ const base=Number(b.cost_base)*batches,comps=Number(b.cost_complements)*batches,pack=Number(b.packaging_unit_cost)*units,other=Number(b.overhead_cost)*batches+extra,
+ total=base+comps+pack+other,sale=Number(b.sale_price),gross=sale*units,comm=Number(b.commission_percent),fee=gross*comm/100,profit=gross-fee-total;
+ const round=(v,d=4)=>Number(v.toFixed(d));
+ return {valid:true,b,batches,units,baseCost:round(base),complementCost:round(comps),packagingCost:round(pack),otherCost:round(other),cost:round(total),
+ costUnit:round(total/units,6),salePrice:sale,revenue:round(gross),commission:comm,commissionValue:round(fee),profit:round(profit),profitUnit:round(profit/units,6)};
+}
+function renderProductionCalc(){
+ const f=productionFigure(),target=$('productionCalc'),msg=$('productionStatus');
+ if(!f.valid){target.innerHTML='';msg.textContent='⚠️ '+f.error;msg.className='msg';return;}
+ const fields=[
+ ['Rendimento real',String(f.units)+' unidades'],
+ ['Rendimento previsto',String(Number(f.b.yield_units)*f.batches)+' unidades'],
+ ['Custo base + recheios',money(f.baseCost+f.complementCost)],
+ ['Embalagens + outros',money(f.packagingCost+f.otherCost)],
+ ['Custo TOTAL do lote',money(f.cost)],
+ ['Custo por geladinho',money(f.costUnit)],
+ ['Venda potencial do lote',money(f.revenue)],
+ ['Lucro potencial do lote',money(f.profit)]
+ ];
+ target.innerHTML=fields.map(([label,value],i)=>'<div class="metric '+(i===7?'good':'')+'"><small>'+esc(label)+'</small><b>'+esc(value)+'</b></div>').join('');
+ msg.textContent='Esta ficha usa os custos salvos no Livro e o rendimento real informado. Comissão potencial: '+money(f.commissionValue)+'. O valor de venda é uma projeção; faturamento real depende das vendas registradas.';
+ msg.className='msg ok';
+}
+function selectBookForProduction(id){
+ const b=state.book.find(x=>x.id===id);
+ if(!b)return;
+ state.selectedBookId=id;
+ $('productionDate').value=todayLocal();
+ $('productionDate').max=todayLocal();
+ $('productionBatches').value='1';
+ $('productionUnits').value='';
+ $('productionExtra').value='0';
+ $('productionNotes').value='';
+ $('productionPanel').hidden=false;
+ $('productionRecipeName').textContent=b.recipe_name+' — '+(state.bases.find(x=>x.id===b.base_id)?.name||'Base')+' | Rendimento esperado: '+(b.yield_units||'—')+' un. por preparo';
+ renderProductionCalc();
+ $('productionPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function registerProduction(){
+ const f=productionFigure(),button=$('registerProduction'),date=field('productionDate'),notes=field('productionNotes').trim();
+ if(!f.valid)return alert(f.error);
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>todayLocal())return alert('Informe uma data válida de produção concluída, sem data futura.');
+ const entry={
+ recipe_id:f.b.id,production_date:date,batch_count:f.batches,finished_units:f.units,
+ base_cost_total:f.baseCost,complement_cost_total:f.complementCost,packaging_cost_total:f.packagingCost,other_cost_total:f.otherCost,
+ production_cost_total:f.cost,production_cost_unit:f.costUnit,sale_price:f.salePrice,potential_revenue:f.revenue,
+ commission_percent:f.commission,commission_potential:f.commissionValue,potential_profit:f.profit,profit_potential_unit:f.profitUnit,
+ production_notes:notes||null,
+ recipe_snapshot:{recipe_name:f.b.recipe_name,category:f.b.category,recipe_updated_at:f.b.updated_at,ingredients:f.b.ingredients,
+ expected_yield:f.b.yield_units,batch_count:f.batches,base_id:f.b.base_id,unit_packaging_cost:f.b.packaging_unit_cost,
+ other_cost_per_recipe:f.b.overhead_cost,extra_batch_cost:val('productionExtra')??0}
+ };
+ button.disabled=true;
+ try{
+ const r=await sb.from('gds_recipe_production_logs').insert(entry).select('id').single();
+ if(r.error)throw r.error;
+ const logs=await sb.from('gds_recipe_production_logs').select('*').order('production_date',{ascending:false}).order('created_at',{ascending:false}).limit(1000);
+ if(logs.error)throw logs.error;
+ state.production=logs.data||[];
+ const flavor=f.b.recipe_name,units=f.units;
+ state.selectedBookId=null;
+ renderBook();
+ note('✅ Produção de '+flavor+' registrada: '+units+' geladinhos embalados. Custos e receita potencial salvos por lote.');
+ }catch(e){note('Erro ao registrar produção: '+e.message,true)}
+ finally{button.disabled=false;}
+}
+
 async function saveRecipe(){
 const b=currentBase(),rows=currentItems(),btn=$('saveRecipe'),y=val('yieldUnits'),pr=val('salePrice'),pk=val('packaging'),ov=val('overhead'),cp=val('commission');
 if(y!==null&&(!(y>0)||!Number.isInteger(y)))return alert('Rendimento precisa ser um inteiro positivo.');
