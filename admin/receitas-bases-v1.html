@@ -210,6 +210,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div>
 <div class="panel">
 <div class="flex"><div><h2>📋 Histórico de produções</h2><p class="small">Cada lote registrado permanece identificado por receita e data.</p></div><span id="productionCount" class="badge">0 produções</span></div>
+<label class="field">Filtrar histórico por receita<select id="productionFilter"><option value="">Todas as receitas</option></select></label>
 <div id="productionHistory" class="book-cards"></div>
 </div>
 </section>
@@ -534,7 +535,9 @@ function renderBook(){
  $('bookCount').textContent=state.book.length+' receitas';
  $('bookCards').innerHTML=list.map(b=>{
   const ready=num(b.cost_total)!==null&&num(b.cost_base)!==null&&num(b.cost_complements)!==null&&num(b.yield_units)>0;
-  const relevant=state.production.filter(p=>p.recipe_id===b.id),finished=relevant.reduce((n,p)=>n+Number(p.finished_units||0),0);
+  const relevant=state.production.filter(p=>p.recipe_id===b.id),finished=relevant.reduce((n,p)=>n+Number(p.finished_units||0),0),
+ totalSpent=relevant.reduce((n,p)=>n+Number(p.production_cost_total||0),0),
+ totalPotential=relevant.reduce((n,p)=>n+Number(p.potential_revenue||0),0);
   const date=b.updated_at?new Date(b.updated_at).toLocaleDateString('pt-BR'):'—';
   const ingredients=Array.isArray(b.ingredients)?b.ingredients:[];
   const lines=ingredients.map(i=>{
@@ -544,7 +547,8 @@ function renderBook(){
   return '<article class="book-card"><div class="flex"><h3>'+esc(b.recipe_name)+'</h3><span class="badge">'+esc(b.category||'Gourmet')+'</span></div>'+
    '<div class="book-meta">Base: '+esc(state.bases.find(x=>x.id===b.base_id)?.name||'Base')+' • Atualizada em '+esc(date)+'</div>'+
    '<div class="book-pills"><span>Rendimento previsto: '+(b.yield_units?b.yield_units+' un.':'pendente')+'</span><span>'+relevant.length+' produção(ões)</span><span>'+finished+' geladinhos produzidos</span></div>'+
-   '<div class="book-pills"><span>Custo/receita: '+(ready?money(b.cost_total):'pendente')+'</span><span>Custo/un.: '+(ready?money(b.cost_unit):'pendente')+'</span></div>'+
+   '<div class="book-pills"><span>Custo/receita: '+(ready?money(b.cost_total):'pendente')+'</span><span>Custo/un. previsto: '+(ready?money(b.cost_unit):'pendente')+'</span></div>'+
+   (relevant.length?'<div class="book-pills"><span>Custos das produções: '+money(totalSpent)+'</span><span>Custo médio real/un.: '+money(finished?totalSpent/finished:0)+'</span><span>Vendas potenciais: '+money(totalPotential)+'</span></div>':'')+
    '<div class="'+(ready?'book-total':'book-pending')+'">'+(ready?'Lucro potencial por receita: '+money(b.estimated_profit):'⚠️ Complete preços e rendimento antes de registrar uma produção.')+'</div>'+
    '<details><summary>Ver ingredientes e ficha técnica</summary>'+lines+'<div class="book-meta">Valores congelados nesta ficha até você salvá-la novamente.</div></details>'+
    '<button type="button" style="margin-top:12px;width:100%" data-produce-book="'+esc(b.id)+'">🏭 Registrar produção desta receita</button></article>';
@@ -554,7 +558,10 @@ function renderBook(){
  else $('productionPanel').hidden=true;
 }
 function renderProductionHistory(){
- const logs=state.production;
+ const previous=field('productionFilter');
+ $('productionFilter').innerHTML='<option value="">Todas as receitas</option>'+state.book.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.recipe_name)+'</option>').join('');
+ $('productionFilter').value=previous;
+ const logs=state.production.filter(p=>!previous||p.recipe_id===previous);
  $('productionCount').textContent=logs.length+' lotes';
  $('productionHistory').innerHTML=logs.map(p=>{
   const b=state.book.find(x=>x.id===p.recipe_id),name=p.recipe_snapshot?.recipe_name||b?.recipe_name||'Receita';
@@ -607,6 +614,7 @@ function selectBookForProduction(id){
  const b=state.book.find(x=>x.id===id);
  if(!b)return;
  state.selectedBookId=id;
+ $('productionFilter').value=id;renderProductionHistory();
  $('productionDate').value=todayLocal();
  $('productionDate').max=todayLocal();
  $('productionBatches').value='1';
@@ -691,6 +699,7 @@ $('compSave').onclick=saveComplement;$('compClear').onclick=clearComplement;
 $('compSearch').addEventListener('input',renderComplementCatalog);
 $('compCatalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit-complement]');if(btn)editComplement(btn.dataset.editComplement)});
 $('bookSearch').addEventListener('input',renderBook);$('bookFilter').addEventListener('change',renderBook);
+$('productionFilter').addEventListener('change',renderProductionHistory);
 $('bookCards').addEventListener('click',e=>{const btn=e.target.closest('[data-produce-book]');if(btn)selectBookForProduction(btn.dataset.produceBook)});
 ['productionBatches','productionUnits','productionExtra'].forEach(id=>$(id).addEventListener('input',renderProductionCalc));
 $('registerProduction').addEventListener('click',registerProduction);
