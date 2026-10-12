@@ -25,6 +25,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .field input,.field select{width:100%;border:1px solid #dac3cf;background:#fff;color:#211720;border-radius:10px;padding:11px;min-height:44px}
 .field small{font-size:11px;color:var(--muted);font-weight:400}
 .field input:read-only{background:#fff7fa;color:#65525c}
+#newRecipeBaseField[hidden]{display:none}
 .recipe-name-highlight{padding:15px;margin-bottom:14px;border:2px solid #e58aaa;border-radius:15px;background:#fff4f8}.recipe-name-highlight .field{font-size:16px}.recipe-name-highlight input{font-size:17px;font-weight:750}
 .line .field input:not(:disabled),.line .field select:not(:disabled){background:#fff;color:#29171d}
 .line .field input[data-field="purchase_cost"],.line .field input[data-field="purchase_quantity"]{border-color:#d9a4bb}
@@ -323,7 +324,7 @@ if(unit!==r.measure_unit)return{ok:false,reason:r.ingredient_name+': unidade de 
 return{ok:true,base:q*price/pack,unitcost:price/pack};
 }
 function updateLineCosts(){
-document.querySelectorAll('.line').forEach(el=>{const r=currentItems().find(x=>x.item_key===el.dataset.key);if(!r)return;const x=itemCalc(r);
+document.querySelectorAll('#lines .line, #complementLines .line').forEach(el=>{const r=currentItems().find(x=>x.item_key===el.dataset.key);if(!r)return;const x=itemCalc(r);
 el.querySelector('[data-unitcost]').textContent=x.inactive?'Não utilizado':x.unitcost===null||x.unitcost===undefined?'—':precise(x.unitcost);
 el.querySelector('[data-linecost]').textContent=x.inactive?'Não incluído':x.ok?money(x.base):'Pendente';
 });
