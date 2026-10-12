@@ -546,6 +546,101 @@ function buildBookSnapshot(){
  estimated_profit:complete?round(profit):null,profit_unit:complete?round(profit/y,6):null,margin_percent:complete&&gross>0?round(profit/gross*100):null,
  ingredients,notes:warnings.length?'Pendente: '+warnings.join('; '):null,updated_at:new Date().toISOString()};
 }
+
+function beginBookEdit(id){
+ const recipe=state.book.find(b=>b.id===id);if(!recipe)return;
+ state.bookEditing=JSON.parse(JSON.stringify(recipe));
+ $('bookEditName').textContent=recipe.recipe_name+' — os ajustes valerão para os próximos lotes.';
+ [['bookEditYield','yield_units'],['bookEditSale','sale_price'],['bookEditPackaging','packaging_unit_cost'],['bookEditOverhead','overhead_cost'],['bookEditCommission','commission_percent']].forEach(([id,key])=>$(id).value=fmtInput(recipe[key]));
+ renderBookEditItems();updateBookEditCalculation();
+ $('bookEditPanel').hidden=false;$('bookEditPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function renderBookEditItems(){
+ const b=state.bookEditing;if(!b)return;
+ $('bookEditItems').innerHTML=(Array.isArray(b.ingredients)?b.ingredients:[]).map((i,index)=>{
+ const m=material(i.material_id);
+ return '<div class="line '+(i.active===false?'inactive':'')+'" data-edit-item="'+index+'"><div class="line-top"><strong>'+esc(i.name)+'</strong><label class="ingredient-switch"><input type="checkbox" data-edit-active="1" '+(i.active===false?'':'checked')+'> Usar na receita</label></div>'+
+ '<div class="line-grid">'+
+ '<label class="field">Quantidade usada<input type="number" data-edit-prop="quantity_used" value="'+fmtInput(i.quantity_used)+'" min="0" step="any"></label>'+
+ '<label class="field">Unidade<input readonly value="'+esc(i.unit||'g')+'"></label>'+
+ '<label class="field">Peso / quantidade comprada<input type="number" data-edit-prop="pack_quantity" value="'+fmtInput(i.pack_quantity)+'" min="0.0001" step="any"></label>'+
+ '<label class="field">Preço da embalagem (R$)<input type="number" data-edit-prop="pack_cost" value="'+fmtInput(i.pack_cost)+'" min="0" step="any"></label>'+
+ '</div><div class="line-result"><span>'+esc(i.classification||i.type||'Ingrediente')+'</span><span data-edit-cost>Custo: '+(i.cost===null?'pendente':money(i.cost))+'</span></div>'+
+ (m?'<button type="button" class="secondary" style="margin-top:9px" data-edit-load-catalog="'+index+'">↺ Usar preço atual do cadastro de materiais</button>':'')+'</div>';
+ }).join('');
+ const options=Array.isArray(b.complement_options)?b.complement_options:[];
+ $('bookEditComplements').innerHTML=options.map((c,i)=>'<label class="ingredient-switch"><input type="checkbox" data-edit-complement="'+i+'" '+(c.selected?'checked':'')+'> '+esc(c.name)+'</label>').join(' ')||'<p class="small">Não há complementos opcionais cadastrados para esta ficha.</p>';
+}
+function bookEditFigure(){
+ const b=state.bookEditing;if(!b)return{valid:false,missing:['Escolha uma receita para editar']};
+ const y=val('bookEditYield'),sale=val('bookEditSale'),pack=val('bookEditPackaging'),other=val('bookEditOverhead'),commission=val('bookEditCommission');
+ let base=0,comps=0,active=0;
+ const missing=[];
+ b.ingredients=(b.ingredients||[]).map(i=>{
+  const x={...i},q=num(i.quantity_used),size=num(i.pack_quantity),price=num(i.pack_cost);
+  if(i.active===false){x.cost=null;x.unit_cost=size>0&&price!==null?price/size:null;return x;}
+  active++;
+  if(q===null||q<0){missing.push(i.name+': quantidade usada');x.cost=null;return x}
+  if(!(size>0)||price===null||price<0){missing.push(i.name+': preço ou peso/quantidade comprada');x.cost=null;return x}
+  x.unit_cost=Number((price/size).toFixed(6));x.cost=Number((q*price/size).toFixed(4));
+  if(i.type==='complemento')comps+=x.cost;else base+=x.cost;
+  return x;
+ });
+ if(!active)missing.push('Ative pelo menos um ingrediente.');
+ if(!(y>0&&Number.isInteger(y)))missing.push('Rendimento previsto em unidades.');
+ if(sale===null||sale<0)missing.push('Preço de venda.');
+ if(pack===null||pack<0)missing.push('Custo da embalagem por geladinho (informe zero se não houver).');
+ if(other===null||other<0)missing.push('Outros custos da receita (informe zero se não houver).');
+ if(commission===null||commission<0||commission>100)missing.push('Comissão em porcentagem (informe zero se não houver).');
+ if(missing.length)return{valid:false,missing,base,comps,y,sale,pack,other,commission};
+ const total=base+comps+pack*y+other,gross=sale*y,fee=gross*commission/100,profit=gross-fee-total;
+ const round=(x,d=4)=>Number(x.toFixed(d));
+ return{valid:true,base:round(base),comps:round(comps),y,sale,pack,other,commission,
+ total:round(total),costUnit:round(total/y,6),gross:round(gross),fee:round(fee),profit:round(profit),profitUnit:round(profit/y,6),
+ margin:gross>0?round(profit/gross*100):null};
+}
+function updateBookEditCalculation(){
+ const x=bookEditFigure(),msg=$('bookEditCalc');
+ if(!x.valid){msg.textContent='⚠️ Ficha financeira incompleta: '+x.missing.join('; ')+' Custos completos e lucro serão calculados após preencher os itens.';return;}
+ msg.textContent='Custo da base: '+money(x.base)+' • Recheios: '+money(x.comps)+' • Custo total: '+money(x.total)+' • Custo por geladinho: '+money(x.costUnit)+' • Lucro potencial por receita: '+money(x.profit)+'.';
+}
+function updateBookEditItem(e){
+ const row=e.target.closest('[data-edit-item]'),b=state.bookEditing;if(!row||!b)return;
+ const i=b.ingredients[Number(row.dataset.editItem)];if(!i)return;
+ if(e.target.dataset.editProp){
+  i[e.target.dataset.editProp]=num(e.target.value);
+  if(e.target.dataset.editProp==='quantity_used')i.display_quantity=i.quantity_used===null?null:fmt(i.quantity_used)+' '+(i.unit||'');
+  updateBookEditCalculation();
+ }
+}
+function toggleBookComplement(index,selected){
+ const b=state.bookEditing;if(!b)return;
+ const opt=b.complement_options[index];if(!opt)return;
+ opt.selected=selected;
+ let line=b.ingredients.find(i=>i.type==='complemento'&&i.name===opt.name);
+ if(selected&&!line){
+  const m=state.materials.find(m=>m.name.toLocaleLowerCase('pt-BR')===opt.name.toLocaleLowerCase('pt-BR'));
+  b.ingredients.push({position:b.ingredients.length+1,name:opt.name,classification:'Complemento',type:'complemento',active:true,material_id:m?.id||null,brand:m?.brand||null,unit:m?.unit||'g',quantity_used:null,pack_quantity:m?.pack_quantity??null,pack_cost:m?.pack_cost??null,cost:null,unit_cost:null});
+ }else if(line)line.active=selected;
+ renderBookEditItems();updateBookEditCalculation();
+}
+async function saveBookEdit(){
+ const b=state.bookEditing;if(!b)return;
+ const x=bookEditFigure(),btn=$('bookEditSave');btn.disabled=true;
+ const change={ingredients:b.ingredients,complement_options:b.complement_options||[],
+ yield_units:x.y??null,sale_price:x.sale??null,packaging_unit_cost:x.pack??null,overhead_cost:x.other??null,commission_percent:x.commission??null,
+ cost_base:x.valid?x.base:null,cost_complements:x.valid?x.comps:null,cost_total:x.valid?x.total:null,cost_unit:x.valid?x.costUnit:null,
+ revenue:x.valid?x.gross:null,commission_value:x.valid?x.fee:null,estimated_profit:x.valid?x.profit:null,profit_unit:x.valid?x.profitUnit:null,
+ margin_percent:x.valid?x.margin:null,updated_at:new Date().toISOString()};
+ try{
+  const result=await sb.from('gds_recipe_book').update(change).eq('id',b.id).select('*').single();if(result.error)throw result.error;
+  const index=state.book.findIndex(r=>r.id===b.id);if(index>=0)state.book[index]=result.data;
+  state.bookEditing=null;$('bookEditPanel').hidden=true;renderBook();
+  note(x.valid?'✅ Preços e ficha de '+result.data.recipe_name+' atualizados. Os próximos lotes usarão esses custos.':'✅ Ficha salva. Ainda há itens pendentes; o cálculo de lucro permanecerá bloqueado até serem preenchidos.');
+ }catch(e){note('Erro ao salvar ficha: '+e.message,true)}
+ finally{btn.disabled=false}
+}
+
 function renderBook(){
  const search=field('bookSearch').trim().toLocaleLowerCase('pt-BR'),filter=field('bookFilter');
  const list=state.book.filter(b=>(!filter||b.category===filter)&&(!search||(b.recipe_name+' '+(b.category||'')).toLocaleLowerCase('pt-BR').includes(search)));
