@@ -60,7 +60,19 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .actions button{flex:1;min-width:160px}
 .badge{background:#fff0f6;color:#842246;border-radius:30px;padding:4px 10px;font-size:12px;font-weight:750}
 .note{background:#f5f9fd;border:1px solid #dfeaf5;padding:12px;border-radius:12px;color:#38536c;font-size:13px}
-#recipePanel[hidden],#materialsPanel[hidden],#powdersPanel[hidden],#powderPickerPanel[hidden],#complementsPanel[hidden],#compWeightField[hidden]{display:none}
+#recipePanel[hidden],#materialsPanel[hidden],#powdersPanel[hidden],#powderPickerPanel[hidden],#complementsPanel[hidden],#compWeightField[hidden],#bookPanel[hidden]{display:none}
+.book-card{border:1px solid var(--line);background:#fffafc;border-radius:17px;padding:16px}
+.book-card h3{margin:0;color:var(--dark);font-size:18px}
+.book-card .book-meta{font-size:12px;color:var(--muted);margin:6px 0}
+.book-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(275px,1fr));gap:12px;margin-top:12px}
+.book-pills{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.book-pills span{background:#fff0f6;border-radius:8px;padding:6px 9px;color:#622b46;font-size:12px}
+.book-card details{margin-top:12px}
+.book-card summary{cursor:pointer;font-weight:800;color:#a01e56}
+.book-item{border-bottom:1px solid #f0e0e6;padding:7px 0;font-size:13px}
+.book-item:last-child{border:0}
+.book-total{font-weight:800;color:var(--green)}
+.book-card .book-pending{color:#a96319;font-weight:750}
 .powder-card{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:9px;background:#fff}
 .powder-card h3{margin:0;color:var(--dark)}.powder-card .powder-meta{font-size:12px;color:var(--muted)}
 .powder-card .powder-balance{border-radius:9px;padding:9px;background:#fff1f5;color:#642840;font-weight:800;font-size:13px}
@@ -75,13 +87,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <main>
 <section class="hero"><img src="../assets/logo-oficial-hq-v65.webp" alt="Geladinho dos Sonhos" onerror="this.onerror=null;this.src='../assets/icon-512.png'"><div><h1>Receitas e custos de produção</h1><p>Cadastro de matérias-primas, bases e cálculo de lucro por receita e por geladinho.</p></div></section>
 <div class="tabbar" id="tabs" role="tablist" aria-label="Receitas-base e materiais">
-<button type="button" data-tab="premium_1">Base Premium 1</button><button type="button" data-tab="premium_2">Base Premium 2</button><button type="button" data-tab="gourmet_nova">Base Gourmet</button><button type="button" data-tab="materials">📦 Produtos e materiais</button><button type="button" data-tab="powders">🎨 Estoque de pós</button><button type="button" data-tab="complements">🍫 Recheios e complementos</button>
+<button type="button" data-tab="premium_1">Base Premium 1</button><button type="button" data-tab="premium_2">Base Premium 2</button><button type="button" data-tab="gourmet_nova">Base Gourmet</button><button type="button" data-tab="materials">📦 Produtos e materiais</button><button type="button" data-tab="powders">🎨 Estoque de pós</button><button type="button" data-tab="complements">🍫 Recheios e complementos</button><button type="button" data-tab="book">📖 Livro de Receitas</button>
 </div>
 <div id="status" class="msg">Conectando com segurança ao Supabase...</div>
 <section id="recipePanel" hidden>
 <div class="panel"><div class="flex"><h2 id="baseTitle">Ficha da receita</h2><span id="baseFlag" class="badge">Cadastro editável</span></div>
 <p id="baseDescription" class="small"></p>
 <div class="cols">
+<label class="field">Nome da receita / sabor <small>Obrigatório para guardar no Livro de Receitas. Ex.: Morangurte.</small><input id="bookName" maxlength="120" placeholder="Nome da receita" required></label>
+<label class="field">Categoria do produto<select id="bookCategory"><option value="Gourmet">Gourmet</option><option value="Cremoso">Cremoso</option><option value="Trufado">Trufado</option><option value="Tradicional">Tradicional</option></select></label>
 <label class="field">Preço de venda (R$ / geladinho)<input id="salePrice" type="number" inputmode="decimal" min="0" step="0.01"></label>
 <label class="field">Rendimento por receita (unidades)<input id="yieldUnits" type="number" inputmode="numeric" min="1" step="1" placeholder="Ex.: 20"></label>
 <label class="field">Embalagem por unidade (R$)<input id="packaging" type="number" inputmode="decimal" min="0" step="0.0001" placeholder="Custo por saquinho/etiqueta"></label>
@@ -93,7 +107,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="panel">
 <div class="flex"><div><h2>Ingredientes da receita-base</h2><p class="small">Quantidade usada, peso do pacote, preço pago, custo por grama/ml e custo total de cada item. Desmarque <strong>Usar na receita</strong> para desativar um ingrediente sem apagá-lo ou alterar as outras bases.</p></div><button type="button" id="addLine" class="secondary">+ Acrescentar ingrediente</button></div>
 <div id="lines" class="lines"></div>
-<div class="actions"><button type="button" id="saveRecipe">💾 Salvar receita e valores</button><button type="button" id="goMaterials" class="secondary">+ Cadastrar produto separadamente</button></div>
+<div class="actions"><button type="button" id="saveRecipe">💾 Salvar receita no Livro</button><button type="button" id="goMaterials" class="secondary">+ Cadastrar produto separadamente</button></div>
+<div class="note" style="margin-top:13px">Ao salvar, a receita será registrada pelo nome no <strong>Livro de Receitas</strong>, com uma cópia dos ingredientes, quantidades, preços, rendimento e resultado financeiro. Salvar novamente o mesmo nome na mesma base atualiza essa ficha. Um sabor diferente gera nova ficha. <strong>Simular e salvar receitas não movimenta o estoque.</strong></div>
 <div class="note" style="margin-top:13px"><strong>Todos os valores são editáveis.</strong> Os campos de peso e preço começam com os valores de <strong>Produtos e materiais</strong>, mas você pode alterá-los nesta receita sem mudar o cadastro geral. Clique em <strong>↺ Usar valores do cadastro</strong> para voltar ao preço de referência. Para alterar o preço padrão de todas as receitas que não tenham preço personalizado, edite a aba Produtos e materiais.</div>
 </div>
 <div class="panel" id="powderPickerPanel" hidden>
@@ -169,6 +184,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="cols" style="margin-top:12px"><label class="field">Marca<select id="powderBrand"><option value="">Todas</option><option value="Du Porto">Du Porto — Shopee</option><option value="Marvi">Marvi</option></select></label><label class="field">Buscar sabor<input id="powderSearch" type="search" placeholder="Ex.: Leitinho, Nata Especial"></label></div>
 <div id="powderCards" class="catalog-list"></div>
 </div></section>
+<section id="bookPanel" hidden>
+<div class="panel">
+<div class="flex"><div><h2>📖 Livro de Receitas — Geladinho dos Sonhos</h2><p class="small">Receitas salvas por sabor, com os ingredientes e os custos registrados na data do salvamento.</p></div><span id="bookCount" class="badge">0 receitas</span></div>
+<div class="note">Cada ficha é independente e guarda uma fotografia dos valores informados ao salvar. Atualizações futuras nos preços gerais não apagam os custos registrados. <strong>Custo previsto não significa despesa realizada nem baixa de estoque.</strong></div>
+<div class="cols" style="margin-top:12px">
+<label class="field">Buscar sabor ou nome<input id="bookSearch" type="search" placeholder="Ex.: Morangurte, Prestígio, Ninho"></label>
+<label class="field">Categoria<select id="bookFilter"><option value="">Todas as categorias</option><option value="Gourmet">Gourmet</option><option value="Cremoso">Cremoso</option><option value="Trufado">Trufado</option><option value="Tradicional">Tradicional</option></select></label>
+</div>
+<div id="bookCards" class="book-cards"></div>
+</div>
+</section>
 </main>
 <script>
 (function(){'use strict';
@@ -177,7 +203,7 @@ const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'
 const num=v=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
-const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders','complements'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],deletions:[],materialEditing:null,complementEditing:null};
+const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders','complements','book'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],materialEditing:null,complementEditing:null};
 const currentBase=()=>state.bases.find(x=>x.code===state.active),currentItems=()=>state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
 const material=id=>state.materials.find(m=>m.id===id);
 const powderStock=id=>state.powders.find(p=>p.material_id===id);
@@ -189,21 +215,22 @@ const unitLabel=u=>({g:'g',ml:'ml',un:'un',cx:'caixa',pct:'pacote'})[u]||u;
 const note=(s,bad=false)=>{const x=$('status');x.textContent=s;x.className='msg '+(bad?'err':'ok')};
 const pending=()=>note('✏️ Alterações na receita ainda não salvas. Clique em Salvar receita e valores.');
 async function load(){
-const [b,i,m,p]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*')]);
-if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;if(p.error)throw p.error;
-state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];
+const [b,i,m,p,k]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*'),sb.from('gds_recipe_book').select('*').order('updated_at',{ascending:false})]);
+if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;if(p.error)throw p.error;if(k.error)throw k.error;
+state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];
 if(!codes.every(code=>state.bases.some(b=>b.code===code)))throw Error('As três bases não foram encontradas.');render();
 }
 function render(){
 document.querySelectorAll('[data-tab]').forEach(b=>{const active=b.dataset.tab===state.active;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
-const isMaterial=state.active==='materials',powderPage=state.active==='powders',complementPage=state.active==='complements';
-$('materialsPanel').hidden=!isMaterial;$('powdersPanel').hidden=!powderPage;$('complementsPanel').hidden=!complementPage;
-$('recipePanel').hidden=isMaterial||powderPage||complementPage;
-if(isMaterial){renderCatalog();return;}if(powderPage){renderPowders();return;}if(complementPage){renderComplementCatalog();return;}renderBase();
+const isMaterial=state.active==='materials',powderPage=state.active==='powders',complementPage=state.active==='complements',bookPage=state.active==='book';
+$('materialsPanel').hidden=!isMaterial;$('powdersPanel').hidden=!powderPage;$('complementsPanel').hidden=!complementPage;$('bookPanel').hidden=!bookPage;
+$('recipePanel').hidden=isMaterial||powderPage||complementPage||bookPage;
+if(isMaterial){renderCatalog();return;}if(powderPage){renderPowders();return;}if(complementPage){renderComplementCatalog();return;}if(bookPage){renderBook();return;}renderBase();
 }
 function renderBase(){
 const b=currentBase();$('baseTitle').textContent=b.name;$('baseDescription').textContent=b.description||'';
 $('baseFlag').textContent=b.code==='gourmet_nova'?'Nova base Gourmet':'Base existente • referência';
+$('bookName').value=b.name;$('bookCategory').value='Gourmet';
 [['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']].forEach(p=>{$(p[0]).value=fmtInput(b[p[1]])});
 renderRows();calc();renderPowderPicker();
 }
