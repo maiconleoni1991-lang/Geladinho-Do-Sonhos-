@@ -649,6 +649,8 @@ async function registerProduction(){
 
 async function saveRecipe(){
 const b=currentBase(),rows=currentItems(),btn=$('saveRecipe'),y=val('yieldUnits'),pr=val('salePrice'),pk=val('packaging'),ov=val('overhead'),cp=val('commission');
+const snapshot=buildBookSnapshot();
+if(snapshot.recipe_name.length<2||snapshot.recipe_name.length>120)return alert('Informe o nome do sabor (2 a 120 caracteres) para salvar no Livro de Receitas.');
 if(y!==null&&(!(y>0)||!Number.isInteger(y)))return alert('Rendimento precisa ser um inteiro positivo.');
 if(pr===null||pr<0||ov===null||ov<0||cp===null||cp<0||cp>100)return alert('Informe preço, custos extras e comissão válidos.');
 if(pk!==null&&pk<0)return alert('Custo da embalagem inválido.');
@@ -663,7 +665,13 @@ const payload=rows.map(x=>({recipe_id:b.id,item_key:x.item_key,ingredient_name:x
 res=await sb.from('gds_recipe_base_items').upsert(payload,{onConflict:'recipe_id,item_key'});if(res.error)throw res.error;
 }
 for(const entry of state.deletions.filter(x=>x.recipe_id===b.id)){res=await sb.from('gds_recipe_base_items').delete().eq('id',entry.id);if(res.error)throw res.error;}
-state.deletions=state.deletions.filter(x=>x.recipe_id!==b.id);await load();note('✅ Receita salva no Supabase! Quantidades, compras e cálculos cadastrados.');
+state.deletions=state.deletions.filter(x=>x.recipe_id!==b.id);
+const bookSave=await sb.from('gds_recipe_book').upsert(snapshot,{onConflict:'base_id,recipe_key'}).select('id').single();
+if(bookSave.error)throw new Error('A base foi salva, mas não foi possível registrar a ficha no Livro: '+bookSave.error.message);
+state.selectedBookId=null;state.active='book';location.hash='book';
+$('bookSearch').value='';$('bookFilter').value='';
+await load();
+note(snapshot.cost_total===null?'✅ Receita "'+snapshot.recipe_name+'" salva no Livro como ficha incompleta. Complete custos e rendimento antes de produzir.':'✅ Receita "'+snapshot.recipe_name+'" salva no Livro de Receitas. Você já pode selecioná-la para registrar a produção.');
 }catch(e){note('Erro ao salvar receita: '+e.message,true)}finally{btn.disabled=false}
 }
 $('powderChoice').addEventListener('change',e=>{
@@ -682,6 +690,12 @@ $('compFormat').addEventListener('change',updateComplementForm);
 $('compSave').onclick=saveComplement;$('compClear').onclick=clearComplement;
 $('compSearch').addEventListener('input',renderComplementCatalog);
 $('compCatalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit-complement]');if(btn)editComplement(btn.dataset.editComplement)});
+$('bookSearch').addEventListener('input',renderBook);$('bookFilter').addEventListener('change',renderBook);
+$('bookCards').addEventListener('click',e=>{const btn=e.target.closest('[data-produce-book]');if(btn)selectBookForProduction(btn.dataset.produceBook)});
+['productionBatches','productionUnits','productionExtra'].forEach(id=>$(id).addEventListener('input',renderProductionCalc));
+$('registerProduction').addEventListener('click',registerProduction);
+$('productionCancel').onclick=()=>{state.selectedBookId=null;$('productionPanel').hidden=true;};
+$('productionDate').max=todayLocal();
 document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){state.active=b.dataset.tab;location.hash=state.active;render();}});
 $('goMaterials').onclick=()=>{state.active='materials';location.hash='materials';render();window.scrollTo({top:0,behavior:'smooth'})};
 $('addLine').onclick=()=>{
