@@ -25,6 +25,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .field input,.field select{width:100%;border:1px solid #dac3cf;background:#fff;color:#211720;border-radius:10px;padding:11px;min-height:44px}
 .field small{font-size:11px;color:var(--muted);font-weight:400}
 .field input:read-only{background:#fff7fa;color:#65525c}
+.recipe-name-highlight{padding:15px;margin-bottom:14px;border:2px solid #e58aaa;border-radius:15px;background:#fff4f8}.recipe-name-highlight .field{font-size:16px}.recipe-name-highlight input{font-size:17px;font-weight:750}
 .line .field input:not(:disabled),.line .field select:not(:disabled){background:#fff;color:#29171d}
 .line .field input[data-field="purchase_cost"],.line .field input[data-field="purchase_quantity"]{border-color:#d9a4bb}
 .line .line-source{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin:6px 0 0}
@@ -87,14 +88,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <main>
 <section class="hero"><img src="../assets/logo-oficial-hq-v65.webp" alt="Geladinho dos Sonhos" onerror="this.onerror=null;this.src='../assets/icon-512.png'"><div><h1>Receitas e custos de produção</h1><p>Cadastro de matérias-primas, bases e cálculo de lucro por receita e por geladinho.</p></div></section>
 <div class="tabbar" id="tabs" role="tablist" aria-label="Receitas-base e materiais">
-<button type="button" data-tab="premium_1">Base Premium 1</button><button type="button" data-tab="premium_2">Base Premium 2</button><button type="button" data-tab="gourmet_nova">Base Gourmet</button><button type="button" data-tab="materials">📦 Produtos e materiais</button><button type="button" data-tab="powders">🎨 Estoque de pós</button><button type="button" data-tab="complements">🍫 Recheios e complementos</button><button type="button" data-tab="book">📖 Livro de Receitas</button>
+<button type="button" data-tab="new_recipe">➕ Nova receita</button><button type="button" data-tab="premium_1">Base Premium 1</button><button type="button" data-tab="premium_2">Base Premium 2</button><button type="button" data-tab="gourmet_nova">Base Gourmet</button><button type="button" data-tab="materials">📦 Produtos e materiais</button><button type="button" data-tab="powders">🎨 Estoque de pós</button><button type="button" data-tab="complements">🍫 Recheios e complementos</button><button type="button" data-tab="book">📖 Livro de Receitas</button>
 </div>
 <div id="status" class="msg">Conectando com segurança ao Supabase...</div>
 <section id="recipePanel" hidden>
 <div class="panel"><div class="flex"><h2 id="baseTitle">Ficha da receita</h2><span id="baseFlag" class="badge">Cadastro editável</span></div>
 <p id="baseDescription" class="small"></p>
+<div class="recipe-name-highlight"><label class="field">✏️ Nome da receita / sabor<input id="bookName" maxlength="120" placeholder="Ex.: Morangurte, Ninho com Nutella" required></label><span class="small">Informe o nome que aparecerá no Livro. O nome da base não será usado automaticamente.</span></div>
+<label class="field" id="newRecipeBaseField" hidden>Modelo de base<select id="newRecipeBase"><option value="gourmet_nova">Base Gourmet</option><option value="premium_2">Base Premium 2</option><option value="premium_1">Base Premium 1</option></select><small>Os ingredientes são copiados para a nova ficha; a base original é preservada.</small></label>
 <div class="cols">
-<label class="field">Nome da receita / sabor <small>Obrigatório para guardar no Livro de Receitas. Ex.: Morangurte.</small><input id="bookName" maxlength="120" placeholder="Nome da receita" required></label>
 <label class="field">Categoria do produto<select id="bookCategory"><option value="Gourmet">Gourmet</option><option value="Cremoso">Cremoso</option><option value="Trufado">Trufado</option><option value="Tradicional">Tradicional</option></select></label>
 <label class="field">Preço de venda (R$ / geladinho)<input id="salePrice" type="number" inputmode="decimal" min="0" step="0.01"></label>
 <label class="field">Rendimento por receita (unidades)<input id="yieldUnits" type="number" inputmode="numeric" min="1" step="1" placeholder="Ex.: 20"></label>
@@ -186,7 +188,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div></section>
 <section id="bookPanel" hidden>
 <div class="panel">
-<div class="flex"><div><h2>📖 Livro de Receitas — Geladinho dos Sonhos</h2><p class="small">Receitas salvas por sabor, com os ingredientes e os custos registrados na data do salvamento.</p></div><span id="bookCount" class="badge">0 receitas</span></div>
+<div class="flex"><div><h2>📖 Livro de Receitas — Geladinho dos Sonhos</h2><p class="small">Receitas salvas por sabor, com os ingredientes e os custos registrados na data do salvamento.</p></div><button type="button" id="bookNewRecipe">➕ Nova receita</button><span id="bookCount" class="badge">0 receitas</span></div>
 <div class="note">Cada ficha é independente e guarda uma fotografia dos valores informados ao salvar. Atualizações futuras nos preços gerais não apagam os custos registrados. <strong>Custo previsto não significa despesa realizada nem baixa de estoque.</strong></div>
 <div class="cols" style="margin-top:12px">
 <label class="field">Buscar sabor ou nome<input id="bookSearch" type="search" placeholder="Ex.: Morangurte, Prestígio, Ninho"></label>
@@ -197,6 +199,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div id="bookEditPanel" class="panel" hidden>
 <div class="flex"><div><h2>✏️ Ajustar ficha de receita</h2><p id="bookEditName" class="small">Atualize quantidades e custos desta receita, sem alterar outras bases.</p></div><button type="button" id="bookEditCancel" class="secondary">Cancelar</button></div>
 <div class="note">Os dados desta ficha são independentes dos preços gerais dos materiais. Ao salvar, os próximos lotes usarão os novos custos; produções antigas não serão modificadas.</div>
+<label class="field" style="margin-top:14px">Nome da receita / sabor<input id="bookEditRecipeName" maxlength="120" placeholder="Ex.: Morangurte" required></label>
 <div class="cols" style="margin-top:12px">
 <label class="field">Rendimento previsto (130 ml) em unidades<input id="bookEditYield" type="number" min="1" step="1"></label>
 <label class="field">Preço de venda por geladinho (R$)<input id="bookEditSale" type="number" min="0" step="0.01"></label>
@@ -239,8 +242,19 @@ const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'
 const num=v=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
-const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders','complements','book'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null};
-const currentBase=()=>state.bases.find(x=>x.code===state.active),currentItems=()=>state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
+const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','powders','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null};
+const isNewRecipe=()=>state.active==='new_recipe';
+const currentBase=()=>state.bases.find(x=>x.code===(isNewRecipe()?(state.newRecipeDraft?.base_code||'gourmet_nova'):state.active));
+const currentItems=()=>isNewRecipe()?(state.newRecipeDraft?.items||[]):state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
+function makeNewRecipe(code='gourmet_nova'){
+ const b=state.bases.find(x=>x.code===code);if(!b)return null;
+ return {base_code:code,name:'',category:'Gourmet',sale_price:num(b.sale_price),yield_units:num(b.yield_units),packaging_unit_cost:num(b.packaging_unit_cost),overhead_cost:num(b.overhead_cost),commission_percent:num(b.commission_percent),
+ items:state.items.filter(x=>x.recipe_id===b.id).sort((a,z)=>a.sort_order-z.sort_order).map(x=>({...x,id:null}))};
+}
+function startNewRecipe(){
+ state.newRecipeDraft=makeNewRecipe();state.active='new_recipe';location.hash='new_recipe';render();
+ window.scrollTo({top:0,behavior:'smooth'});$('bookName').focus();
+}
 const material=id=>state.materials.find(m=>m.id===id);
 const powderStock=id=>state.powders.find(p=>p.material_id===id);
 const isPowder=id=>!!powderStock(id);
@@ -254,7 +268,9 @@ async function load(){
 const [b,i,m,p,k,l]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*'),sb.from('gds_recipe_book').select('*').order('updated_at',{ascending:false}),sb.from('gds_recipe_production_logs').select('*').order('production_date',{ascending:false}).order('created_at',{ascending:false}).limit(1000)]);
 if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;if(p.error)throw p.error;if(k.error)throw k.error;if(l.error)throw l.error;
 state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];state.production=l.data||[];
-if(!codes.every(code=>state.bases.some(b=>b.code===code)))throw Error('As três bases não foram encontradas.');render();
+if(!codes.every(code=>state.bases.some(b=>b.code===code)))throw Error('As três bases não foram encontradas.');
+if(isNewRecipe()&&!state.newRecipeDraft)state.newRecipeDraft=makeNewRecipe();
+render();
 }
 function render(){
 document.querySelectorAll('[data-tab]').forEach(b=>{const active=b.dataset.tab===state.active;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
@@ -264,11 +280,15 @@ $('recipePanel').hidden=isMaterial||powderPage||complementPage||bookPage;
 if(isMaterial){renderCatalog();return;}if(powderPage){renderPowders();return;}if(complementPage){renderComplementCatalog();return;}if(bookPage){renderBook();return;}renderBase();
 }
 function renderBase(){
-const b=currentBase();$('baseTitle').textContent=b.name;$('baseDescription').textContent=b.description||'';
-$('baseFlag').textContent=b.code==='gourmet_nova'?'Nova base Gourmet':'Base existente • referência';
-$('bookName').value=b.name;$('bookCategory').value='Gourmet';
-[['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']].forEach(p=>{$(p[0]).value=fmtInput(b[p[1]])});
-renderRows();calc();renderPowderPicker();
+ const b=currentBase(),draft=isNewRecipe()?state.newRecipeDraft:null,info=draft||b;
+ $('baseTitle').textContent=draft?'➕ Cadastrar nova receita':b.name+' — modelo da base';
+ $('baseDescription').textContent=draft?'Digite o nome do sabor. Ajuste ingredientes, complementos e custos sem alterar a base original.':(b.description||'Informe um nome de sabor para salvar no Livro.');
+ $('baseFlag').textContent=draft?'Nova ficha independente':'Modelo de ingredientes';
+ $('newRecipeBaseField').hidden=!draft;if(draft)$('newRecipeBase').value=draft.base_code;
+ $('bookName').value=draft?draft.name:'';
+ $('bookCategory').value=draft?draft.category:'Gourmet';
+ [['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']].forEach(p=>{$(p[0]).value=fmtInput(info[p[1]])});
+ renderRows();calc();renderPowderPicker();
 }
 function renderRows(){
 const ms=state.materials;
@@ -550,7 +570,7 @@ function buildBookSnapshot(){
 function beginBookEdit(id){
  const recipe=state.book.find(b=>b.id===id);if(!recipe)return;
  state.bookEditing=JSON.parse(JSON.stringify(recipe));
- $('bookEditName').textContent=recipe.recipe_name+' — os ajustes valerão para os próximos lotes.';
+ $('bookEditName').textContent=recipe.recipe_name+' — os ajustes valerão para os próximos lotes.';$('bookEditRecipeName').value=recipe.recipe_name;
  [['bookEditYield','yield_units'],['bookEditSale','sale_price'],['bookEditPackaging','packaging_unit_cost'],['bookEditOverhead','overhead_cost'],['bookEditCommission','commission_percent']].forEach(([id,key])=>$(id).value=fmtInput(recipe[key]));
  renderBookEditItems();updateBookEditCalculation();
  $('bookEditPanel').hidden=false;$('bookEditPanel').scrollIntoView({behavior:'smooth',block:'start'});
@@ -626,14 +646,16 @@ function toggleBookComplement(index,selected){
 }
 async function saveBookEdit(){
  const b=state.bookEditing;if(!b)return;
- const x=bookEditFigure(),btn=$('bookEditSave');
+ const x=bookEditFigure(),btn=$('bookEditSave'),newName=field('bookEditRecipeName').trim();
+ if(newName.length<2||newName.length>120)return alert('Nome deve ter de 2 a 120 caracteres.');
+ if(state.book.some(q=>q.id!==b.id&&q.base_id===b.base_id&&q.recipe_name.trim().toLocaleLowerCase('pt-BR')===newName.toLocaleLowerCase('pt-BR')))return alert('Já existe receita com este nome nesta base.');
  const y=val('bookEditYield');
  if(y!==null&&(!Number.isInteger(y)||y<=0))return alert('Rendimento previsto deve ser um número inteiro maior que zero.');
  for(const id of ['bookEditSale','bookEditPackaging','bookEditOverhead','bookEditCommission']){
    const v=val(id);if(v!==null&&(v<0||(id==='bookEditCommission'&&v>100)))return alert('Corrija o valor do campo '+id+'.');
  }
  btn.disabled=true;
- const change={ingredients:b.ingredients,complement_options:b.complement_options||[],
+ const change={recipe_name:newName,ingredients:b.ingredients,complement_options:b.complement_options||[],
  yield_units:x.y??null,sale_price:x.sale??null,packaging_unit_cost:x.pack??null,overhead_cost:x.other??null,commission_percent:x.commission??null,
  cost_base:x.valid?x.base:null,cost_complements:x.valid?x.comps:null,cost_total:x.valid?x.total:null,cost_unit:x.valid?x.costUnit:null,
  revenue:x.valid?x.gross:null,commission_value:x.valid?x.fee:null,estimated_profit:x.valid?x.profit:null,profit_unit:x.valid?x.profitUnit:null,
@@ -685,7 +707,7 @@ function renderBook(){
    (b.preparation?'<h3 style="margin:13px 0 5px;font-size:14px">Modo de preparo</h3><p class="small">'+esc(b.preparation)+'</p>':'')+
    (b.notes?'<p class="small"><strong>Observações:</strong> '+esc(b.notes)+'</p>':'')+
    '<div class="book-meta">Esta ficha registra as informações salvas; não movimenta o estoque.</div></details>'+
-   '<div class="actions"><button type="button" class="secondary" data-edit-book="'+esc(b.id)+'">✏️ Ajustar preços e ingredientes</button><button type="button" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção</button></div></article>';
+   '<div class="actions"><button type="button" class="secondary" data-edit-book="'+esc(b.id)+'">✏️ Editar nome, ingredientes e preços</button><button type="button" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção</button></div></article>';
  }).join('')||'<p class="small">Nenhuma receita encontrada. Preencha uma base, informe o nome do sabor e clique em Salvar receita no Livro.</p>';
  renderProductionHistory();
  if(state.selectedBookId){const selected=state.book.find(x=>x.id===state.selectedBookId);if(selected){$('productionPanel').hidden=false;$('productionRecipeName').textContent=selected.recipe_name+' — '+(state.bases.find(x=>x.id===selected.base_id)?.name||'Base');renderProductionCalc();}else{$('productionPanel').hidden=true;}}
@@ -795,6 +817,7 @@ async function registerProduction(){
 async function saveRecipe(){
 const b=currentBase(),rows=currentItems(),btn=$('saveRecipe'),y=val('yieldUnits'),pr=val('salePrice'),pk=val('packaging'),ov=val('overhead'),cp=val('commission');
 const snapshot=buildBookSnapshot();
+ if(isNewRecipe()&&state.book.some(q=>q.base_id===snapshot.base_id&&q.recipe_name.trim().toLocaleLowerCase('pt-BR')===snapshot.recipe_name.toLocaleLowerCase('pt-BR')))return alert('Receita já cadastrada. Edite o nome ou a ficha existente no Livro.');
 if(snapshot.recipe_name.length<2||snapshot.recipe_name.length>120)return alert('Informe o nome do sabor (2 a 120 caracteres) para salvar no Livro de Receitas.');
 if(y!==null&&(!(y>0)||!Number.isInteger(y)))return alert('Rendimento precisa ser um inteiro positivo.');
 if(pr===null||pr<0||ov===null||ov<0||cp===null||cp<0||cp>100)return alert('Informe preço, custos extras e comissão válidos.');
@@ -803,6 +826,7 @@ for(const x of rows){if(x.quantity_used!==null&&x.quantity_used<0)return alert('
 if(x.purchase_cost!==null&&x.purchase_cost<0)return alert('Preço não pode ser negativo: '+x.ingredient_name);}
 btn.disabled=true;
 try{
+if(!isNewRecipe()){
 const change={sale_price:pr,yield_units:y,packaging_unit_cost:pk,overhead_cost:ov,commission_percent:cp,updated_at:new Date().toISOString()};
 let res=await sb.from('gds_recipe_bases').update(change).eq('id',b.id).select('id').single();if(res.error)throw res.error;
 if(rows.length){
@@ -811,9 +835,10 @@ res=await sb.from('gds_recipe_base_items').upsert(payload,{onConflict:'recipe_id
 }
 for(const entry of state.deletions.filter(x=>x.recipe_id===b.id)){res=await sb.from('gds_recipe_base_items').delete().eq('id',entry.id);if(res.error)throw res.error;}
 state.deletions=state.deletions.filter(x=>x.recipe_id!==b.id);
-const bookSave=await sb.from('gds_recipe_book').upsert(snapshot,{onConflict:'base_id,recipe_key'}).select('id').single();
+}
+const bookSave=isNewRecipe()?await sb.from('gds_recipe_book').insert(snapshot).select('id').single():await sb.from('gds_recipe_book').upsert(snapshot,{onConflict:'base_id,recipe_key'}).select('id').single();
 if(bookSave.error)throw new Error('A base foi salva, mas não foi possível registrar a ficha no Livro: '+bookSave.error.message);
-state.selectedBookId=null;state.active='book';location.hash='book';
+state.selectedBookId=null;state.newRecipeDraft=null;state.active='book';location.hash='book';
 $('bookSearch').value='';$('bookFilter').value='';
 await load();
 note(snapshot.cost_total===null?'✅ Receita "'+snapshot.recipe_name+'" salva no Livro como ficha incompleta. Complete custos e rendimento antes de produzir.':'✅ Receita "'+snapshot.recipe_name+'" salva no Livro de Receitas. Você já pode selecioná-la para registrar a produção.');
@@ -835,6 +860,7 @@ $('compFormat').addEventListener('change',updateComplementForm);
 $('compSave').onclick=saveComplement;$('compClear').onclick=clearComplement;
 $('compSearch').addEventListener('input',renderComplementCatalog);
 $('compCatalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit-complement]');if(btn)editComplement(btn.dataset.editComplement)});
+$('bookNewRecipe').onclick=startNewRecipe;
 $('bookSearch').addEventListener('input',renderBook);$('bookFilter').addEventListener('change',renderBook);
 $('productionFilter').addEventListener('change',renderProductionHistory);
 $('bookCards').addEventListener('click',e=>{
@@ -867,16 +893,18 @@ $('bookEditSave').onclick=saveBookEdit;
 $('registerProduction').addEventListener('click',registerProduction);
 $('productionCancel').onclick=()=>{state.selectedBookId=null;$('productionPanel').hidden=true;};
 $('productionDate').max=todayLocal();
-document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){state.active=b.dataset.tab;location.hash=state.active;render();}});
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;
+if(b.dataset.tab==='new_recipe'){startNewRecipe();return;}state.active=b.dataset.tab;location.hash=state.active;render();
+});
 $('goMaterials').onclick=()=>{state.active='materials';location.hash='materials';render();window.scrollTo({top:0,behavior:'smooth'})};
 $('addLine').onclick=()=>{
 const b=currentBase(),id='extra_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
-state.items.push({id:null,recipe_id:b.id,item_key:id,ingredient_name:'Novo ingrediente',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,item_type:'base',is_active:true,sort_order:currentItems().length+1});
+(isNewRecipe()?state.newRecipeDraft.items:state.items).push({id:null,recipe_id:b.id,item_key:id,ingredient_name:'Novo ingrediente',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,item_type:'base',is_active:true,sort_order:currentItems().length+1});
 renderRows();calc();pending();
 };
 $('addComplement').onclick=()=>{
 const b=currentBase(),key='comp_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
-state.items.push({id:null,recipe_id:b.id,item_key:key,ingredient_name:'Novo complemento',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,item_type:'complemento',is_active:true,sort_order:currentItems().length+1});
+(isNewRecipe()?state.newRecipeDraft.items:state.items).push({id:null,recipe_id:b.id,item_key:key,ingredient_name:'Novo complemento',quantity_used:null,measure_unit:'g',purchase_quantity:null,purchase_cost:null,material_id:null,item_type:'complemento',is_active:true,sort_order:currentItems().length+1});
 renderRows();calc();pending();
 };
 ['lines','complementLines'].forEach(area=>{
@@ -900,12 +928,22 @@ if(reset){const item=currentItems().find(z=>z.item_key===reset.dataset.resetValu
 }
 const btn=e.target.closest('[data-del]');if(!btn)return;
 const x=currentItems().find(z=>z.item_key===btn.dataset.del);if(!x)return;
-if(x.id)state.deletions.push({id:x.id,recipe_id:x.recipe_id});
-state.items=state.items.filter(z=>z!==x);renderRows();calc();pending();
+if(!isNewRecipe()&&x.id)state.deletions.push({id:x.id,recipe_id:x.recipe_id});
+if(isNewRecipe())state.newRecipeDraft.items=state.newRecipeDraft.items.filter(z=>z!==x);
+else state.items=state.items.filter(z=>z!==x);
+renderRows();calc();pending();
 });
 });
 const map=[['salePrice','sale_price'],['yieldUnits','yield_units'],['packaging','packaging_unit_cost'],['overhead','overhead_cost'],['commission','commission_percent']];
-map.forEach(([id,k])=>$(id).addEventListener('input',()=>{currentBase()[k]=val(id);calc();pending()}));
+map.forEach(([id,k])=>$(id).addEventListener('input',()=>{(isNewRecipe()?state.newRecipeDraft:currentBase())[k]=val(id);calc();pending()}));
+$('bookName').addEventListener('input',()=>{if(isNewRecipe())state.newRecipeDraft.name=field('bookName');pending();});
+$('bookCategory').addEventListener('change',()=>{if(isNewRecipe())state.newRecipeDraft.category=field('bookCategory');pending();});
+$('newRecipeBase').addEventListener('change',e=>{if(!isNewRecipe())return;
+ const old=state.newRecipeDraft,code=e.target.value;
+ if(old.name.trim()&&!confirm('Trocar a base reiniciará os ingredientes desta nova receita. Continuar?')){e.target.value=old.base_code;return;}
+ state.newRecipeDraft=makeNewRecipe(code);state.newRecipeDraft.name=old.name;state.newRecipeDraft.category=old.category;
+ renderBase();pending();
+});
 $('lots').addEventListener('input',()=>{calc();renderPowderRecipeInfo()});
 $('saveRecipe').onclick=saveRecipe;
 ['matQty','matPrice','matUnit'].forEach(id=>$(id).addEventListener('input',updatePricePreview));
