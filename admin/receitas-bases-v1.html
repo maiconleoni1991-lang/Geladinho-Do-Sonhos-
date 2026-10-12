@@ -60,7 +60,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .actions button{flex:1;min-width:160px}
 .badge{background:#fff0f6;color:#842246;border-radius:30px;padding:4px 10px;font-size:12px;font-weight:750}
 .note{background:#f5f9fd;border:1px solid #dfeaf5;padding:12px;border-radius:12px;color:#38536c;font-size:13px}
-#recipePanel[hidden],#materialsPanel[hidden],#powdersPanel[hidden],#powderPickerPanel[hidden],#complementsPanel[hidden],#compWeightField[hidden],#bookPanel[hidden]{display:none}
+#recipePanel[hidden],#materialsPanel[hidden],#powdersPanel[hidden],#powderPickerPanel[hidden],#complementsPanel[hidden],#compWeightField[hidden],#bookPanel[hidden],#productionPanel[hidden]{display:none}
 .book-card{border:1px solid var(--line);background:#fffafc;border-radius:17px;padding:16px}
 .book-card h3{margin:0;color:var(--dark);font-size:18px}
 .book-card .book-meta{font-size:12px;color:var(--muted);margin:6px 0}
@@ -194,6 +194,24 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div>
 <div id="bookCards" class="book-cards"></div>
 </div>
+<div id="productionPanel" class="panel" hidden>
+<div class="flex"><div><h2>🏭 Registrar produção concluída</h2><p id="productionRecipeName" class="small"></p></div><button id="productionCancel" class="secondary" type="button">Voltar ao livro</button></div>
+<div class="note">Depois de preparar e embalar os geladinhos, informe o <strong>rendimento real</strong>. O custo de ingredientes vem da receita salva; a embalagem é multiplicada pelo número efetivo de unidades. Nada será registrado como venda e nenhum estoque será baixado nesta etapa.</div>
+<div class="cols" style="margin-top:12px">
+<label class="field">Data da produção<input id="productionDate" type="date"></label>
+<label class="field">Quantas vezes preparou a receita? <small>Ex.: 2 receitas com o dobro dos ingredientes.</small><input id="productionBatches" type="number" min="1" step="1" inputmode="numeric" value="1"></label>
+<label class="field">Quantidade REAL de geladinhos embalados <small>Contagem após finalizar a produção.</small><input id="productionUnits" type="number" min="1" step="1" inputmode="numeric" placeholder="Ex.: 19"></label>
+<label class="field">Outros custos deste lote (R$) <small>Custos extras não incluídos na ficha, caso existam.</small><input id="productionExtra" type="number" min="0" step="0.01" inputmode="decimal" value="0"></label>
+<label class="field">Observações da produção<input id="productionNotes" maxlength="500" placeholder="Ex.: Rendeu 19 geladinhos de 130 ml"></label>
+</div>
+<div id="productionCalc" class="metrics" style="margin-top:13px"></div>
+<div id="productionStatus" class="msg">Preencha o rendimento real para calcular.</div>
+<div class="actions"><button id="registerProduction" type="button">💾 Registrar produção finalizada</button></div>
+</div>
+<div class="panel">
+<div class="flex"><div><h2>📋 Histórico de produções</h2><p class="small">Cada lote registrado permanece identificado por receita e data.</p></div><span id="productionCount" class="badge">0 produções</span></div>
+<div id="productionHistory" class="book-cards"></div>
+</div>
 </section>
 </main>
 <script>
@@ -203,7 +221,7 @@ const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'
 const num=v=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
-const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders','complements','book'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],materialEditing:null,complementEditing:null};
+const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders','complements','book'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,materialEditing:null,complementEditing:null};
 const currentBase=()=>state.bases.find(x=>x.code===state.active),currentItems=()=>state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
 const material=id=>state.materials.find(m=>m.id===id);
 const powderStock=id=>state.powders.find(p=>p.material_id===id);
@@ -215,9 +233,9 @@ const unitLabel=u=>({g:'g',ml:'ml',un:'un',cx:'caixa',pct:'pacote'})[u]||u;
 const note=(s,bad=false)=>{const x=$('status');x.textContent=s;x.className='msg '+(bad?'err':'ok')};
 const pending=()=>note('✏️ Alterações na receita ainda não salvas. Clique em Salvar receita e valores.');
 async function load(){
-const [b,i,m,p,k]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*'),sb.from('gds_recipe_book').select('*').order('updated_at',{ascending:false})]);
-if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;if(p.error)throw p.error;if(k.error)throw k.error;
-state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];
+const [b,i,m,p,k,l]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*'),sb.from('gds_recipe_book').select('*').order('updated_at',{ascending:false}),sb.from('gds_recipe_production_logs').select('*').order('production_date',{ascending:false}).order('created_at',{ascending:false}).limit(1000)]);
+if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;if(p.error)throw p.error;if(k.error)throw k.error;if(l.error)throw l.error;
+state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];state.production=l.data||[];
 if(!codes.every(code=>state.bases.some(b=>b.code===code)))throw Error('As três bases não foram encontradas.');render();
 }
 function render(){
