@@ -569,7 +569,8 @@ function renderProductionHistory(){
   return '<article class="book-card"><div class="flex"><h3>'+esc(name)+'</h3><span class="badge">'+esc(date)+'</span></div>'+
    '<div class="book-pills"><span>'+p.batch_count+' receita(s)</span><span>'+p.finished_units+' geladinhos</span></div>'+
    '<div class="book-pills"><span>Custo total: '+money(p.production_cost_total)+'</span><span>Custo/un.: '+money(p.production_cost_unit)+'</span></div>'+
-   '<div class="small">Faturamento <strong>potencial</strong>: '+money(p.potential_revenue)+' • Lucro <strong>potencial</strong>: '+money(p.potential_profit)+'</div>'+
+   '<div class="small">Preço de venda/un.: '+money(p.sale_price)+' • Lucro <strong>potencial</strong>/un.: '+money(p.profit_potential_unit)+'</div>'+
+   '<div class="small">Faturamento <strong>potencial</strong> do lote: '+money(p.potential_revenue)+' • Lucro <strong>potencial</strong> do lote: '+money(p.potential_profit)+'</div>'+
    (p.production_notes?'<div class="book-meta">Obs.: '+esc(p.production_notes)+'</div>':'')+'</article>';
  }).join('')||'<p class="small">Nenhuma produção registrada ainda. As produções aparecerão aqui por sabor e data.</p>';
 }
@@ -603,10 +604,12 @@ function renderProductionCalc(){
  ['Embalagens + outros',money(f.packagingCost+f.otherCost)],
  ['Custo TOTAL do lote',money(f.cost)],
  ['Custo por geladinho',money(f.costUnit)],
+ ['Preço de venda por unidade',money(f.salePrice)],
  ['Venda potencial do lote',money(f.revenue)],
+ ['Lucro potencial por unidade',money(f.profitUnit)],
  ['Lucro potencial do lote',money(f.profit)]
  ];
- target.innerHTML=fields.map(([label,value],i)=>'<div class="metric '+(i===7?'good':'')+'"><small>'+esc(label)+'</small><b>'+esc(value)+'</b></div>').join('');
+ target.innerHTML=fields.map(([label,value],i)=>'<div class="metric '+(label==='Lucro potencial do lote'||label==='Lucro potencial por unidade'?'good':'')+'"><small>'+esc(label)+'</small><b>'+esc(value)+'</b></div>').join('');
  msg.textContent='Esta ficha usa os custos salvos no Livro e o rendimento real informado. Comissão potencial: '+money(f.commissionValue)+'. O valor de venda é uma projeção; faturamento real depende das vendas registradas.';
  msg.className='msg ok';
 }
