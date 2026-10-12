@@ -516,6 +516,7 @@ if(e.target.matches('[data-active]')){
  calc();pending();return;
 }
 if(e.target.dataset.field==='material_id'||e.target.dataset.field==='measure_unit')onRowInput(e);
+else if(['purchase_quantity','purchase_cost','ingredient_name'].includes(e.target.dataset.field)){renderRows();}
 });
 $(area).addEventListener('click',e=>{
 const reset=e.target.closest('[data-reset-values]');
