@@ -60,7 +60,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .actions button{flex:1;min-width:160px}
 .badge{background:#fff0f6;color:#842246;border-radius:30px;padding:4px 10px;font-size:12px;font-weight:750}
 .note{background:#f5f9fd;border:1px solid #dfeaf5;padding:12px;border-radius:12px;color:#38536c;font-size:13px}
-#recipePanel[hidden],#materialsPanel[hidden],#powdersPanel[hidden],#powderPickerPanel[hidden],#complementsPanel[hidden],#compWeightField[hidden],#bookPanel[hidden],#productionPanel[hidden]{display:none}
+#recipePanel[hidden],#materialsPanel[hidden],#powdersPanel[hidden],#powderPickerPanel[hidden],#complementsPanel[hidden],#compWeightField[hidden],#bookPanel[hidden],#productionPanel[hidden],#bookEditPanel[hidden]{display:none}
 .book-card{border:1px solid var(--line);background:#fffafc;border-radius:17px;padding:16px}
 .book-card h3{margin:0;color:var(--dark);font-size:18px}
 .book-card .book-meta{font-size:12px;color:var(--muted);margin:6px 0}
@@ -194,6 +194,23 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div>
 <div id="bookCards" class="book-cards"></div>
 </div>
+<div id="bookEditPanel" class="panel" hidden>
+<div class="flex"><div><h2>✏️ Ajustar ficha de receita</h2><p id="bookEditName" class="small">Atualize quantidades e custos desta receita, sem alterar outras bases.</p></div><button type="button" id="bookEditCancel" class="secondary">Cancelar</button></div>
+<div class="note">Os dados desta ficha são independentes dos preços gerais dos materiais. Ao salvar, os próximos lotes usarão os novos custos; produções antigas não serão modificadas.</div>
+<div class="cols" style="margin-top:12px">
+<label class="field">Rendimento previsto (130 ml) em unidades<input id="bookEditYield" type="number" min="1" step="1"></label>
+<label class="field">Preço de venda por geladinho (R$)<input id="bookEditSale" type="number" min="0" step="0.01"></label>
+<label class="field">Embalagem por geladinho (R$)<input id="bookEditPackaging" type="number" min="0" step="any" placeholder="Informe custo de saquinho/etiqueta"></label>
+<label class="field">Energia e demais custos por receita (R$)<input id="bookEditOverhead" type="number" min="0" step="any" placeholder="0 se não houver"></label>
+<label class="field">Comissão (%)<input id="bookEditCommission" type="number" min="0" max="100" step="any" placeholder="0 para venda sem comissão"></label>
+</div>
+<h3 style="margin-top:17px">Ingredientes e custos individuais</h3>
+<div id="bookEditItems" class="lines"></div>
+<h3 style="margin-top:17px">Recheios opcionais</h3>
+<div id="bookEditComplements" class="lines"></div>
+<div id="bookEditCalc" class="note" style="margin-top:12px"></div>
+<div class="actions"><button type="button" id="bookEditSave">💾 Salvar ajustes desta receita</button></div>
+</div>
 <div id="productionPanel" class="panel" hidden>
 <div class="flex"><div><h2>🏭 Registrar produção concluída</h2><p id="productionRecipeName" class="small"></p></div><button id="productionCancel" class="secondary" type="button">Voltar ao livro</button></div>
 <div class="note">Depois de preparar e embalar os geladinhos, informe o <strong>rendimento real</strong>. O custo de ingredientes vem da receita salva; a embalagem é multiplicada pelo número efetivo de unidades. Nada será registrado como venda e nenhum estoque será baixado nesta etapa.</div>
@@ -222,7 +239,7 @@ const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'
 const num=v=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
-const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders','complements','book'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,materialEditing:null,complementEditing:null};
+const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'materials','powders','complements','book'].includes(initialTab)?initialTab:'gourmet_nova',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null};
 const currentBase=()=>state.bases.find(x=>x.code===state.active),currentItems=()=>state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
 const material=id=>state.materials.find(m=>m.id===id);
 const powderStock=id=>state.powders.find(p=>p.material_id===id);
@@ -567,7 +584,7 @@ function renderBook(){
    (b.preparation?'<h3 style="margin:13px 0 5px;font-size:14px">Modo de preparo</h3><p class="small">'+esc(b.preparation)+'</p>':'')+
    (b.notes?'<p class="small"><strong>Observações:</strong> '+esc(b.notes)+'</p>':'')+
    '<div class="book-meta">Esta ficha registra as informações salvas; não movimenta o estoque.</div></details>'+
-   '<button type="button" style="margin-top:12px;width:100%" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção desta receita</button></article>';
+   '<div class="actions"><button type="button" class="secondary" data-edit-book="'+esc(b.id)+'">✏️ Ajustar preços e ingredientes</button><button type="button" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção</button></div></article>';
  }).join('')||'<p class="small">Nenhuma receita encontrada. Preencha uma base, informe o nome do sabor e clique em Salvar receita no Livro.</p>';
  renderProductionHistory();
  if(state.selectedBookId){const selected=state.book.find(x=>x.id===state.selectedBookId);if(selected){$('productionPanel').hidden=false;$('productionRecipeName').textContent=selected.recipe_name+' — '+(state.bases.find(x=>x.id===selected.base_id)?.name||'Base');renderProductionCalc();}else{$('productionPanel').hidden=true;}}
