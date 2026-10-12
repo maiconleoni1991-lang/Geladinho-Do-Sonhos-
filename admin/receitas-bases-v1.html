@@ -626,7 +626,13 @@ function toggleBookComplement(index,selected){
 }
 async function saveBookEdit(){
  const b=state.bookEditing;if(!b)return;
- const x=bookEditFigure(),btn=$('bookEditSave');btn.disabled=true;
+ const x=bookEditFigure(),btn=$('bookEditSave');
+ const y=val('bookEditYield');
+ if(y!==null&&(!Number.isInteger(y)||y<=0))return alert('Rendimento previsto deve ser um número inteiro maior que zero.');
+ for(const id of ['bookEditSale','bookEditPackaging','bookEditOverhead','bookEditCommission']){
+   const v=val(id);if(v!==null&&(v<0||(id==='bookEditCommission'&&v>100)))return alert('Corrija o valor do campo '+id+'.');
+ }
+ btn.disabled=true;
  const change={ingredients:b.ingredients,complement_options:b.complement_options||[],
  yield_units:x.y??null,sale_price:x.sale??null,packaging_unit_cost:x.pack??null,overhead_cost:x.other??null,commission_percent:x.commission??null,
  cost_base:x.valid?x.base:null,cost_complements:x.valid?x.comps:null,cost_total:x.valid?x.total:null,cost_unit:x.valid?x.costUnit:null,
@@ -831,7 +837,32 @@ $('compSearch').addEventListener('input',renderComplementCatalog);
 $('compCatalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit-complement]');if(btn)editComplement(btn.dataset.editComplement)});
 $('bookSearch').addEventListener('input',renderBook);$('bookFilter').addEventListener('change',renderBook);
 $('productionFilter').addEventListener('change',renderProductionHistory);
-$('bookCards').addEventListener('click',e=>{const btn=e.target.closest('[data-produce-book]');if(btn)selectBookForProduction(btn.dataset.produceBook)});
+$('bookCards').addEventListener('click',e=>{
+ const edit=e.target.closest('[data-edit-book]');if(edit){beginBookEdit(edit.dataset.editBook);return;}
+ const btn=e.target.closest('[data-produce-book]');if(btn)selectBookForProduction(btn.dataset.produceBook);
+});
+$('bookEditCancel').onclick=()=>{state.bookEditing=null;$('bookEditPanel').hidden=true;};
+['bookEditYield','bookEditSale','bookEditPackaging','bookEditOverhead','bookEditCommission'].forEach(id=>$(id).addEventListener('input',updateBookEditCalculation));
+$('bookEditItems').addEventListener('input',updateBookEditItem);
+$('bookEditItems').addEventListener('change',e=>{
+const row=e.target.closest('[data-edit-item]');
+if(!row||!e.target.matches('[data-edit-active]')||!state.bookEditing)return;
+state.bookEditing.ingredients[Number(row.dataset.editItem)].active=e.target.checked;
+renderBookEditItems();updateBookEditCalculation();
+});
+$('bookEditItems').addEventListener('click',e=>{
+ const btn=e.target.closest('[data-edit-load-catalog]');
+ if(!btn||!state.bookEditing)return;
+ const item=state.bookEditing.ingredients[Number(btn.dataset.editLoadCatalog)],m=material(item?.material_id);
+ if(!m)return;
+ item.pack_quantity=num(m.pack_quantity);item.pack_cost=num(m.pack_cost);
+ renderBookEditItems();updateBookEditCalculation();
+});
+$('bookEditComplements').addEventListener('change',e=>{
+const option=e.target.closest('[data-edit-complement]');
+if(option)toggleBookComplement(Number(option.dataset.editComplement),option.checked);
+});
+$('bookEditSave').onclick=saveBookEdit;
 ['productionBatches','productionUnits','productionExtra'].forEach(id=>$(id).addEventListener('input',renderProductionCalc));
 $('registerProduction').addEventListener('click',registerProduction);
 $('productionCancel').onclick=()=>{state.selectedBookId=null;$('productionPanel').hidden=true;};
