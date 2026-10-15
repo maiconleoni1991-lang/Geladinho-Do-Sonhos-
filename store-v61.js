@@ -82,7 +82,7 @@ async function verifyCartStock(){
   for(const [slug,qRaw] of requested){
     const q=Number(qRaw)||0,fp=fresh.find(x=>x.slug===slug);
     if(!fp||fp.stock<=0)problems.push((fp?.name||slug)+' está esgotado');
-    else if(fp.stock<q)problems.push((fp?.name||slug)+': restam apenas '+fp.stock+' unidade(s)');
+    else if(fp.stock<q)problems.push((fp?.name||slug)+': quantidade solicitada indisponível');
   }
   products=fresh;
   cleanCart();renderProducts();
@@ -104,7 +104,7 @@ function renderProducts(){
         <div class="cat">${esc(p.category)}</div>
         <h3>${esc(p.name)}</h3>
         <div class="desc">${esc(p.description||'Geladinho preparado com muito sabor e cremosidade.')}</div>
-        <div class="meta"><div class="price">${money(p.price)}</div><div class="stock ${p.stock<=5&&p.stock>0?'low':''}">${p.stock>0?`${p.stock} em estoque`:'Sem estoque'}</div></div>
+        <div class="meta"><div class="price">${money(p.price)}</div><div class="stock">${p.stock>0?'Disponível':'Esgotado'}</div></div>
         <div class="pickLabel">${blocked?(!storeOpen?'Loja fechada':'Indisponível'):'Escolha a quantidade'}</div>
         <div class="pickQty ${selected>0?'selected':''}">
           <button type="button" data-card-dec="${esc(p.slug)}" aria-label="Diminuir ${esc(p.name)}" ${blocked||selected<=0?'disabled':''}>−</button>
@@ -123,7 +123,7 @@ function cardAdjust(slug,d){
   const current=Number(cart[slug]||0),next=current+d;
   if(next<=0)delete cart[slug];
   else if(next<=p.stock)cart[slug]=next;
-  else return alert(`Estoque disponível: ${p.stock}`);
+  else return alert('Quantidade solicitada indisponível para este sabor.');
   saveCart();
   renderProducts();
   if($('cartOverlay')?.classList.contains('show'))renderCart();
@@ -137,7 +137,7 @@ function changeQty(slug,d){
   const n=(cart[slug]||0)+d;
   if(n<=0)delete cart[slug];
   else if(n<=p.stock)cart[slug]=n;
-  else return alert(`Estoque disponível: ${p.stock}`);
+  else return alert('Quantidade solicitada indisponível para este sabor.');
   saveCart();renderProducts();renderCart();
 }
 function renderCart(){const rows=Object.entries(cart).filter(([,q])=>q>0);$('cartRows').innerHTML=rows.length?rows.map(([slug,q])=>{const p=products.find(x=>x.slug===slug);if(!p)return'';return `<div class="cartRow"><div><b>${esc(p.name)}</b><small>${esc(p.category)} · ${q} unidade(s)</small><div class="qty"><button data-dec="${esc(slug)}">−</button><span>${q}</span><button data-inc="${esc(slug)}">+</button></div></div><div class="rowPrice">${money(p.price*q)}</div></div>`}).join(''):'<div class="emptyBox">Seu carrinho está vazio.</div>';$('cartRows').querySelectorAll('[data-dec]').forEach(b=>b.onclick=()=>changeQty(b.dataset.dec,-1));$('cartRows').querySelectorAll('[data-inc]').forEach(b=>b.onclick=()=>changeQty(b.dataset.inc,1));updateTotals();renderStatus()}
@@ -214,7 +214,7 @@ async function enableStoreOpenPush(){
   }
 }
 
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=130');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=131');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 bind();updateCartCount();restoreLastOrder();setupInstall();replaceOldServiceWorker();startPresence();loadStore();setInterval(()=>{if(document.visibilityState==='visible')refreshStockOnly().catch(()=>{})},10000);window.addEventListener('focus',()=>refreshStockOnly().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshStockOnly().catch(()=>{})});
 })();
