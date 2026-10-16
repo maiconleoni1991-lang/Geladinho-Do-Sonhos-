@@ -1,20 +1,247 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#ff0f68"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="GDS Admin"><link rel="manifest" href="./manifest.webmanifest?v=130"><link rel="icon" href="./icon-admin.svg?v=130" type="image/svg+xml"><link rel="apple-touch-icon" href="../assets/icon-192.png?v=106"><title>GDS Admin</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script><style>*{box-sizing:border-box}body{margin:0;background:#fff8fb;font-family:Inter,system-ui;color:#29171d}.wrap{max-width:1180px;margin:auto;padding:18px 14px 70px}.hero{background:linear-gradient(135deg,#4a101e,#7f1f49);color:#fff;border-radius:24px;padding:22px;box-shadow:0 18px 45px #4a101e24}.hero h1{margin:0 0 5px}.hero p{margin:0;color:#ffe7f0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.stat.money{background:linear-gradient(180deg,#fff,#fff7fa)}.stat.money b{color:#ff0f68}.stat,.card{background:#fff;border:1px solid #efdde4;border-radius:18px;padding:16px;box-shadow:0 12px 30px #4a101e0d}.stat small{color:#78616a}.stat b{display:block;font-size:28px;color:#4a101e;margin-top:5px}.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.quick a{text-decoration:none;color:#4a101e;font-weight:900;min-height:95px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;font-size:14px}.quick span{font-size:27px;margin-bottom:6px}.msg{margin-top:14px;padding:12px;border-radius:12px;background:#fff;border:1px solid #efdde4;color:#78616a}@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}.quick{grid-template-columns:1fr 1fr}}@media(max-width:430px){.stats{grid-template-columns:1fr}.quick{grid-template-columns:1fr 1fr}}</style></head><body><script src="admin-common-v48.js?v=131"></script><main class="wrap"><section class="hero"><img src="../assets/logo-oficial-hq-v65.webp?v=106" alt="Geladinho dos Sonhos" onerror="this.onerror=null;this.src='../assets/icon-512.png?v=106'" style="width:220px;max-width:70vw;height:auto;display:block;margin:0 0 14px"><h1>Painel administrativo</h1><p>Estoque, pedidos, eventos e relatórios em uma sessão MFA única.</p></section><section class="stats"><div class="stat"><small>Produtos</small><b id="products">—</b></div><div class="stat"><small>Itens em estoque</small><b id="stock">—</b></div><div class="stat"><small>Pedidos abertos</small><b id="orders">—</b></div><div class="stat"><small>Eventos ativos</small><b id="events">—</b></div><div class="stat money"><small>💰 Valor do estoque atual</small><b id="stockValue">—</b></div><div class="stat money"><small>🧾 Vendas concluídas hoje</small><b id="completedToday">—</b></div><div class="stat money"><small>💵 Recebido hoje</small><b id="soldToday">—</b></div><div class="stat money"><small>📈 Total recebido</small><b id="soldValue">—</b></div><div class="stat money"><small>💳 A receber de pedidos concluídos</small><b id="completedReceivable">—</b></div></section><div class="msg" style="margin-top:-4px;margin-bottom:14px;font-size:11px">Valor do estoque = quantidade atual × preço de venda. Vendas concluídas hoje soma o valor integral dos pedidos entregues ou finalizados registrados hoje, mesmo que ainda estejam pendentes. Recebido hoje e Total recebido consideram somente os pagamentos registrados. A receber mostra o saldo não pago de pedidos concluídos; a confirmação de um Pix deve ser feita em Pagamentos.</div><section class="quick"><a class="card" href="products-v48.html?v=130"><span>⚙️</span>Produtos / Estoque</a><a class="card" href="orders-v48.html?v=134"><span>🔔</span>Pedidos / Abrir Loja</a><a class="card" href="payments-v117.html?v=132"><span>💳</span>Confirmar Pagamentos</a><a class="card" href="events-v57.html?v=130"><span>🎉</span>Festas / Eventos</a><a class="card" href="reports-v48.html?v=132"><span>📊</span>Relatórios</a><a class="card" href="production-premium-v1.html?v=130"><span>🧪</span>Produção / Bases Premium</a><a class="card" href="receitas-bases-v1.html?v=130"><span>📋</span>Receitas / Custos / Materiais</a><a class="card" href="receitas-bases-v1.html?v=130#book"><span>📖</span>Livro de Receitas / Produções</a><a class="card" href="receitas-bases-v1.html?v=130#powders"><span>🎨</span>Estoque / Pós Saborizantes</a><a class="card" href="receitas-bases-v1.html?v=130#complements"><span>🍫</span>Recheios / Complementos</a><a class="card" href="reviews-v63.html?v=130"><span>⭐</span>Depoimentos / Avaliações</a><a class="card" href="../?v=106"><span>👁️</span>Visualizar Loja</a><button id="installAdmin" class="card" style="border:1px solid #efdde4;font:900 14px Inter;background:#fff;color:#4a101e;cursor:pointer"><span style="font-size:27px">⬇️</span>Instalar Admin</button><button id="logout" class="card" style="border:1px solid #efdde4;font:900 14px Inter;background:#fff"><span style="font-size:27px">🚪</span>Sair</button></section><div id="msg" class="msg">Carregando dados do painel…</div></main><script>(async()=>{const $=x=>document.getElementById(x);try{await GDS48.ensure('home');const sb=GDS48.sb;const [p,o,e]=await Promise.all([sb.from('products').select('id,stock,active,price'),sb.from('orders').select('id,status,total,paid_amount,payment_status,created_at,deleted_at,sales_channel'),sb.from('events').select('id,status,subtotal,delivery_fee,payment_status,payment_confirmed_at,created_at,event_date')]);if(p.error)throw p.error;if(o.error)throw o.error;if(e.error)throw e.error;const products=p.data||[],orders=o.data||[],events=e.data||[],activeOrders=orders.filter(x=>!x.deleted_at);$('products').textContent=products.length;$('stock').textContent=products.reduce((n,x)=>n+(Number(x.stock)||0),0);$('orders').textContent=activeOrders.filter(x=>!['Finalizado','Cancelado','Entregue'].includes(x.status)).length;$('events').textContent=events.filter(x=>!['Concluído','Finalizado','Cancelado'].includes(x.status)).length;const stockValue=products.reduce((n,x)=>n+(Number(x.stock)||0)*(Number(x.price)||0),0);const soldOrderStatuses=['Aceito','Em preparação','Saiu para entrega','Entregue','Finalizado'];const soldOrdersList=activeOrders.filter(x=>soldOrderStatuses.includes(x.status)&&x.status!=='Cancelado');const soldOrders=soldOrdersList.reduce((n,x)=>n+(Number(x.paid_amount)||0),0);const soldEventsList=events.filter(x=>x.status!=='Cancelado'&&x.payment_status==='Pago');const soldEvents=soldEventsList.reduce((n,x)=>n+(Number(x.subtotal)||0)+(Number(x.delivery_fee)||0),0);const spDay=v=>{const d=new Date(v);const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d),o={};parts.forEach(p=>o[p.type]=p.value);return o.year+'-'+o.month+'-'+o.day};const today=spDay(new Date());const soldTodayOrders=soldOrdersList.filter(x=>x.created_at&&spDay(x.created_at)===today).reduce((n,x)=>n+(Number(x.paid_amount)||0),0);const soldTodayEvents=soldEventsList.filter(x=>{const d=x.payment_confirmed_at||x.created_at||x.event_date;return d&&spDay(d)===today}).reduce((n,x)=>n+(Number(x.subtotal)||0)+(Number(x.delivery_fee)||0),0);const completedOrders=activeOrders.filter(x=>['Entregue','Finalizado'].includes(x.status));const completedToday=completedOrders.filter(x=>x.created_at&&spDay(x.created_at)===today).reduce((n,x)=>n+(Number(x.total)||0),0);const completedReceivable=completedOrders.reduce((n,x)=>n+Math.max(0,(Number(x.total)||0)-(Number(x.paid_amount)||0)),0);$('stockValue').textContent=GDS48.money(stockValue);$('completedToday').textContent=GDS48.money(completedToday);$('completedReceivable').textContent=GDS48.money(completedReceivable);$('soldToday').textContent=GDS48.money(soldTodayOrders+soldTodayEvents);$('soldValue').textContent=GDS48.money(soldOrders+soldEvents);$('msg').textContent='🟢 Supabase conectado · MFA confirmado · dados carregados';$('msg').style.color='#14753e'}catch(err){if(!['NO_SESSION','MFA_REQUIRED'].includes(err.message)){$('msg').textContent='Erro ao carregar painel: '+err.message;$('msg').style.color='#b02a42'}}
-let installPrompt=null;
-const installBtn=$('installAdmin');
-const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
-if(standalone()) installBtn.hidden=true;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installBtn.hidden=false});
-window.addEventListener('appinstalled',()=>{installPrompt=null;installBtn.hidden=true});
-installBtn.onclick=async()=>{
-  if(standalone()) return alert('O GDS Admin já está instalado neste aparelho.');
-  if(installPrompt){
-    installPrompt.prompt();
-    await installPrompt.userChoice;
-    installPrompt=null;
-    return;
-  }
-  const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
-  if(isiOS) return alert('No iPhone/iPad: abra este painel no Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.');
-  alert('No computador ou Android: abra o menu do Chrome/Edge e escolha “Instalar aplicativo” ou “Adicionar à tela inicial”.');
-};
-$('logout').onclick=GDS48.logout})();</script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="theme-color" content="#ed1768">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GDS Admin">
+<link rel="manifest" href="./manifest.webmanifest?v=135">
+<link rel="icon" href="./icon-admin.svg?v=135" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icon-192.png?v=106">
+<title>Início • Geladinho dos Sonhos Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--ink:#17203c;--muted:#777b96;--pink:#ec1768;--pink-dark:#bb1152;--line:#f0e5ec;--bg:#faf9fe;--green:#07834c;--shadow:0 9px 28px #1f25420b}
+*{box-sizing:border-box}html{font-size:15px}body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+[hidden]{display:none!important}button,input{font:inherit}a{color:inherit;text-decoration:none}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #ff9fc5;outline-offset:2px}
+#dashboard{min-height:100dvh}
+#dashboard #gdsAdminNav48{display:none!important}
+body>#gdsAdminNav48,body>#gdsMobileBar48,body>#gdsMore48{display:none!important}
+.layout{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:100dvh}
+.sidebar{border-right:1px solid var(--line);background:linear-gradient(145deg,#fff8fc 0%,#fff 66%,#fff9fc 100%);padding:22px 15px;display:flex;flex-direction:column;gap:3px}
+.logo{display:flex;align-items:center;gap:11px;padding:5px 7px 18px;min-height:94px}
+.logo img{width:77px;height:77px;object-fit:contain;flex-shrink:0}
+.logo .brand-title{color:#aa1451;font-size:16px;font-weight:950;line-height:1.17}.logo .brand-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.side-label{margin:15px 13px 6px;font-size:10px;letter-spacing:.075em;text-transform:uppercase;color:#8a849d;font-weight:950}
+.side-link{display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:12px;font-weight:800;min-height:50px}
+.side-link:hover{background:#ffedf5}.side-link.on{background:var(--pink);color:#fff;box-shadow:0 7px 18px #ec17682c}
+.side-link .ico{font-size:21px;width:27px;text-align:center;line-height:1}
+.side-link small{display:block;font-size:11px;font-weight:500;color:#87849d;margin-top:2px}
+.side-link.on small{color:#ffeaf3}
+.sidebar-bottom{margin-top:auto;padding-top:24px;border-top:1px solid var(--line)}
+.sidebar-bottom .side-link{font-size:13px}
+.main{padding:22px 26px 85px;min-width:0;max-width:1650px;width:100%;margin:auto}
+.toolbar{display:flex;gap:14px;align-items:center;justify-content:space-between}
+.searchbox{position:relative;width:min(490px,100%)}
+.searchbox input{width:100%;height:46px;border:1px solid #e2dfe9;border-radius:13px;padding:0 16px 0 42px;color:var(--ink);background:#fff}
+.searchbox::before{content:"⌕";position:absolute;top:0;left:14px;font-size:26px;color:#485779;line-height:44px}
+.search-results{position:absolute;top:52px;left:0;width:100%;background:#fff;box-shadow:0 15px 30px #1f254222;border:1px solid var(--line);border-radius:13px;z-index:5;padding:8px}
+.search-results a{display:block;padding:10px 12px;border-radius:8px}.search-results a:hover{background:#fff0f6}
+.toolbar-right{display:flex;gap:10px;align-items:center}
+.store-btn,.date-badge,.soft-btn{background:#fff;border:1px solid #e5dbe5;border-radius:12px;min-height:43px;padding:10px 14px;font-weight:800}
+.store-btn{color:#bd1557}.store-btn:hover,.soft-btn:hover{background:#fff0f6}
+.avatar{width:42px;height:42px;border-radius:50%;background:#ef1768;color:#fff;display:grid;place-items:center;font-size:21px}
+.heading{display:flex;justify-content:space-between;gap:15px;align-items:center;margin:21px 0 18px}
+.heading h1{margin:0;font-size:34px;letter-spacing:-.035em;line-height:1.16}
+.heading p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.date-badge{color:#435074;font-size:12px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.metric{border:1px solid var(--line);border-radius:16px;padding:20px 16px;min-height:131px;display:flex;gap:12px;align-items:flex-start}
+.metric .metric-icon{flex-shrink:0;display:grid;place-items:center;width:50px;height:50px;border-radius:15px;background:#ffffff9a;font-size:25px}
+.metric small{display:block;font-weight:700;color:#25304a;font-size:13px}
+.metric strong{display:block;font-size:23px;line-height:1.12;margin:6px 0 4px;letter-spacing:-.03em}
+.metric span.detail{color:#777b93;font-size:11px}
+.metric.pink{background:linear-gradient(110deg,#ffe8f1,#fff3f7)}.metric.pink strong{color:#af0849}
+.metric.mint{background:linear-gradient(110deg,#def9ee,#f0fff8)}.metric.mint strong{color:#075b3b}
+.metric.cream{background:linear-gradient(110deg,#fff4dc,#fffaf0)}
+.metric.blue{background:linear-gradient(110deg,#e4efff,#f0f6ff)}.metric.blue strong{color:#164986}
+.section-grid{display:grid;grid-template-columns:1.24fr .85fr;gap:14px;margin-top:17px}
+.panel{background:#fff;border:1px solid #e9e6ef;border-radius:17px;box-shadow:var(--shadow);padding:18px;min-width:0}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.panel-head h2{margin:0;font-size:16px;font-weight:950}
+.panel-head a,.panel-head button{border:0;background:#fff0f6;border-radius:10px;padding:8px 11px;font-weight:800;color:#c41159;font-size:12px}
+.caption{font-size:12px;color:var(--muted)}
+.channels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.channel{background:#faf9fd;border:1px solid #eeebf3;border-radius:13px;padding:13px}
+.channel label{font-size:12px;color:var(--muted);font-weight:700;display:block}
+.channel strong{font-size:21px;display:block;margin:5px 0}
+.channel span{font-size:11px;color:var(--muted)}
+.channel.online strong{color:#c21158}.channel.local strong{color:#246cc4}
+.weekly{display:flex;align-items:flex-end;gap:10px;height:132px;padding:9px 5px 0;border-bottom:1px solid #ede8f2}
+.day{flex:1;text-align:center;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:4px}
+.bar{background:linear-gradient(180deg,#f65093,#e91a6b);border-radius:5px 5px 0 0;min-height:3px;width:70%;margin:0 auto}
+.day small{font-size:10px;color:var(--muted)}
+.top-products{display:grid;gap:10px}
+.product-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:9px}
+.rank{width:27px;height:27px;background:#fff2e0;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:950}
+.product-name{font-weight:800;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.product-qty{font-size:11px;color:#58617d;font-weight:700}
+.product-track{margin-top:5px;background:#f0eef4;height:5px;border-radius:10px;overflow:hidden}.product-fill{height:100%;background:#ee2477;border-radius:10px}
+.fast{margin-top:16px}.actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.action{display:flex;gap:11px;align-items:center;min-height:85px;border:1px solid transparent;border-radius:13px;padding:11px 10px;font-weight:900;font-size:12px}
+.action .icon{display:grid;place-items:center;border-radius:12px;background:#ffffffa8;width:47px;height:47px;flex-shrink:0;font-size:23px}
+.action small{display:block;font-size:10px;font-weight:500;color:#6f6780;margin-top:2px}
+.action:hover{filter:brightness(.98);transform:translateY(-1px)}
+.action.a1{background:#ffe6ef}.action.a2{background:#dffbed}.action.a3{background:#efe5ff}.action.a4{background:#e6f2ff}.action.a5{background:#fff3cc}
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:15px}
+.item-row{display:flex;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #f0ecf2;min-width:0}
+.item-row:last-child{border-bottom:0}
+.item-row .grow{min-width:0;flex:1}
+.item-row b{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item-row small{font-size:11px;color:#798097;display:block}
+.item-row .amount{font-weight:900;font-size:12px;white-space:nowrap}
+.pill{display:inline-block;border-radius:99px;padding:5px 8px;font-size:10px;font-weight:900;white-space:nowrap}
+.pill.green{color:#077a41;background:#dff8e9}.pill.yellow{color:#835b00;background:#fff1c9}.pill.red{color:#bf1450;background:#ffe8ef}.pill.blue{color:#205a9c;background:#e4efff}
+.mini-icon{border-radius:10px;background:#fff2f8;width:34px;height:34px;flex:none;display:grid;place-items:center;font-size:19px}
+.empty{text-align:center;color:#7b8097;background:#f9f8fc;border:1px dashed #e8e4ed;border-radius:12px;padding:23px 13px;font-size:12px}
+.notice{margin-top:14px;min-height:39px;border-radius:11px;padding:11px 13px;font-size:12px;color:#6b607a;border:1px solid #ece6f0;background:#fff}
+.notice.error{color:#a21b41;border-color:#f3bccc;background:#fff2f6}
+.mobile-menu{display:none}
+@media(max-width:1200px){.sidebar{padding:15px 9px}.layout{grid-template-columns:222px minmax(0,1fr)}.main{padding:18px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.actions{grid-template-columns:repeat(3,minmax(0,1fr))}.bottom-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:850px){.layout{display:block}.sidebar{display:none}.main{padding:12px 12px 93px}.section-grid,.bottom-grid{grid-template-columns:1fr}.toolbar{gap:8px}.searchbox{width:100%}.store-btn{white-space:nowrap}.heading{align-items:start}.heading h1{font-size:27px}.actions{grid-template-columns:repeat(2,minmax(0,1fr))}.mobile-menu{position:fixed;display:grid;z-index:30;grid-template-columns:repeat(4,minmax(0,1fr));bottom:8px;left:8px;right:8px;background:#fff;box-shadow:0 8px 35px #25152730;border:1px solid #f0e0e9;border-radius:19px;padding:6px;gap:5px}.mobile-menu a{display:grid;justify-items:center;align-content:center;min-height:56px;font-size:10px;font-weight:900;border-radius:12px}.mobile-menu .active{color:#fff;background:var(--pink)}.mobile-menu .ico{font-size:20px}}
+@media(max-width:480px){.toolbar-right .avatar{display:none}.date-badge{display:none}.metrics{gap:8px}.metric{min-height:118px;padding:12px 9px;gap:8px}.metric .metric-icon{width:35px;height:36px;font-size:19px}.metric small{font-size:11px}.metric strong{font-size:17px}.panel{padding:13px}.action{gap:7px;padding:9px}.action .icon{width:34px;height:36px}.action small{font-size:9px}}
+</style>
+</head>
+<body>
+<script src="./admin-common-v48.js?v=131"></script>
+<div id="loading" style="padding:30px;text-align:center">🔐 Verificando acesso administrativo…</div>
+<div id="dashboard" hidden>
+<div class="layout">
+<aside class="sidebar" aria-label="Menu administrativo">
+<a class="logo" href="./?v=135"><img src="../assets/logo-oficial-hq-v65.webp?v=106" alt="Logotipo oficial Geladinho do Sonhos" onerror="this.onerror=null;this.src='../assets/icon-512.png?v=106'"><div><div class="brand-title">Geladinho<br>do Sonhos</div><div class="brand-sub">Painel administrativo</div></div></a>
+<a class="side-link on" href="./?v=135"><span class="ico">🏠</span><span>Início<small>Visão geral</small></span></a>
+<div class="side-label">VENDAS</div>
+<a class="side-link" data-nav href="orders-v48.html?v=134"><span class="ico">🛒</span><span>Pedidos online<small>Recebimentos e preparo</small></span></a>
+<a class="side-link" data-nav href="local-sales-v90.html?v=134"><span class="ico">🏪</span><span>Venda local<small>Registrar no balcão</small></span></a>
+<a class="side-link" data-nav href="payments-v117.html?v=134"><span class="ico">💳</span><span>Pagamentos<small>Confirmar Pix e pendências</small></span></a>
+<div class="side-label">PRODUÇÃO E ESTOQUE</div>
+<a class="side-link" data-nav href="receitas-bases-v1.html?v=134#book"><span class="ico">👩‍🍳</span><span>Produção<small>Receitas e rendimentos</small></span></a>
+<a class="side-link" data-nav href="products-v48.html?v=134"><span class="ico">📦</span><span>Estoque<small>Produtos acabados</small></span></a>
+<a class="side-link" data-nav href="receitas-bases-v1.html?v=134"><span class="ico">🧾</span><span>Custos e receitas<small>Insumos e saborizantes</small></span></a>
+<div class="side-label">GESTÃO</div>
+<a class="side-link" data-nav href="reports-v48.html?v=134"><span class="ico">📊</span><span>Relatórios<small>Financeiro e gráficos</small></span></a>
+<a class="side-link" data-nav href="trusted-customers-v116.html?v=134"><span class="ico">👥</span><span>Clientes<small>Histórico e fiado</small></span></a>
+<a class="side-link" data-nav href="events-v57.html?v=134"><span class="ico">🎉</span><span>Eventos<small>Encomendas</small></span></a>
+<div class="sidebar-bottom">
+<a class="side-link" data-nav href="reviews-v63.html?v=134"><span class="ico">⭐</span><span>Avaliações</span></a>
+<a class="side-link" href="../?v=135" target="_blank" rel="noopener noreferrer"><span class="ico">👁️</span><span>Acessar loja</span></a>
+<button type="button" class="side-link" id="installAdmin" style="border:0;background:none;text-align:left;cursor:pointer;width:100%"><span class="ico">⬇️</span><span>Instalar aplicativo</span></button>
+<button type="button" class="side-link" id="logout" style="border:0;background:none;text-align:left;cursor:pointer;width:100%"><span class="ico">🚪</span><span>Sair</span></button>
+</div>
+</aside>
+<div class="main">
+<div class="toolbar">
+<div class="searchbox"><input id="menuSearch" type="search" placeholder="Buscar áreas do painel…" aria-label="Buscar seções do administrativo" autocomplete="off"><div id="searchResults" class="search-results" hidden></div></div>
+<div class="toolbar-right"><a class="store-btn" href="../?v=135" target="_blank" rel="noopener noreferrer">↗ Acessar loja</a><div class="avatar" aria-label="Administrador">👤</div></div>
+</div>
+<div class="heading"><div><h1>Olá! 👋</h1><p>Resumo da Geladinho do Sonhos · <span id="todayLabel">carregando data</span></p></div><div class="date-badge" id="dateBadge">📅 Hoje</div></div>
+<div class="metrics">
+<div class="metric pink"><div class="metric-icon">🛒</div><div><small>Vendas de hoje</small><strong id="salesToday">—</strong><span class="detail" id="salesCount">Pedidos concluídos</span></div></div>
+<div class="metric mint"><div class="metric-icon">💰</div><div><small>Recebido hoje</small><strong id="receivedToday">—</strong><span class="detail">Pagamentos registrados hoje</span></div></div>
+<div class="metric cream"><div class="metric-icon">📦</div><div><small>Produção de hoje</small><strong id="madeToday">—</strong><span class="detail" id="productionCount">Receitas produzidas</span></div></div>
+<div class="metric blue"><div class="metric-icon">🗃️</div><div><small>Estoque total</small><strong id="stockTotal">—</strong><span class="detail" id="stockCount">Produtos cadastrados</span></div></div>
+</div>
+<div class="section-grid">
+<section class="panel"><div class="panel-head"><h2>📈 Vendas da semana</h2><a href="reports-v48.html?v=134">Ver relatório</a></div>
+<div class="channels"><div class="channel online"><label>🌐 Vendas online hoje</label><strong id="onlineToday">—</strong><span id="onlineCount">Concluídas</span></div><div class="channel local"><label>🏪 Vendas locais hoje</label><strong id="localToday">—</strong><span id="localCount">Concluídas</span></div></div>
+<div id="weeklyChart" class="weekly" aria-label="Gráfico de vendas dos últimos sete dias"></div>
+<p class="caption">Contabiliza pedidos concluídos pela data de criação. Recebimentos são mostrados separadamente.</p>
+</section>
+<section class="panel"><div class="panel-head"><h2>🔥 Produtos mais vendidos</h2><a href="reports-v48.html?v=134">Ver todos</a></div><div id="bestProducts" class="top-products"><div class="empty">Carregando produtos…</div></div></section>
+</div>
+<section class="panel fast"><div class="panel-head"><h2>⚡ Ações rápidas</h2></div>
+<div class="actions">
+<a class="action a1" href="local-sales-v90.html?v=134"><span class="icon">🛒</span><span>Nova venda<small>Venda no local</small></span></a>
+<a class="action a2" href="receitas-bases-v1.html?v=134#book"><span class="icon">👩‍🍳</span><span>Nova produção<small>Registrar rendimento</small></span></a>
+<a class="action a3" href="products-v48.html?v=134"><span class="icon">📦</span><span>Atualizar estoque<small>Produtos cadastrados</small></span></a>
+<a class="action a4" href="payments-v117.html?v=134"><span class="icon">💳</span><span>Registrar pagamento<small>Confirmar recebimento</small></span></a>
+<a class="action a5" href="receitas-bases-v1.html?v=134"><span class="icon">🧾</span><span>Ver receitas<small>Consultar custos</small></span></a>
+</div></section>
+<div class="bottom-grid">
+<section class="panel"><div class="panel-head"><h2>🛒 Últimos pedidos</h2><a href="orders-v48.html?v=134">Ver todos</a></div><div id="recentOrders"><div class="empty">Carregando pedidos…</div></div></section>
+<section class="panel"><div class="panel-head"><h2>⚠️ Estoque com atenção</h2><a href="products-v48.html?v=134">Ver todos</a></div><div id="lowStock"><div class="empty">Carregando estoque…</div></div></section>
+<section class="panel"><div class="panel-head"><h2>👩‍🍳 Produções recentes</h2><a href="receitas-bases-v1.html?v=134#book">Ver todas</a></div><div id="recentProduction"><div class="empty">Carregando produções…</div></div></section>
+</div>
+<div id="status" class="notice" role="status">Consultando dados do sistema…</div>
+</div>
+</div>
+<nav class="mobile-menu" aria-label="Acessos rápidos">
+<a class="active" href="./?v=135"><span class="ico">🏠</span>Início</a>
+<a href="orders-v48.html?v=134"><span class="ico">🔔</span>Pedidos</a>
+<a href="local-sales-v90.html?v=134"><span class="ico">🛒</span>Venda</a>
+<a href="products-v48.html?v=134"><span class="ico">📦</span>Estoque</a>
+</nav>
+</div>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>GDS48.esc(String(s??''));
+const money=n=>GDS48.money(n);
+const num=n=>Number(n)||0;
+const done=o=>['Entregue','Finalizado'].includes(o.status)&&!o.deleted_at;
+const tz='America/Sao_Paulo';
+function dayKey(value){if(!value)return '';const d=new Date(value);if(!Number.isFinite(d.getTime()))return '';const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d),r={};parts.forEach(p=>r[p.type]=p.value);return r.year+'-'+r.month+'-'+r.day}
+function minusDays(date,days){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-days);return d.toISOString().slice(0,10)}
+function setText(id,value){$(id).textContent=value}
+function empty(message){return '<div class="empty">'+esc(message)+'</div>'}
+function orderBadge(paid){return paid==='Pago'?'<span class="pill green">Pago</span>':paid==='Parcial'?'<span class="pill yellow">Parcial</span>':'<span class="pill red">Pendente</span>'}
+const routes=[...document.querySelectorAll('a[data-nav]')];
+$('menuSearch').addEventListener('input',e=>{const q=e.target.value.trim().toLocaleLowerCase('pt-BR');const target=$('searchResults');if(!q){target.hidden=true;target.innerHTML='';return}const found=routes.filter(x=>x.textContent.toLocaleLowerCase('pt-BR').includes(q)).slice(0,7);target.innerHTML=found.length?found.map(x=>'<a href="'+x.getAttribute('href')+'">'+esc(x.textContent.trim().replace(/\s+/g,' '))+'</a>').join(''):empty('Nenhuma seção encontrada');target.hidden=false});
+document.addEventListener('click',e=>{if(!e.target.closest('.searchbox'))$('searchResults').hidden=true});
+$('logout').onclick=()=>GDS48.logout();
+$('installAdmin').onclick=()=>GDS48.installAdmin();
+async function load(){
+const sb=GDS48.sb;
+const [pr,or,ev,items,logs,books]=await Promise.all([
+ sb.from('products').select('id,name,category,stock,active,price'),
+ sb.from('orders').select('id,public_code,customer_name,status,total,paid_amount,payment_status,payment_received_at,created_at,deleted_at,sales_channel').order('created_at',{ascending:false}).limit(1000),
+ sb.from('events').select('id,status,subtotal,delivery_fee,payment_status,payment_confirmed_at,created_at').limit(1000),
+ sb.from('order_items').select('order_id,product_name,quantity').limit(1000),
+ sb.from('gds_recipe_production_logs').select('id,recipe_id,production_date,finished_units,created_at,recipe_snapshot').order('created_at',{ascending:false}).limit(300),
+ sb.from('gds_recipe_book').select('id,recipe_name').limit(500)
+]);
+for(const r of [pr,or,ev,items,logs,books])if(r.error)throw r.error;
+const products=pr.data||[],orders=(or.data||[]).filter(x=>!x.deleted_at),events=ev.data||[],orderItems=items.data||[],productions=logs.data||[],book=books.data||[];
+const today=dayKey(new Date());
+const dateText=new Intl.DateTimeFormat('pt-BR',{timeZone:tz,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
+setText('todayLabel',dateText);setText('dateBadge','📅 '+new Intl.DateTimeFormat('pt-BR',{timeZone:tz,day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()));
+const completed=orders.filter(done),todayCompleted=completed.filter(o=>dayKey(o.created_at)===today),online=todayCompleted.filter(o=>o.sales_channel==='online'),local=todayCompleted.filter(o=>o.sales_channel==='local');
+const sumTotal=list=>list.reduce((n,o)=>n+num(o.total),0);
+setText('salesToday',money(sumTotal(todayCompleted)));
+setText('salesCount',todayCompleted.length+' pedidos concluídos');
+setText('onlineToday',money(sumTotal(online)));
+setText('localToday',money(sumTotal(local)));
+setText('onlineCount',online.length+' pedidos online');
+setText('localCount',local.length+' vendas locais');
+const paidOrders=orders.filter(o=>o.status!=='Cancelado'&&dayKey(o.payment_received_at)===today).reduce((n,o)=>n+num(o.paid_amount),0);
+const paidEvents=events.filter(e=>e.status!=='Cancelado'&&e.payment_status==='Pago'&&dayKey(e.payment_confirmed_at)===today).reduce((n,e)=>n+num(e.subtotal)+num(e.delivery_fee),0);
+setText('receivedToday',money(paidOrders+paidEvents));
+setText('madeToday',productions.filter(p=>p.production_date===today).reduce((n,p)=>n+num(p.finished_units),0)+' un.');
+setText('productionCount',productions.filter(p=>p.production_date===today).length+' produções registradas');
+setText('stockTotal',products.reduce((n,p)=>n+num(p.stock),0)+' un.');
+setText('stockCount',products.length+' produtos · '+products.filter(p=>p.active).length+' ativos');
+const days=Array.from({length:7},(_,i)=>minusDays(today,6-i));
+const sums=days.map(d=>sumTotal(completed.filter(o=>dayKey(o.created_at)===d)));
+const max=Math.max(...sums,1),wd=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+$('weeklyChart').innerHTML=days.map((d,i)=>{const h=Math.max(3,Math.round(sums[i]/max*95));const n=new Date(d+'T12:00:00Z').getUTCDay();return '<div class="day" title="'+esc(d+' · '+money(sums[i]))+'"><div class="bar" style="height:'+h+'px"></div><small>'+wd[n]+'</small></div>'}).join('');
+const allowed=new Set(completed.map(o=>o.id)),counts=new Map();
+orderItems.forEach(i=>{if(!allowed.has(i.order_id))return;const name=i.product_name||'Sem identificação';counts.set(name,(counts.get(name)||0)+num(i.quantity))});
+const top=[...counts].sort((a,b)=>b[1]-a[1]).slice(0,5),maxUnits=Math.max(...top.map(x=>x[1]),1);
+$('bestProducts').innerHTML=top.length?top.map(([name,units],i)=>'<div class="product-row"><div class="rank">'+(i+1)+'</div><div><div class="product-name">'+esc(name)+'</div><div class="product-track"><div class="product-fill" style="width:'+Math.round(units/maxUnits*100)+'%"></div></div></div><span class="product-qty">'+units+' un.</span></div>').join(''):empty('Ainda não há produtos vendidos nos pedidos concluídos.');
+const recent=orders.slice(0,5);
+$('recentOrders').innerHTML=recent.length?recent.map(o=>'<div class="item-row"><div class="mini-icon">'+(o.sales_channel==='local'?'🏪':'🛒')+'</div><div class="grow"><b>'+esc(o.public_code||'Pedido')+'</b><small>'+esc(o.customer_name||'Cliente')+' · '+(o.sales_channel==='local'?'Local':'Online')+'</small></div><div><div class="amount">'+money(o.total)+'</div>'+orderBadge(o.payment_status)+'</div></div>').join(''):empty('Nenhum pedido registrado no novo caixa.');
+const low=products.filter(p=>p.active&&num(p.stock)<=5).sort((a,b)=>num(a.stock)-num(b.stock)).slice(0,5);
+$('lowStock').innerHTML=low.length?low.map(p=>'<div class="item-row"><div class="mini-icon">📦</div><div class="grow"><b>'+esc(p.name)+'</b><small>'+num(p.stock)+' unidades restantes</small></div><span class="pill '+(num(p.stock)===0?'red':'yellow')+'">'+(num(p.stock)===0?'Esgotado':'Estoque baixo')+'</span></div>').join(''):empty('Nenhum produto ativo com 5 unidades ou menos.');
+const names=new Map(book.map(x=>[x.id,x.recipe_name]));
+$('recentProduction').innerHTML=productions.length?productions.slice(0,5).map(p=>'<div class="item-row"><div class="mini-icon">👩‍🍳</div><div class="grow"><b>'+esc(names.get(p.recipe_id)||p.recipe_snapshot?.recipe_name||'Receita')+'</b><small>'+esc(p.production_date||'')+' · Lote não informado</small></div><span class="pill green">'+num(p.finished_units)+' un.</span></div>').join(''):empty('Ainda não há produções registradas.');
+$('status').textContent='✅ Dados atualizados. Relatórios de pagamento detalhados ficam na seção Relatórios. Nenhuma movimentação de estoque foi realizada por este painel.';
+}
+(async()=>{try{await GDS48.ensure('home');$('loading').hidden=true;$('dashboard').hidden=false;await load()}catch(err){if(['NO_SESSION','MFA_REQUIRED'].includes(err.message))return;$('loading').hidden=false;$('loading').textContent='Não foi possível carregar o painel: '+err.message;$('dashboard').hidden=true}})();
+})();
+</script>
+</body></html>
