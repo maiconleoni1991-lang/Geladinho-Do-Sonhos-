@@ -152,12 +152,12 @@ async function checkout(){
   const initialItems=Object.entries(cart).filter(([,q])=>Number(q)>0);
   if(!initialItems.length)return alert('Adicione pelo menos um geladinho.');
   const name=$('customerName').value.trim();
-  const phone=$('customerPhone').value.replace(/\\D/g,'');
+  const phone=$('customerPhone').value.replace(/\D/g,'');
   if(name.length<2)return alert('Informe seu nome.');
   if(phone.length<10||phone.length>13)return alert('Informe um WhatsApp válido com DDD.');
   const delivery=fulfillment();let address=null;
   if(delivery==='entrega'){
-    const cep=$('cep').value.replace(/\\D/g,'');
+    const cep=$('cep').value.replace(/\D/g,'');
     const street=$('street').value.trim(),number=$('number').value.trim(),district=$('district').value.trim();
     const complement=$('complement').value.trim(),reference=$('reference').value.trim();
     if(cep.length!==8||!street||!number||!district)return alert('Preencha CEP, rua, número e bairro.');
