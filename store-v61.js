@@ -69,7 +69,7 @@ async function refreshStockOnly(){
     products=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
     const catOrder={Tradicional:0,Cremoso:1,Gourmet:2,Trufado:3};
     products.sort((a,b)=>(a.stock<=0?1:0)-(b.stock<=0?1:0)||(catOrder[a.category]??99)-(catOrder[b.category]??99)||(Number(a.sort_order)||999)-(Number(b.sort_order)||999)||String(a.name).localeCompare(String(b.name),'pt-BR'));
-    cleanCart();renderProducts();
+    cleanCart();renderFilters();renderProducts();
     if($('cartOverlay')?.classList.contains('show'))renderCart();
   }finally{stockRefreshBusy=false}
 }
@@ -85,26 +85,34 @@ async function verifyCartStock(){
     else if(fp.stock<q)problems.push((fp?.name||slug)+': quantidade solicitada indisponível');
   }
   products=fresh;
-  cleanCart();renderProducts();
+  cleanCart();renderFilters();renderProducts();
   if($('cartOverlay')?.classList.contains('show'))renderCart();
   if(problems.length)throw new Error('O estoque mudou enquanto você fazia o pedido. '+problems.join(' · ')+'. Atualizamos seu carrinho.');
 }
 function renderStatus(custom){const b=$('storeStatus');b.className='statusbar '+(custom?'closed':storeOpen?'open':'closed');b.textContent=custom|| (storeOpen?'● Vendas online abertas · Faça seu pedido pelo site.':'● Vendas online fechadas · Cardápio disponível somente para consulta.');const c=$('checkoutBtn');if(c){c.disabled=checkoutBusy||!storeOpen;c.textContent=checkoutBusy?'Registrando pedido…':(storeOpen?'Confirmar pedido':'Loja fechada para pedidos online')}}
-function renderFilters(){const base=['Tradicional','Cremoso','Gourmet','Trufado'];const extras=[...new Set(products.map(p=>p.category).filter(Boolean).filter(c=>!base.includes(c)))];const cats=['Todos',...base,...extras];$('filters').innerHTML=cats.map(c=>`<button class="filter ${filter===c?'on':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');$('filters').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{filter=b.dataset.cat;renderFilters();renderProducts()})}
+function renderFilters(){
+  const available=products.filter(p=>p.stock>0);
+  const base=['Tradicional','Cremoso','Gourmet','Trufado'].filter(c=>available.some(p=>p.category===c));
+  const extras=[...new Set(available.map(p=>p.category).filter(Boolean).filter(c=>!base.includes(c)))];
+  const cats=['Todos',...base,...extras];
+  if(!cats.includes(filter))filter='Todos';
+  $('filters').innerHTML=cats.map(c=>`<button class="filter ${filter===c?'on':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');
+  $('filters').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{filter=b.dataset.cat;renderFilters();renderProducts()});
+}
 function renderProducts(){
   const q=term.trim().toLowerCase();
-  const list=products.filter(p=>(filter==='Todos'||p.category===filter)&&(!q||`${p.name} ${p.category} ${p.description||''}`.toLowerCase().includes(q)));
-  if(!list.length){$('products').innerHTML='<div class="emptyBox" style="grid-column:1/-1">Nenhum sabor encontrado.</div>';return}
+  const list=products.filter(p=>p.stock>0&&(filter==='Todos'||p.category===filter)&&(!q||`${p.name} ${p.category} ${p.description||''}`.toLowerCase().includes(q)));
+  if(!list.length){$('products').innerHTML='<div class="emptyBox" style="grid-column:1/-1">'+(q||filter!=='Todos'?'Nenhum sabor encontrado.':'Nenhum sabor disponível no momento.')+'</div>';return}
   $('products').innerHTML=list.map(p=>{
     const selected=Number(cart[p.slug]||0);
     const blocked=p.stock<=0||!storeOpen;
     return `<article class="product">
-      <div class="photo">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:''}${p.stock<=0?'<div class="sold">ESGOTADO</div>':''}</div>
+      <div class="photo">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:''}</div>
       <div class="body">
         <div class="cat">${esc(p.category)}</div>
         <h3>${esc(p.name)}</h3>
         <div class="desc">${esc(p.description||'Geladinho preparado com muito sabor e cremosidade.')}</div>
-        <div class="meta"><div class="price">${money(p.price)}</div><div class="stock">${p.stock>0?'Disponível':'Esgotado'}</div></div>
+        <div class="meta"><div class="price">${money(p.price)}</div><div class="stock">Disponível</div></div>
         <div class="pickLabel">${blocked?(!storeOpen?'Loja fechada':'Indisponível'):'Escolha a quantidade'}</div>
         <div class="pickQty ${selected>0?'selected':''}">
           <button type="button" data-card-dec="${esc(p.slug)}" aria-label="Diminuir ${esc(p.name)}" ${blocked||selected<=0?'disabled':''}>−</button>
@@ -269,7 +277,7 @@ async function enableStoreOpenPush(){
   }
 }
 
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=132');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=137');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 bind();updateCartCount();restoreLastOrder();setupInstall();replaceOldServiceWorker();startPresence();loadStore();setInterval(()=>{if(document.visibilityState==='visible')refreshStockOnly().catch(()=>{})},10000);window.addEventListener('focus',()=>refreshStockOnly().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshStockOnly().catch(()=>{})});
 })();
