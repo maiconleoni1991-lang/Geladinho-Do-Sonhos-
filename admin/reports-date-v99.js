@@ -15,7 +15,7 @@ function fmt(s){const [y,m,d]=s.split('-');return d+'/'+m+'/'+y}
 function inRange(day,a,b){return day&&day>=a&&day<=b}
 function orderDay(x){return spDate(new Date(x.created_at))}
 function eventDay(x){if(x.payment_confirmed_at)return spDate(new Date(x.payment_confirmed_at));if(x.created_at)return spDate(new Date(x.created_at));return x.event_date||''}
-function soldOrder(x){return !x.deleted_at&&x.status!=='Cancelado'&&soldStatuses.includes(x.status)&&Number(x.paid_amount||0)>0}
+function soldOrder(x){return !x.deleted_at&&x.status!=='Cancelado'&&soldStatuses.includes(x.status)&&(['Entregue','Finalizado'].includes(x.status)||Number(x.paid_amount||0)>0)}
 function inject(){
   if($('gdsDateSales99'))return;
   const style=document.createElement('style');
@@ -28,7 +28,7 @@ function inject(){
   .gdsDateQuick{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
   .gdsDateBtn{border:1px solid #efdde4;background:#fff;color:#4a101e;border-radius:11px;padding:10px 12px;font-weight:900;cursor:pointer}
   .gdsDateBtn.primary{background:#ff0f68;color:#fff;border-color:#ff0f68}
-  .gdsDateTotals{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+  .gdsDateTotals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
   .gdsDateStat{border:1px solid #efdde4;border-radius:13px;padding:11px;background:#fffafc}
   .gdsDateStat small{display:block;color:#78616a}.gdsDateStat b{display:block;margin-top:4px;font-size:20px;color:#4a101e}
   .gdsDateStat.main b{color:#ff0f68}
@@ -58,7 +58,7 @@ function inject(){
     <div class="gdsDateStat"><small>Online</small><b id="gdsDateOnline99">—</b></div>
     <div class="gdsDateStat"><small>Venda local</small><b id="gdsDateLocal99">—</b></div>
     <div class="gdsDateStat"><small>Eventos pagos</small><b id="gdsDateEvents99">—</b></div>
-    <div class="gdsDateStat"><small>Nº de vendas</small><b id="gdsDateCount99">—</b></div>
+    <div class="gdsDateStat"><small>Nº de vendas</small><b id="gdsDateCount99">—</b></div><div class="gdsDateStat"><small>💵 Recebido no período</small><b id="gdsDateReceived99">—</b></div>
   </div>
   <div class="gdsDateTableWrap"><table class="gdsDateTable"><thead><tr><th>Dia</th><th>Vendas</th><th>Online</th><th>Local</th><th>Eventos</th><th>Total</th></tr></thead><tbody id="gdsDateRows99"></tbody></table></div>
   <div id="gdsDateMsg99" class="gdsDateMsg">Carregando vendas…</div>`;
@@ -85,17 +85,17 @@ async function run(){
     const paidEvents=events.filter(x=>x.status!=='Cancelado'&&x.payment_status==='Pago'&&inRange(eventDay(x),a,b));
     const online=sold.filter(x=>(x.sales_channel||'online')!=='local');
     const local=sold.filter(x=>x.sales_channel==='local');
-    const onlineValue=online.reduce((n,x)=>n+(Number(x.paid_amount)||0),0);
-    const localValue=local.reduce((n,x)=>n+(Number(x.paid_amount)||0),0);
+    const onlineValue=online.reduce((n,x)=>n+(Number(x.total)||0),0);
+    const localValue=local.reduce((n,x)=>n+(Number(x.total)||0),0);
     const eventValue=paidEvents.reduce((n,x)=>n+(Number(x.subtotal)||0)+(Number(x.delivery_fee)||0),0);
-    const grand=onlineValue+localValue+eventValue;
-    $('gdsDateTotal99').textContent=money(grand);$('gdsDateOnline99').textContent=money(onlineValue);$('gdsDateLocal99').textContent=money(localValue);$('gdsDateEvents99').textContent=money(eventValue);$('gdsDateCount99').textContent=sold.length+paidEvents.length;
+    const grand=onlineValue+localValue+eventValue;const received=sold.reduce((n,x)=>n+(Number(x.paid_amount)||0),0)+eventValue;
+    $('gdsDateTotal99').textContent=money(grand);$('gdsDateOnline99').textContent=money(onlineValue);$('gdsDateLocal99').textContent=money(localValue);$('gdsDateEvents99').textContent=money(eventValue);$('gdsDateCount99').textContent=sold.length+paidEvents.length;$('gdsDateReceived99').textContent=money(received);
     const map={};
-    sold.forEach(x=>{const d=orderDay(x);map[d]??={count:0,online:0,local:0,event:0};map[d].count++;if(x.sales_channel==='local')map[d].local+=Number(x.paid_amount)||0;else map[d].online+=Number(x.paid_amount)||0});
+    sold.forEach(x=>{const d=orderDay(x);map[d]??={count:0,online:0,local:0,event:0};map[d].count++;if(x.sales_channel==='local')map[d].local+=Number(x.total)||0;else map[d].online+=Number(x.total)||0});
     paidEvents.forEach(x=>{const d=eventDay(x);map[d]??={count:0,online:0,local:0,event:0};map[d].count++;map[d].event+=(Number(x.subtotal)||0)+(Number(x.delivery_fee)||0)});
     const days=Object.keys(map).sort((x,y)=>y.localeCompare(x));
     $('gdsDateRows99').innerHTML=days.length?days.map(d=>{const v=map[d],t=v.online+v.local+v.event;return '<tr><td>'+fmt(d)+'</td><td>'+v.count+'</td><td>'+money(v.online)+'</td><td>'+money(v.local)+'</td><td>'+money(v.event)+'</td><td><b>'+money(t)+'</b></td></tr>'}).join(''):'<tr><td colspan="6" style="text-align:center;color:#78616a">Nenhuma venda neste período.</td></tr>';
-    $('gdsDateMsg99').textContent='Período: '+fmt(a)+' até '+fmt(b)+' · total '+money(grand);
+    $('gdsDateMsg99').textContent='Período: '+fmt(a)+' até '+fmt(b)+' · vendido '+money(grand)+' · recebido '+money(received);
   }
   function range(k){const t=spDate();let a=t,b=t;if(k==='yesterday')a=b=addDays(t,-1);else if(k==='7')a=addDays(t,-6);else if(k==='30')a=addDays(t,-29);$('gdsDateFrom99').value=a;$('gdsDateTo99').value=b;render()}
   $('gdsDateApply99').onclick=render;document.querySelectorAll('[data-gds-range]').forEach(b=>b.onclick=()=>range(b.dataset.gdsRange));
