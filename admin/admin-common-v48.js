@@ -1,5 +1,5 @@
 (()=>{
-const V='131';
+const V='136';
 const URL='https://qpqruhcspbdxjcnbhdhn.supabase.co',KEY='sb_publishable_JVYvfl7nrRmlm17qF_KI8A_1H8mtvLk';
 const sb=window.supabase.createClient(URL,KEY);
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -11,75 +11,19 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 })();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw-admin.js?v='+V,{scope:'./'}).then(r=>r.update()).catch(()=>{});
 function nav(active=''){
- if(document.getElementById('gdsAdminNav48'))return;
- const s=document.createElement('style');s.textContent=`.gdsNav48{position:sticky;top:0;z-index:1000;background:#fffafcee;backdrop-filter:blur(14px);border-bottom:1px solid #efdde4}.gdsNav48in{max-width:1180px;margin:auto;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.gdsNav48 img{width:110px;height:66px;object-fit:contain;display:block;opacity:1;visibility:visible}.gdsNav48 b{color:#4a101e}.gdsLinks48{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}.gdsLinks48 a{min-height:42px;display:inline-flex;align-items:center;text-decoration:none;border:1px solid #efdde4;border-radius:11px;padding:9px 10px;background:#fff;color:#4a101e;font:800 12px Inter,system-ui}.gdsLinks48 a.on{background:#ff0f68;color:#fff;border-color:#ff0f68}.gdsSec48{width:100%;font-size:11px;color:#14753e;font-weight:800}.gdsMobileBar48,.gdsMore48{display:none}
-@media(max-width:760px){
- body{padding-bottom:74px!important}
- .gdsNav48{position:sticky}
- .gdsNav48in{padding:7px 10px;flex-wrap:nowrap}
- .gdsNav48 img{width:74px;height:48px}
- .gdsNav48in>div:nth-of-type(1){min-width:0}
- .gdsNav48in>div:nth-of-type(1) b{font-size:14px}
- .gdsLinks48{display:none!important}
- .gdsSec48{display:none}
- .gdsMobileBar48{display:grid;position:fixed;left:8px;right:8px;bottom:8px;z-index:1500;grid-template-columns:repeat(4,1fr);background:#fff;border:1px solid #efdde4;border-radius:18px;padding:6px;box-shadow:0 14px 40px #4a101e26}
- .gdsMobileBar48 a,.gdsMobileBar48 button{min-height:52px;border:0;background:transparent;color:#4a101e;border-radius:12px;text-decoration:none;font:800 10px Inter,system-ui;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
- .gdsMobileBar48 .ico{font-size:19px;line-height:1}
- .gdsMobileBar48 .on{background:#ff0f68;color:#fff}
- .gdsMore48{position:fixed;inset:0;z-index:2000;background:#2a0a166e;align-items:flex-end}
- .gdsMore48.open{display:flex}
- .gdsMoreSheet48{width:100%;max-height:82vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:14px 14px 24px;box-shadow:0 -18px 50px #2a0a1633}
- .gdsMoreHead48{display:flex;align-items:center;gap:10px;margin-bottom:10px}
- .gdsMoreHead48 b{font-size:17px;color:#4a101e}
- .gdsMoreClose48{margin-left:auto;width:38px;height:38px;border:1px solid #efdde4;border-radius:11px;background:#fff;font-size:22px;font-weight:900;color:#4a101e}
- .gdsMoreGroup48{margin-top:13px}
- .gdsMoreTitle48{font-size:11px;font-weight:950;color:#8c6b76;text-transform:uppercase;letter-spacing:.05em;margin:0 0 7px 4px}
- .gdsMoreGrid48{display:grid;grid-template-columns:1fr 1fr;gap:7px}
- .gdsMoreGrid48 a,.gdsMoreGrid48 button{min-height:46px;border:1px solid #efdde4;border-radius:12px;background:#fff;color:#4a101e;text-decoration:none;font:800 12px Inter,system-ui;display:flex;align-items:center;justify-content:flex-start;gap:7px;padding:10px}
- .gdsMoreGrid48 a.on{background:#fff0f5;border-color:#ff9dbf;color:#9e1648}
-}`;
- document.head.appendChild(s);
- const n=document.createElement('div');n.id='gdsAdminNav48';n.className='gdsNav48';n.innerHTML=`<div class="gdsNav48in"><img class="gdsAdminLogo65" src="../assets/logo-oficial-hq-v65.webp?v=131" alt="Geladinho dos Sonhos" onerror="this.onerror=null;this.src='../assets/icon-512.png?v=131'"><div><b>Geladinho dos Sonhos</b><div style="font-size:11px;color:#78616a">Administração</div></div><div class="gdsLinks48"><a data-k="home" href="./?v=${V}">🏠 Painel</a><a data-k="products" href="products-v48.html?v=${V}">⚙️ Estoque</a><a data-k="orders" href="orders-v48.html?v=${V}">🔔 Pedidos / Abrir Loja</a><a data-k="local" href="local-sales-v90.html?v=${V}">🏠 Venda no Local</a><a data-k="payments" href="payments-v117.html?v=${V}">💰 Pagamentos</a><a data-k="trusted" href="trusted-customers-v116.html?v=${V}">🤝 Clientes / Fiado</a><a data-k="archived" href="archived-orders-v87.html?v=${V}">🗄️ Arquivados</a><a data-k="events" href="events-v57.html?v=${V}">🎉 Eventos</a><a data-k="bases" href="receitas-bases-v1.html?v=131">🧾 Receitas e custos</a><a data-k="book" href="receitas-bases-v1.html?v=131#book">📖 Livro de Receitas / Produções</a><a data-k="powders" href="receitas-bases-v1.html?v=131#powders">🎨 Pós saborizantes</a><a data-k="complements" href="receitas-bases-v1.html?v=131#complements">🍫 Recheios</a><a data-k="reports" href="reports-v48.html?v=${V}">📊 Relatórios</a><a data-k="reviews" href="reviews-v63.html?v=${V}">⭐ Depoimentos</a><a data-k="store" href="../?v=${V}" target="_blank" rel="noopener">👁️ Loja</a><button id="gdsInstallAdmin48" type="button" style="min-height:42px;border:1px solid #efdde4;border-radius:11px;padding:9px 10px;background:#fff;color:#4a101e;font:800 12px Inter,system-ui;cursor:pointer">⬇️ Instalar Admin</button></div><div id="gdsSec48" class="gdsSec48">🔐 Verificando segurança…</div></div>`;
- document.body.prepend(n);const localLinks=[...document.querySelectorAll('a[href*="local-sales-v90.html"]')];if(localLinks.length>1)localLinks.slice(1).forEach(a=>a.remove());n.querySelector(`[data-k="${active}"]`)?.classList.add('on');
-
- const mb=document.createElement('div');mb.className='gdsMobileBar48';mb.id='gdsMobileBar48';mb.innerHTML=`
-   <a data-mk="home" href="./?v=${V}"><span class="ico">🏠</span><span>Painel</span></a>
-   <a data-mk="orders" href="orders-v48.html?v=${V}"><span class="ico">🔔</span><span>Pedidos</span></a>
-   <a data-mk="local" href="local-sales-v90.html?v=${V}"><span class="ico">🛒</span><span>Venda</span></a>
-   <button id="gdsMoreBtn48" type="button"><span class="ico">☰</span><span>Mais</span></button>`;
- document.body.appendChild(mb);
- if(['home','orders','local'].includes(active))mb.querySelector(`[data-mk="${active}"]`)?.classList.add('on');else mb.querySelector('#gdsMoreBtn48')?.classList.add('on');
-
- const more=document.createElement('div');more.className='gdsMore48';more.id='gdsMore48';more.innerHTML=`
-  <div class="gdsMoreSheet48">
-   <div class="gdsMoreHead48"><b>☰ Mais opções</b><button id="gdsMoreClose48" class="gdsMoreClose48" type="button">×</button></div>
-   <div class="gdsMoreGroup48"><div class="gdsMoreTitle48">Vendas</div><div class="gdsMoreGrid48">
-    <a data-k2="payments" href="payments-v117.html?v=${V}">💰 Pagamentos</a>
-    <a data-k2="trusted" href="trusted-customers-v116.html?v=${V}">🤝 Clientes / Fiado</a>
-    <a data-k2="archived" href="archived-orders-v87.html?v=${V}">🗄️ Arquivados</a>
-    <a data-k2="events" href="events-v57.html?v=${V}">🎉 Eventos</a>
-   </div></div>
-   <div class="gdsMoreGroup48"><div class="gdsMoreTitle48">Produção</div><div class="gdsMoreGrid48">
-    <a data-k2="products" href="products-v48.html?v=${V}">⚙️ Estoque</a>
-    <a data-k2="bases" href="receitas-bases-v1.html?v=${V}">🧾 Receitas e custos</a>
-    <a data-k2="powders" href="receitas-bases-v1.html?v=${V}#powders">🎨 Pós saborizantes</a>
-    <a data-k2="complements" href="receitas-bases-v1.html?v=${V}#complements">🍫 Recheios</a>
-   </div></div>
-   <div class="gdsMoreGroup48"><div class="gdsMoreTitle48">Gestão</div><div class="gdsMoreGrid48">
-    <a data-k2="reports" href="reports-v48.html?v=${V}">📊 Relatórios</a>
-    <a data-k2="reviews" href="reviews-v63.html?v=${V}">⭐ Depoimentos</a>
-    <a data-k2="store" href="../?v=${V}" target="_blank" rel="noopener">👁️ Loja</a>
-    <button id="gdsInstallAdminMobile48" type="button">⬇️ Instalar Admin</button>
-   </div></div>
-  </div>`;
- document.body.appendChild(more);
- more.querySelector(`[data-k2="${active}"]`)?.classList.add('on');
- const openMore=()=>more.classList.add('open'),closeMore=()=>more.classList.remove('open');
- mb.querySelector('#gdsMoreBtn48').onclick=openMore;
- more.querySelector('#gdsMoreClose48').onclick=closeMore;
- more.addEventListener('click',e=>{if(e.target===more)closeMore()});
- more.querySelector('#gdsInstallAdminMobile48').onclick=()=>gdsInstallAdmin();
-
+ if(document.getElementById('gdsAdminNav48')) return;
+ if(active==='home'){ const ch=document.createElement('span');ch.id='gdsSec48';ch.hidden=true;document.body.appendChild(ch);return; }
+ document.body.classList.add('gds-app-screen');
+ const style=document.createElement('style');style.id='gdsAdminShellStyle';style.textContent="\nbody.gds-app-screen{background:#faf9fe!important;color:#17203c}\nbody.gds-app-screen>.gdsAppSide{position:fixed;inset:0 auto 0 0;width:264px;overflow-y:auto;background:linear-gradient(145deg,#fff8fc,#fff 68%,#fff9fc);border-right:1px solid #f0e5ec;padding:22px 15px;z-index:1001;box-sizing:border-box;color:#17203c;font:400 14px/1.45 Inter,system-ui,sans-serif}\n.gdsAppSide .gdsAppBrand{display:flex;align-items:center;gap:11px;padding:5px 7px 18px;min-height:94px;color:#aa1451;text-decoration:none}\n.gdsAppBrand img{width:77px;height:77px;object-fit:contain;flex-shrink:0}\n.gdsAppBrand b{font-size:16px;font-weight:950;line-height:1.17;display:block}\n.gdsAppBrand small{font-size:11px;color:#777b96;display:block;margin-top:4px}\n.gdsAppSide .gdsAppCategory{margin:15px 13px 6px;font-size:10px;letter-spacing:.075em;color:#8a849d;font-weight:950}\n.gdsAppSide .gdsAppLink{display:flex;align-items:center;gap:12px;padding:12px 13px;min-height:50px;border-radius:12px;font-size:14px;font-weight:800;color:#17203c;text-decoration:none;box-sizing:border-box;border:0}\n.gdsAppSide .gdsAppLink:hover{background:#ffedf5}\n.gdsAppSide .gdsAppLink.on{background:#ec1768;color:#fff;box-shadow:0 7px 18px #ec17682c}\n.gdsAppSide .gdsAppIco{font-size:21px;min-width:27px;text-align:center;line-height:1}\n.gdsAppSide .gdsAppFoot{margin-top:25px;padding-top:13px;border-top:1px solid #f0e5ec}\n.gdsAppSide .gdsAppBtn{width:100%;background:transparent;cursor:pointer;font-family:inherit;text-align:left}\n.gdsAppSide .gdsAppSec{font-size:11px;color:#14753e;font-weight:800;margin:12px 8px 0;line-height:1.4}\nbody.gds-app-screen>main{box-sizing:border-box!important;max-width:calc(100% - 264px)!important;width:calc(100% - 264px)!important;margin:0 0 0 264px!important;padding-top:24px!important;padding-left:24px!important;padding-right:24px!important}\nbody.gds-app-screen>main h1{letter-spacing:-.025em}\nbody.gds-app-screen .gdsAppBottom{display:none}\nbody.gds-app-screen .gdsAppMore{border:0;border-radius:22px 22px 0 0;background:#fff;box-shadow:0 -16px 35px #1c153830;color:#17203c;padding:15px;width:min(580px,100%);max-height:80%;overflow:auto;margin:auto auto 0}\n.gdsAppMore::backdrop{background:#2a0a1677}\n.gdsAppMoreHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}\n.gdsAppMoreHead b{font-size:18px}.gdsAppMoreHead button{min-width:45px;min-height:45px;border:1px solid #f0e5ec;border-radius:10px;background:#fff;color:#17203c;cursor:pointer}\n.gdsAppMoreLinks{display:grid;grid-template-columns:1fr 1fr;gap:8px}\n.gdsAppMoreLinks a{min-height:45px;display:flex;align-items:center;justify-content:flex-start;padding:10px;border:1px solid #f0e5ec;border-radius:10px;background:#fff8fc;color:#17203c;font-size:12px;font-weight:800;text-decoration:none;box-sizing:border-box}\n@media(max-width:850px){\nbody.gds-app-screen>.gdsAppSide{display:none!important}\nbody.gds-app-screen>main{max-width:100%!important;width:100%!important;margin:0!important;padding-left:12px!important;padding-right:12px!important;padding-bottom:95px!important}\nbody.gds-app-screen .gdsAppBottom{position:fixed;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));bottom:8px;left:8px;right:8px;z-index:1500;gap:5px;padding:6px;background:#fff;border:1px solid #f0e0e9;border-radius:19px;box-shadow:0 8px 35px #25152730}\n.gdsAppBottom a,.gdsAppBottom button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;border:0;background:transparent;text-decoration:none;color:#17203c;font:900 10px Inter,system-ui,sans-serif;border-radius:12px}\n.gdsAppBottom a span,.gdsAppBottom button span{font-size:20px}\n.gdsAppBottom .on{background:#ec1768;color:#fff}\n}\n@media(max-width:450px){.gdsAppMoreLinks{grid-template-columns:1fr}}\n";document.head.appendChild(style);
+ const sidebar=document.createElement('aside');sidebar.id='gdsAdminNav48';sidebar.className='gdsAppSide';sidebar.setAttribute('aria-label','Navegação administrativa');sidebar.innerHTML="<a class=\"gdsAppBrand\" href=\"./?v=136\"><img src=\"../assets/logo-oficial-hq-v65.webp?v=106\" alt=\"Logotipo oficial Geladinho do Sonhos\" onerror=\"this.onerror=null;this.src='../assets/icon-512.png?v=106'\"><span><b>Geladinho<br>do Sonhos</b><small>Painel administrativo</small></span></a>\n<a class=\"gdsAppLink\" data-gds-key=\"home\" href=\"./?v=136\"><span class=\"gdsAppIco\">🏠</span><span>Início</span></a>\n<div class=\"gdsAppCategory\">VENDAS</div><a class=\"gdsAppLink\" data-gds-key=\"orders\" href=\"orders-v48.html?v=136\"><span class=\"gdsAppIco\">🛒</span><span>Pedidos online</span></a><a class=\"gdsAppLink\" data-gds-key=\"local\" href=\"local-sales-v90.html?v=136\"><span class=\"gdsAppIco\">🏪</span><span>Venda local</span></a><a class=\"gdsAppLink\" data-gds-key=\"payments\" href=\"payments-v117.html?v=136\"><span class=\"gdsAppIco\">💳</span><span>Pagamentos</span></a><div class=\"gdsAppCategory\">PRODUÇÃO E ESTOQUE</div><a class=\"gdsAppLink\" data-gds-key=\"book\" href=\"receitas-bases-v1.html?v=136#book\"><span class=\"gdsAppIco\">👩‍🍳</span><span>Produção</span></a><a class=\"gdsAppLink\" data-gds-key=\"products\" href=\"products-v48.html?v=136\"><span class=\"gdsAppIco\">📦</span><span>Estoque</span></a><a class=\"gdsAppLink\" data-gds-key=\"bases\" href=\"receitas-bases-v1.html?v=136\"><span class=\"gdsAppIco\">🧾</span><span>Custos e receitas</span></a><div class=\"gdsAppCategory\">GESTÃO</div><a class=\"gdsAppLink\" data-gds-key=\"reports\" href=\"reports-v48.html?v=136\"><span class=\"gdsAppIco\">📊</span><span>Relatórios</span></a><a class=\"gdsAppLink\" data-gds-key=\"trusted\" href=\"trusted-customers-v116.html?v=136\"><span class=\"gdsAppIco\">👥</span><span>Clientes</span></a><a class=\"gdsAppLink\" data-gds-key=\"events\" href=\"events-v57.html?v=136\"><span class=\"gdsAppIco\">🎉</span><span>Eventos</span></a><a class=\"gdsAppLink\" data-gds-key=\"archived\" href=\"archived-orders-v87.html?v=136\"><span class=\"gdsAppIco\">🗂️</span><span>Arquivados</span></a><a class=\"gdsAppLink\" data-gds-key=\"reviews\" href=\"reviews-v63.html?v=136\"><span class=\"gdsAppIco\">⭐</span><span>Avaliações</span></a>\n<div class=\"gdsAppFoot\">\n<a class=\"gdsAppLink\" href=\"../?v=136\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"gdsAppIco\">👁️</span><span>Acessar loja</span></a>\n<button class=\"gdsAppLink gdsAppBtn\" type=\"button\" id=\"gdsInstallAdmin48\"><span class=\"gdsAppIco\">⬇️</span><span>Instalar aplicativo</span></button>\n<button class=\"gdsAppLink gdsAppBtn\" type=\"button\" id=\"gdsAppLogout\"><span class=\"gdsAppIco\">🚪</span><span>Sair</span></button>\n<div id=\"gdsSec48\" class=\"gdsAppSec\" aria-live=\"polite\">🔐 Verificando segurança…</div></div>";document.body.prepend(sidebar);
+ const bottom=document.createElement('nav');bottom.className='gdsAppBottom';bottom.setAttribute('aria-label','Navegação móvel');bottom.innerHTML="<a href=\"./?v=136\" data-gds-key=\"home\"><span>🏠</span>Início</a><a href=\"orders-v48.html?v=136\" data-gds-key=\"orders\"><span>🔔</span>Pedidos</a><a href=\"local-sales-v90.html?v=136\" data-gds-key=\"local\"><span>🛒</span>Venda</a><button type=\"button\" id=\"gdsAppMoreBtn\"><span>☰</span>Menu</button>";document.body.appendChild(bottom);
+ const more=document.createElement('dialog');more.className='gdsAppMore';more.setAttribute('aria-label','Mais áreas do aplicativo');more.innerHTML="<div class=\"gdsAppMoreHead\"><b>Áreas do aplicativo</b><button type=\"button\" id=\"gdsAppMoreClose\" aria-label=\"Fechar menu\">✕</button></div><div class=\"gdsAppMoreLinks\"><a href=\"orders-v48.html?v=136\">🛒 Pedidos online</a><a href=\"local-sales-v90.html?v=136\">🏪 Venda local</a><a href=\"payments-v117.html?v=136\">💳 Pagamentos</a><a href=\"receitas-bases-v1.html?v=136#book\">👩‍🍳 Produção</a><a href=\"products-v48.html?v=136\">📦 Estoque</a><a href=\"receitas-bases-v1.html?v=136\">🧾 Custos e receitas</a><a href=\"reports-v48.html?v=136\">📊 Relatórios</a><a href=\"trusted-customers-v116.html?v=136\">👥 Clientes</a><a href=\"events-v57.html?v=136\">🎉 Eventos</a><a href=\"archived-orders-v87.html?v=136\">🗂️ Arquivados</a><a href=\"reviews-v63.html?v=136\">⭐ Avaliações</a><a href=\"../?v=136\" target=\"_blank\" rel=\"noopener noreferrer\">👁️ Acessar loja</a></div>";document.body.appendChild(more);
+ const chosen=['bases','book','powders','complements'].includes(active)?(active==='book'?'book':'bases'):active;
+ sidebar.querySelector('[data-gds-key="'+chosen+'"]')?.classList.add('on');
+ bottom.querySelector('[data-gds-key="'+chosen+'"]')?.classList.add('on');
+ bottom.querySelector('#gdsAppMoreBtn').addEventListener('click',()=>more.showModal());
+ more.querySelector('#gdsAppMoreClose').addEventListener('click',()=>more.close());
+ sidebar.querySelector('#gdsAppLogout').addEventListener('click',logout);
 }
 async function ensure(active=''){
  nav(active);const chip=document.getElementById('gdsSec48');
