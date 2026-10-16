@@ -85,7 +85,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 @media(max-width:1010px){.line-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){.hero{align-items:flex-start}.hero img{width:80px;height:78px}.hero h1{font-size:21px}.line-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric b{font-size:20px}}
 </style></head><body>
-<script src="admin-common-v48.js?v=130"></script>
+<script src="admin-common-v48.js?v=136"></script>
 <main>
 <section class="hero"><img src="../assets/logo-oficial-hq-v65.webp" alt="Geladinho dos Sonhos" onerror="this.onerror=null;this.src='../assets/icon-512.png'"><div><h1>Receitas e custos de produção</h1><p>Cadastro de matérias-primas, bases e cálculo de lucro por receita e por geladinho.</p></div></section>
 <div class="tabbar" id="tabs" role="tablist" aria-label="Receitas-base e materiais">
@@ -950,6 +950,6 @@ $('saveRecipe').onclick=saveRecipe;
 ['matQty','matPrice','matUnit'].forEach(id=>$(id).addEventListener('input',updatePricePreview));
 $('saveMaterial').onclick=saveMaterial;$('clearMaterial').onclick=clearMaterial;$('materialSearch').addEventListener('input',renderCatalog);
 $('catalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit]');if(btn)editMaterial(btn.dataset.edit)});
-(async()=>{try{await GDS48.ensure('bases');await load();note('✅ Acesso administrativo confirmado • três bases e catálogo conectados ao Supabase.');}catch(e){note('Não foi possível abrir a gestão de receitas: '+e.message,true)}})();
+(async()=>{try{await GDS48.ensure(location.hash==='#book'?'book':'bases');await load();note('✅ Acesso administrativo confirmado • três bases e catálogo conectados ao Supabase.');}catch(e){note('Não foi possível abrir a gestão de receitas: '+e.message,true)}})();
 })();
 </script></body></html>
