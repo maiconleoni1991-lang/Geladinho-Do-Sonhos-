@@ -950,6 +950,6 @@ $('saveRecipe').onclick=saveRecipe;
 ['matQty','matPrice','matUnit'].forEach(id=>$(id).addEventListener('input',updatePricePreview));
 $('saveMaterial').onclick=saveMaterial;$('clearMaterial').onclick=clearMaterial;$('materialSearch').addEventListener('input',renderCatalog);
 $('catalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit]');if(btn)editMaterial(btn.dataset.edit)});
-(async()=>{try{await GDS48.ensure('bases');await load();note('✅ Acesso administrativo confirmado • três bases e catálogo conectados ao Supabase.');}catch(e){note('Não foi possível abrir a gestão de receitas: '+e.message,true)}})();
+(async()=>{try{await GDS48.ensure(location.hash==='#book'?'book':'bases');await load();note('✅ Acesso administrativo confirmado • três bases e catálogo conectados ao Supabase.');}catch(e){note('Não foi possível abrir a gestão de receitas: '+e.message,true)}})();
 })();
 </script></body></html>
