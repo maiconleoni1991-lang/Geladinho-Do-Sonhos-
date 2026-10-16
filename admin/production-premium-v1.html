@@ -20,6 +20,6 @@ $('shortcuts').addEventListener('click',e=>{const n=e.target.dataset.n;if(n){$('
 $('flavor').addEventListener('change',()=>{$('flavorPrice').value=flavors.find(f=>f[0]===$('flavor').value)?.[2]||0;calc()});
 ['flavorGram','flavorPrice','extras','packaging','salePrice','overhead','waterCost'].forEach(id=>$(id).addEventListener('input',calc));
 $('print').onclick=()=>window.print();$('reset').onclick=()=>{values={1:{},2:{}};$('times').value=1;$('yield').value='';extraItems=[];renderExtras();$('kind').value='gourmet';$('salePrice').value=6;$('overhead').value=0;$('waterCost').value='';$('flavor').value='';$('ligaBrand').value='duporto';$('flavorGram').value=0;$('flavorPrice').value=0;$('extras').value=0;render()};
-(async()=>{try{await GDS48.ensure('home');$('content').hidden=false;$('status').textContent='✅ Acesso administrativo confirmado • calculadora pronta';render();await loadCatalog()}catch(e){$('status').textContent='Acesso não liberado: '+e.message}})();
+(async()=>{try{await GDS48.ensure('book');$('content').hidden=false;$('status').textContent='✅ Acesso administrativo confirmado • calculadora pronta';render();await loadCatalog()}catch(e){$('status').textContent='Acesso não liberado: '+e.message}})();
 })();
 </script></body></html>
