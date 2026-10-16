@@ -7,7 +7,7 @@ const DELIVERY_FEE=6;
 const VAPID_PUBLIC_KEY='BOJ0jB7oR4VvBDiU0ejprYRayZeWHFEOdb8DliQNXpWf5TzXAo8CJbpy3879L1MioYEF393gc3ri1iauqD3vPmw';
 const $=id=>document.getElementById(id);
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-let products=[],cart=loadCart(),filter='Todos',term='',storeOpen=false,installPrompt=null,stockRefreshBusy=false;
+let products=[],cart=loadCart(),filter='Todos',term='',storeOpen=false,installPrompt=null,stockRefreshBusy=false,checkoutBusy=false;
 
 // Presença ao vivo da loja para o painel administrativo.
 let presenceChannel=null,presenceActivity='navegando';
@@ -62,7 +62,7 @@ async function loadStore(){
 }
 function cleanCart(){let changed=false;for(const slug of Object.keys(cart)){const p=products.find(x=>x.slug===slug);if(!p||p.stock<=0){delete cart[slug];changed=true}else if(cart[slug]>p.stock){cart[slug]=p.stock;changed=true}}if(changed)saveCart();else updateCartCount()}
 async function refreshStockOnly(){
-  if(stockRefreshBusy)return;
+  if(stockRefreshBusy||checkoutBusy)return;
   stockRefreshBusy=true;
   try{
     const p=await api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&order=category.asc,name.asc');
@@ -89,7 +89,7 @@ async function verifyCartStock(){
   if($('cartOverlay')?.classList.contains('show'))renderCart();
   if(problems.length)throw new Error('O estoque mudou enquanto você fazia o pedido. '+problems.join(' · ')+'. Atualizamos seu carrinho.');
 }
-function renderStatus(custom){const b=$('storeStatus');b.className='statusbar '+(custom?'closed':storeOpen?'open':'closed');b.textContent=custom|| (storeOpen?'● Vendas online abertas · Faça seu pedido pelo site.':'● Vendas online fechadas · Cardápio disponível somente para consulta.');const c=$('checkoutBtn');if(c){c.disabled=!storeOpen;c.textContent=storeOpen?'Confirmar pedido e abrir WhatsApp':'Loja fechada para pedidos online'}}
+function renderStatus(custom){const b=$('storeStatus');b.className='statusbar '+(custom?'closed':storeOpen?'open':'closed');b.textContent=custom|| (storeOpen?'● Vendas online abertas · Faça seu pedido pelo site.':'● Vendas online fechadas · Cardápio disponível somente para consulta.');const c=$('checkoutBtn');if(c){c.disabled=checkoutBusy||!storeOpen;c.textContent=checkoutBusy?'Registrando pedido…':(storeOpen?'Confirmar pedido':'Loja fechada para pedidos online')}}
 function renderFilters(){const base=['Tradicional','Cremoso','Gourmet','Trufado'];const extras=[...new Set(products.map(p=>p.category).filter(Boolean).filter(c=>!base.includes(c)))];const cats=['Todos',...base,...extras];$('filters').innerHTML=cats.map(c=>`<button class="filter ${filter===c?'on':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');$('filters').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{filter=b.dataset.cat;renderFilters();renderProducts()})}
 function renderProducts(){
   const q=term.trim().toLowerCase();
@@ -146,8 +146,63 @@ function openCart(){setPresenceActivity(cartQty()>0?'visualizando carrinho':'vis
 function closeCart(){$('cartOverlay').classList.remove('show');document.body.style.overflow=''}
 async function lookupCep(){const cep=($('cep').value||'').replace(/\D/g,'');if(cep.length!==8)return;try{const r=await fetch(`https://viacep.com.br/ws/${cep}/json/`,{cache:'no-store'});const d=await r.json();if(d.erro)return alert('CEP não encontrado.');if((d.localidade||'').toLowerCase()!=='monte alto'||String(d.uf||'').toUpperCase()!=='SP')return alert('No momento, entregamos somente em Monte Alto/SP.');$('street').value=d.logradouro||'';$('district').value=d.bairro||'';$('number').focus()}catch(_){}}
 function buildWhats(o,name,phone,address){const lines=['*PEDIDO - GELADINHO DOS SONHOS*','',`Pedido: #${o.public_code}`,`Cliente: ${name}`,`WhatsApp: ${phone}`,''];for(const [slug,q] of Object.entries(cart)){const p=products.find(x=>x.slug===slug);if(p)lines.push(`${q}x ${p.name} — ${money(p.price*q)}`)}lines.push('',`Subtotal: ${money(o.subtotal)}`);if(fulfillment()==='entrega'){lines.push(`Entrega: ${money(o.delivery_fee)}`,`Total: ${money(o.total)}`,'',`Endereço: ${address.street}, ${address.number}${address.complement?' - '+address.complement:''}`,`${address.district} - Monte Alto/SP · CEP ${address.cep}`);if(address.reference)lines.push(`Referência: ${address.reference}`)}else{lines.push(`Total: ${money(o.total)}`,'','Retirada: Rua Aparecida Marchetti Guzzo, 161 - Vale dos Sonhos - Monte Alto/SP')}const obs=$('notes').value.trim();if(obs)lines.push('',`Observação: ${obs}`);lines.push('',`Pagamento: ${paymentMethod()}`);if(paymentMethod()==='Pix')lines.push('O Pix será liberado após a loja aceitar o pedido.');lines.push('',`Acompanhe pelo código ${o.public_code}.`);return lines.join('\n')}
-async function checkout(){setPresenceActivity('finalizando pedido');const initialItems=Object.entries(cart).filter(([,q])=>q>0);if(!initialItems.length)return alert('Adicione pelo menos um geladinho.');const name=$('customerName').value.trim(),phone=$('customerPhone').value.replace(/\D/g,'');if(name.length<2)return alert('Informe seu nome.');if(phone.length<10)return alert('Informe um WhatsApp com DDD.');const delivery=fulfillment()==='entrega';let address=null;if(delivery){const cep=$('cep').value.replace(/\D/g,''),street=$('street').value.trim(),number=$('number').value.trim(),district=$('district').value.trim(),complement=$('complement').value.trim(),reference=$('reference').value.trim();if(cep.length!==8||!street||!number||!district)return alert('Preencha CEP, rua, número e bairro.');address={cep,street,number,district,complement,reference,city:'Monte Alto',state:'SP'}}let wa=null;try{wa=window.open('about:blank','_blank');if(wa)wa.document.write('<div style="font-family:Arial;padding:30px;text-align:center">Registrando pedido…</div>')}catch(_){}const btn=$('checkoutBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='Registrando pedido…';try{await verifyCartStock();const items=Object.entries(cart).filter(([,q])=>q>0);if(!items.length)throw new Error('Os itens do seu carrinho ficaram sem estoque.');const o=await api('/rest/v1/rpc/create_store_order_v89',{method:'POST',body:JSON.stringify({p_customer_name:name,p_customer_phone:phone,p_fulfillment:delivery?'entrega':'retirada',p_address:address,p_notes:$('notes').value.trim()||null,p_items:items.map(([slug,quantity])=>({slug,quantity})),p_payment_method:paymentMethod()})});const saved={code:o.public_code,token:o.tracking_token,phone};localStorage.setItem('gds_last_order',JSON.stringify(saved));const msg=buildWhats(o,name,phone,address),url=`https://wa.me/${WHATS}?text=${encodeURIComponent(msg)}`;cart={};saveCart();showSuccess(o);if(wa&&!wa.closed)wa.location.replace(url);else window.open(url,'_blank');loadStore().catch(()=>{})}catch(e){if(wa&&!wa.closed)wa.close();alert(e.message||'Não foi possível registrar o pedido.')}finally{btn.disabled=!storeOpen;btn.textContent=old}}
-function showSuccess(o){$('cartForm').hidden=true;$('success').hidden=false;$('successCode').textContent='#'+o.public_code;$('trackLink').href='./acompanhar/?t='+encodeURIComponent(o.tracking_token)}
+async function checkout(){
+  if(checkoutBusy)return;
+  const errorBox=$('checkoutError');if(errorBox){errorBox.hidden=true;errorBox.textContent=''}
+  const initialItems=Object.entries(cart).filter(([,q])=>Number(q)>0);
+  if(!initialItems.length)return alert('Adicione pelo menos um geladinho.');
+  const name=$('customerName').value.trim();
+  const phone=$('customerPhone').value.replace(/\\D/g,'');
+  if(name.length<2)return alert('Informe seu nome.');
+  if(phone.length<10||phone.length>13)return alert('Informe um WhatsApp válido com DDD.');
+  const delivery=fulfillment();let address=null;
+  if(delivery==='entrega'){
+    const cep=$('cep').value.replace(/\\D/g,'');
+    const street=$('street').value.trim(),number=$('number').value.trim(),district=$('district').value.trim();
+    const complement=$('complement').value.trim(),reference=$('reference').value.trim();
+    if(cep.length!==8||!street||!number||!district)return alert('Preencha CEP, rua, número e bairro.');
+    address={cep,street,number,district,complement,reference,city:'Monte Alto',state:'SP'};
+  }
+  checkoutBusy=true;
+  setPresenceActivity('finalizando pedido');
+  renderStatus();
+  try {
+    // Não abre janela vazia antes da confirmação: navegadores internos podem interromper a compra.
+    await verifyCartStock();
+    const items=Object.entries(cart).filter(([,q])=>Number(q)>0);
+    if(!items.length)throw new Error('Os itens do carrinho ficaram sem estoque.');
+    const o=await api('/rest/v1/rpc/create_store_order_v89',{
+      method:'POST',
+      body:JSON.stringify({
+        p_customer_name:name,p_customer_phone:phone,p_fulfillment:delivery,
+        p_address:address,p_notes:$('notes').value.trim()||null,
+        p_items:items.map(([slug,quantity])=>({slug,quantity})),
+        p_payment_method:paymentMethod()
+      })
+    });
+    if(!o?.public_code||!o?.tracking_token){
+      throw new Error('Não recebemos a confirmação completa. Consulte seus pedidos antes de tentar novamente.');
+    }
+    const msg=buildWhats(o,name,phone,address);
+    const url=`https://wa.me/${WHATS}?text=${encodeURIComponent(msg)}`;
+    // Falhas de armazenamento do navegador não podem transformar um pedido salvo em erro.
+    try{localStorage.setItem('gds_last_order',JSON.stringify({code:o.public_code,token:o.tracking_token,phone}))}catch(e){console.warn('Não foi possível salvar o acesso rápido ao pedido',e)}
+    cart={};
+    try{saveCart()}catch(e){console.warn('Carrinho não pôde ser gravado localmente',e);updateCartCount()}
+    showSuccess(o,url);
+    restoreLastOrder();
+    loadStore().catch(e=>console.warn('Atualização do cardápio',e));
+  }catch(e){
+    console.error('Falha ao registrar pedido',e);
+    const message=e?.message||'Não foi possível registrar o pedido.';
+    if(errorBox){errorBox.textContent='Não foi possível finalizar: '+message;errorBox.hidden=false;errorBox.scrollIntoView({behavior:'smooth',block:'nearest'})}
+    else alert(message);
+  }finally{
+    checkoutBusy=false;
+    renderStatus();
+  }
+}
+function showSuccess(o,whatsUrl){$('cartForm').hidden=true;$('success').hidden=false;$('successCode').textContent='#'+o.public_code;$('trackLink').href='./acompanhar/?t='+encodeURIComponent(o.tracking_token);const wa=$('whatsOrderLink');if(wa)wa.href=whatsUrl}
 function resetCartModal(){$('cartForm').hidden=false;$('success').hidden=true;closeCart()}
 function renderTestimonials(rows){if(!rows.length){$('testGrid').innerHTML='<div class="emptyBox" style="grid-column:1/-1">Ainda não há depoimentos publicados. Depois que os clientes avaliarem pedidos concluídos, eles aparecerão aqui.</div>';return}$('testGrid').innerHTML=rows.map(r=>`<article class="testCard"><div class="stars">${'★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5)))}</div><p>“${esc(r.comment||'')}”</p><small>Cliente verificado · ${new Date(r.created_at).toLocaleDateString('pt-BR')}</small></article>`).join('')}
 function restoreLastOrder(){try{const o=JSON.parse(localStorage.getItem('gds_last_order')||'null');if(!o?.token)return;const a=$('lastOrder');a.hidden=false;a.href='./acompanhar/?t='+encodeURIComponent(o.token);a.textContent='📍 Acompanhar '+(o.code||'pedido')}catch(_){}}
@@ -214,7 +269,7 @@ async function enableStoreOpenPush(){
   }
 }
 
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=131');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=132');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 bind();updateCartCount();restoreLastOrder();setupInstall();replaceOldServiceWorker();startPresence();loadStore();setInterval(()=>{if(document.visibilityState==='visible')refreshStockOnly().catch(()=>{})},10000);window.addEventListener('focus',()=>refreshStockOnly().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshStockOnly().catch(()=>{})});
 })();
