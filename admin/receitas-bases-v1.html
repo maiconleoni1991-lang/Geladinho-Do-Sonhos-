@@ -209,7 +209,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <label class="field">Comissão (%)<input id="bookEditCommission" type="number" min="0" max="100" step="any" placeholder="0 para venda sem comissão"></label>
 </div>
 <h3 style="margin-top:17px">Ingredientes e custos individuais</h3>
-<div id="bookEditItems" class="lines"></div>
+<div class="book-add-bar">
+<label class="field">Selecionar insumo já cadastrado<select id="bookEditMaterialChoice"><option value="">Escolha um ingrediente ou complemento...</option></select></label>
+<button type="button" id="bookEditAddMaterial">+ Adicionar do cadastro</button>
+<button type="button" id="bookEditAddManual" class="secondary">+ Adicionar manualmente</button>
+</div>
+<p class="hint">Depois de salvar, você pode incluir ou remover itens nesta ficha. Os insumos cadastrados trazem o último preço registrado; os valores continuam editáveis por receita. <strong>A ficha não baixa estoque nem modifica lotes já produzidos.</strong></p>
+<div id="bookEditItems" class="lines" style="margin-top:12px"></div>
 <h3 style="margin-top:17px">Recheios opcionais</h3>
 <div id="bookEditComplements" class="lines"></div>
 <div id="bookEditCalc" class="note" style="margin-top:12px"></div>
@@ -571,26 +577,65 @@ function buildBookSnapshot(){
 function beginBookEdit(id){
  const recipe=state.book.find(b=>b.id===id);if(!recipe)return;
  state.bookEditing=JSON.parse(JSON.stringify(recipe));
+ if(!Array.isArray(state.bookEditing.ingredients))state.bookEditing.ingredients=[];
+ renderBookEditMaterialChoices();
  $('bookEditName').textContent=recipe.recipe_name+' — os ajustes valerão para os próximos lotes.';$('bookEditRecipeName').value=recipe.recipe_name;
  [['bookEditYield','yield_units'],['bookEditSale','sale_price'],['bookEditPackaging','packaging_unit_cost'],['bookEditOverhead','overhead_cost'],['bookEditCommission','commission_percent']].forEach(([id,key])=>$(id).value=fmtInput(recipe[key]));
  renderBookEditItems();updateBookEditCalculation();
  $('bookEditPanel').hidden=false;$('bookEditPanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
+function renderBookEditMaterialChoices(){
+ const select=$('bookEditMaterialChoice'),previous=select.value;
+ const list=state.materials.filter(m=>m.material_type!=='Embalagem').sort((a,b)=>String(a.name).localeCompare(String(b.name),'pt-BR'));
+ select.innerHTML='<option value="">Escolha um ingrediente ou complemento...</option>'+list.map(m=>
+ '<option value="'+esc(m.id)+'">'+esc(m.name+(m.brand?' — '+m.brand:'')+' · '+(m.pack_quantity?fmt(m.pack_quantity)+' '+m.unit:'quantidade pendente')+(m.pack_cost!==null&&m.pack_cost!==undefined?' · '+money(m.pack_cost):' · sem preço'))+'</option>'
+ ).join('');
+ if(list.some(m=>m.id===previous))select.value=previous;
+}
 function renderBookEditItems(){
  const b=state.bookEditing;if(!b)return;
  $('bookEditItems').innerHTML=(Array.isArray(b.ingredients)?b.ingredients:[]).map((i,index)=>{
- const m=material(i.material_id);
- return '<div class="line '+(i.active===false?'inactive':'')+'" data-edit-item="'+index+'"><div class="line-top"><strong>'+esc(i.name)+'</strong><label class="ingredient-switch"><input type="checkbox" data-edit-active="1" '+(i.active===false?'':'checked')+'> Usar na receita</label></div>'+
+ const m=material(i.material_id),unit=i.unit||'g';
+ const opts=[['g','Gramas (g)'],['ml','Mililitros (ml)'],['cx','Caixa (cx)'],['pct','Pacote (pct)'],['un','Unidade (un)']].map(([v,label])=>'<option value="'+v+'" '+(v===unit?'selected':'')+'>'+label+'</option>').join('');
+ return '<div class="line '+(i.active===false?'inactive':'')+'" data-edit-item="'+index+'"><div class="line-top"><strong>'+(index+1)+'. '+esc(i.name||'Novo ingrediente')+'</strong><label class="ingredient-switch"><input type="checkbox" data-edit-active="1" '+(i.active===false?'':'checked')+'> Usar na receita</label><button type="button" class="secondary" data-remove-edit-item="'+index+'">🗑️ Remover</button></div>'+
  '<div class="line-grid">'+
- '<label class="field">Quantidade usada<input type="number" data-edit-prop="quantity_used" value="'+fmtInput(i.quantity_used)+'" min="0" step="any"></label>'+
- '<label class="field">Unidade<input readonly value="'+esc(i.unit||'g')+'"></label>'+
- '<label class="field">Peso / quantidade comprada<input type="number" data-edit-prop="pack_quantity" value="'+fmtInput(i.pack_quantity)+'" min="0.0001" step="any"></label>'+
- '<label class="field">Preço da embalagem (R$)<input type="number" data-edit-prop="pack_cost" value="'+fmtInput(i.pack_cost)+'" min="0" step="any"></label>'+
- '</div><div class="line-result"><span>'+esc(i.classification||i.type||'Ingrediente')+'</span><span data-edit-cost>Custo: '+(i.cost===null?'pendente':money(i.cost))+'</span></div>'+
- (m?'<button type="button" class="secondary" style="margin-top:9px" data-edit-load-catalog="'+index+'">↺ Usar preço atual do cadastro de materiais</button>':'')+'</div>';
- }).join('');
+ '<label class="field">Ingrediente / insumo<input data-edit-prop="name" maxlength="140" placeholder="Ex.: leite em pó" value="'+esc(i.name||'')+'"></label>'+
+ '<label class="field">Classificação<select data-edit-prop="type"><option value="base" '+(i.type!=='complemento'?'selected':'')+'>Ingrediente da base</option><option value="complemento" '+(i.type==='complemento'?'selected':'')+'>Recheio / complemento</option></select></label>'+
+ '<label class="field">Quantidade usada<input type="number" data-edit-prop="quantity_used" value="'+fmtInput(i.quantity_used)+'" min="0.00001" step="any" inputmode="decimal" placeholder="Quanto usou"></label>'+
+ '<label class="field">Unidade<select data-edit-prop="unit">'+opts+'</select></label>'+
+ '<label class="field">Quantidade comprada ('+esc(unit)+')<input type="number" data-edit-prop="pack_quantity" value="'+fmtInput(i.pack_quantity)+'" min="0.00001" step="any" inputmode="decimal" placeholder="Peso / unidades"></label>'+
+ '<label class="field">Preço pago pela compra (R$)<input type="number" data-edit-prop="pack_cost" value="'+fmtInput(i.pack_cost)+'" min="0" step="any" inputmode="decimal" placeholder="R$"></label>'+
+ '</div><div class="line-result"><span>'+esc(i.classification||i.type||'Ingrediente')+'</span><span data-edit-cost>Custo: '+(num(i.cost)===null?'pendente':money(i.cost))+'</span></div>'+
+ (m?'<button type="button" class="secondary" style="margin-top:9px" data-edit-load-catalog="'+index+'">↺ Usar último preço do cadastro de materiais</button>':'')+'</div>';
+ }).join('')||'<p class="small">Ainda não existem ingredientes nesta ficha. Adicione pelo cadastro ou manualmente.</p>';
  const options=Array.isArray(b.complement_options)?b.complement_options:[];
- $('bookEditComplements').innerHTML=options.map((c,i)=>'<label class="ingredient-switch"><input type="checkbox" data-edit-complement="'+i+'" '+(c.selected?'checked':'')+'> '+esc(c.name)+'</label>').join(' ')||'<p class="small">Não há complementos opcionais cadastrados para esta ficha.</p>';
+ $('bookEditComplements').innerHTML=options.map((c,i)=>'<label class="ingredient-switch"><input type="checkbox" data-edit-complement="'+i+'" '+(c.selected?'checked':'')+'> '+esc(c.name)+'</label>').join(' ')||'<p class="small">Não há recheios opcionais cadastrados para esta ficha. Você pode adicioná-los acima como complementos.</p>';
+}
+function addIngredientToBookEdit(materialId){
+ const b=state.bookEditing;if(!b)return;
+ const m=material(materialId),fromCatalog=!!m;
+ if(fromCatalog&&b.ingredients.some(i=>i.material_id===m.id&&i.active!==false)){
+  alert('Este insumo já está na receita. Ajuste a quantidade na linha existente ou desative-a antes de adicionar outra.');
+  return;
+ }
+ const entry={position:b.ingredients.length+1,name:m?.name||'',classification:m?.material_type==='Complemento'?'Complemento':'Ingrediente',
+ type:m?.material_type==='Complemento'?'complemento':'base',active:true,material_id:m?.id||null,
+ brand:m?.brand||null,unit:m?.unit||'g',quantity_used:null,pack_quantity:num(m?.pack_quantity),
+ pack_cost:num(m?.pack_cost),unit_cost:null,cost:null,display_quantity:null};
+ b.ingredients.push(entry);renderBookEditItems();updateBookEditCalculation();
+ const row=$('bookEditItems').querySelector('[data-edit-item="'+(b.ingredients.length-1)+'"]');
+ row?.scrollIntoView({behavior:'smooth',block:'nearest'});
+ row?.querySelector(fromCatalog?'[data-edit-prop="quantity_used"]':'[data-edit-prop="name"]')?.focus({preventScroll:true});
+}
+function removeIngredientFromBookEdit(index){
+ const b=state.bookEditing;if(!b)return;
+ const ingredient=b.ingredients[index];if(!ingredient)return;
+ if(!confirm('Remover "'+(ingredient.name||'este ingrediente')+'" desta receita? A mudança só será efetivada quando você salvar a ficha.'))return;
+ b.ingredients.splice(index,1);
+ const opt=(b.complement_options||[]).find(o=>o.name===ingredient.name);
+ if(opt)opt.selected=false;
+ b.ingredients.forEach((i,k)=>i.position=k+1);
+ renderBookEditItems();updateBookEditCalculation();
 }
 function bookEditFigure(){
  const b=state.bookEditing;if(!b)return{valid:false,missing:['Escolha uma receita para editar']};
@@ -601,7 +646,8 @@ function bookEditFigure(){
   const x={...i},q=num(i.quantity_used),size=num(i.pack_quantity),price=num(i.pack_cost);
   if(i.active===false){x.cost=null;x.unit_cost=size>0&&price!==null?price/size:null;return x;}
   active++;
-  if(q===null||q<0){missing.push(i.name+': quantidade usada');x.cost=null;return x}
+  if(!String(i.name||'').trim()){missing.push('Um ingrediente está sem nome');x.cost=null;return x}
+  if(!(q>0)){missing.push(i.name+': informe quantidade usada maior que zero');x.cost=null;return x}
   if(!(size>0)||price===null||price<0){missing.push(i.name+': preço ou peso/quantidade comprada');x.cost=null;return x}
   x.unit_cost=Number((price/size).toFixed(6));x.cost=Number((q*price/size).toFixed(4));
   if(i.type==='complemento')comps+=x.cost;else base+=x.cost;
@@ -622,21 +668,41 @@ function bookEditFigure(){
 }
 function updateBookEditCalculation(){
  const x=bookEditFigure(),msg=$('bookEditCalc');
- if(!x.valid){msg.textContent='⚠️ Ficha financeira incompleta: '+x.missing.join('; ')+' Custos completos e lucro serão calculados após preencher os itens.';return;}
+ $('bookEditItems').querySelectorAll('[data-edit-item]').forEach(row=>{
+  const i=state.bookEditing?.ingredients?.[Number(row.dataset.editItem)];
+  const cost=row.querySelector('[data-edit-cost]');if(!i||!cost)return;
+  cost.textContent=i.active===false?'Não incluído no custo':num(i.cost)===null?'Custo pendente':'Custo na receita: '+money(i.cost);
+ });
+ if(!x.valid){msg.textContent='⚠️ Ficha financeira incompleta: '+x.missing.join('; ')+'. O cálculo de lucro só fica disponível quando todos os valores estiverem preenchidos.';return;}
  msg.textContent='Custo da base: '+money(x.base)+' • Recheios: '+money(x.comps)+' • Custo total: '+money(x.total)+' • Custo por geladinho: '+money(x.costUnit)+' • Lucro potencial por receita: '+money(x.profit)+'.';
 }
 function updateBookEditItem(e){
  const row=e.target.closest('[data-edit-item]'),b=state.bookEditing;if(!row||!b)return;
  const i=b.ingredients[Number(row.dataset.editItem)];if(!i)return;
- if(e.target.dataset.editProp){
-  i[e.target.dataset.editProp]=num(e.target.value);
-  if(e.target.dataset.editProp==='quantity_used')i.display_quantity=i.quantity_used===null?null:fmt(i.quantity_used)+' '+(i.unit||'');
-  updateBookEditCalculation();
+ const prop=e.target.dataset.editProp;if(!prop)return;
+ if(prop==='name'){
+  const newName=e.target.value;
+  if(i.material_id&&material(i.material_id)?.name!==newName){i.material_id=null;i.brand=null}
+  i.name=newName;
+  row.querySelector('.line-top strong').textContent=(Number(row.dataset.editItem)+1)+'. '+(newName||'Novo ingrediente');
+ }else if(prop==='unit'){
+  if(i.unit!==e.target.value){
+   i.material_id=null;i.brand=null;i.pack_quantity=null;i.pack_cost=null;i.cost=null;i.unit_cost=null;
+   i.unit=e.target.value;i.display_quantity=null;
+   renderBookEditItems();
+   note('Unidade alterada: confirme o peso/quantidade comprada e o preço na nova unidade, para evitar cálculo incorreto.');
+  }
+ }else if(prop==='type'){
+  i.type=e.target.value;i.classification=i.type==='complemento'?'Complemento':'Ingrediente';
+ }else{
+  i[prop]=num(e.target.value);
+  if(prop==='quantity_used')i.display_quantity=i.quantity_used===null?null:fmt(i.quantity_used)+' '+(i.unit||'');
  }
+ updateBookEditCalculation();
 }
 function toggleBookComplement(index,selected){
  const b=state.bookEditing;if(!b)return;
- const opt=b.complement_options[index];if(!opt)return;
+ const opt=(b.complement_options||[])[index];if(!opt)return;
  opt.selected=selected;
  let line=b.ingredients.find(i=>i.type==='complemento'&&i.name===opt.name);
  if(selected&&!line){
@@ -648,6 +714,10 @@ function toggleBookComplement(index,selected){
 async function saveBookEdit(){
  const b=state.bookEditing;if(!b)return;
  const x=bookEditFigure(),btn=$('bookEditSave'),newName=field('bookEditRecipeName').trim();
+ if(!b.ingredients.length)return alert('Inclua pelo menos um ingrediente antes de salvar.');
+ if(b.ingredients.some(i=>!String(i.name||'').trim()))return alert('Preencha o nome de todos os ingredientes antes de salvar.');
+ if(b.ingredients.some(i=>String(i.name).length>140))return alert('Nome do ingrediente deve ter até 140 caracteres.');
+ b.ingredients.forEach((i,index)=>i.position=index+1);
  if(newName.length<2||newName.length>120)return alert('Nome deve ter de 2 a 120 caracteres.');
  if(state.book.some(q=>q.id!==b.id&&q.base_id===b.base_id&&q.recipe_name.trim().toLocaleLowerCase('pt-BR')===newName.toLocaleLowerCase('pt-BR')))return alert('Já existe receita com este nome nesta base.');
  const y=val('bookEditYield');
@@ -708,7 +778,7 @@ function renderBook(){
    (b.preparation?'<h3 style="margin:13px 0 5px;font-size:14px">Modo de preparo</h3><p class="small">'+esc(b.preparation)+'</p>':'')+
    (b.notes?'<p class="small"><strong>Observações:</strong> '+esc(b.notes)+'</p>':'')+
    '<div class="book-meta">Esta ficha registra as informações salvas; não movimenta o estoque.</div></details>'+
-   '<div class="actions"><button type="button" class="secondary" data-edit-book="'+esc(b.id)+'">✏️ Editar nome, ingredientes e preços</button><button type="button" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção</button></div></article>';
+   '<div class="actions"><button type="button" class="secondary" data-edit-book="'+esc(b.id)+'">✏️ Editar receita / adicionar ingredientes</button><button type="button" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção</button></div></article>';
  }).join('')||'<p class="small">Nenhuma receita encontrada. Preencha uma base, informe o nome do sabor e clique em Salvar receita no Livro.</p>';
  renderProductionHistory();
  if(state.selectedBookId){const selected=state.book.find(x=>x.id===state.selectedBookId);if(selected){$('productionPanel').hidden=false;$('productionRecipeName').textContent=selected.recipe_name+' — '+(state.bases.find(x=>x.id===selected.base_id)?.name||'Base');renderProductionCalc();}else{$('productionPanel').hidden=true;}}
@@ -869,19 +939,34 @@ $('bookCards').addEventListener('click',e=>{
  const btn=e.target.closest('[data-produce-book]');if(btn)selectBookForProduction(btn.dataset.produceBook);
 });
 $('bookEditCancel').onclick=()=>{state.bookEditing=null;$('bookEditPanel').hidden=true;};
+$('bookEditAddMaterial').onclick=()=>{
+ const id=$('bookEditMaterialChoice').value;
+ if(!id)return alert('Escolha um insumo cadastrado antes de adicioná-lo à receita.');
+ addIngredientToBookEdit(id);
+};
+$('bookEditAddManual').onclick=()=>addIngredientToBookEdit(null);
 ['bookEditYield','bookEditSale','bookEditPackaging','bookEditOverhead','bookEditCommission'].forEach(id=>$(id).addEventListener('input',updateBookEditCalculation));
 $('bookEditItems').addEventListener('input',updateBookEditItem);
 $('bookEditItems').addEventListener('change',e=>{
-const row=e.target.closest('[data-edit-item]');
-if(!row||!e.target.matches('[data-edit-active]')||!state.bookEditing)return;
-state.bookEditing.ingredients[Number(row.dataset.editItem)].active=e.target.checked;
-renderBookEditItems();updateBookEditCalculation();
+ const row=e.target.closest('[data-edit-item]');
+ if(!row||!state.bookEditing)return;
+ if(e.target.matches('[data-edit-active]')){
+  state.bookEditing.ingredients[Number(row.dataset.editItem)].active=e.target.checked;
+  renderBookEditItems();updateBookEditCalculation();
+ }else if(e.target.matches('[data-edit-prop]')){
+  updateBookEditItem(e);
+ }
 });
 $('bookEditItems').addEventListener('click',e=>{
+ const remove=e.target.closest('[data-remove-edit-item]');
+ if(remove){removeIngredientFromBookEdit(Number(remove.dataset.removeEditItem));return;}
  const btn=e.target.closest('[data-edit-load-catalog]');
  if(!btn||!state.bookEditing)return;
  const item=state.bookEditing.ingredients[Number(btn.dataset.editLoadCatalog)],m=material(item?.material_id);
  if(!m)return;
+ if(item.unit!==m.unit){
+  alert('A unidade do insumo é diferente do cadastro. Confira a conversão manualmente.');return;
+ }
  item.pack_quantity=num(m.pack_quantity);item.pack_cost=num(m.pack_cost);
  renderBookEditItems();updateBookEditCalculation();
 });
