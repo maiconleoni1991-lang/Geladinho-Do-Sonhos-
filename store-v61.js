@@ -307,7 +307,7 @@ function setupInstallRegistration(){
     }
     const save=d.querySelector('#gdsInstallSave');save.disabled=true;save.textContent='Salvando...';
     try{
-      await api('/rest/v1/site_app_installations',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({customer_name:name,customer_phone:phone,install_signal:signal})});
+      const r=await fetch(SB+'/rest/v1/site_app_installations',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({customer_name:name,customer_phone:phone,install_signal:signal})});if(!r.ok){const info=await r.json().catch(()=>({}));throw Error(info.message||'Falha ao registrar instalação.')}
       try{localStorage.setItem('gds_install_optin_v1','yes')}catch(_){}
       document.getElementById('gdsInstallRegister')?.remove();d.close();
       alert('Obrigado! Seu uso do aplicativo foi registrado com sua autorização.');
