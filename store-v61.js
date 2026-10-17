@@ -279,5 +279,47 @@ async function enableStoreOpenPush(){
 
 async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=137');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
-bind();updateCartCount();restoreLastOrder();setupInstall();replaceOldServiceWorker();startPresence();loadStore();setInterval(()=>{if(document.visibilityState==='visible')refreshStockOnly().catch(()=>{})},10000);window.addEventListener('focus',()=>refreshStockOnly().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshStockOnly().catch(()=>{})});
+
+function setupInstallRegistration(){
+ const displayStandalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+ let signal=displayStandalone()?'standalone':'';
+ const alreadyRegistered=()=>{try{return localStorage.getItem('gds_install_optin_v1')==='yes'}catch(_){return false}};
+ function offer(){
+  if(!signal||alreadyRegistered()||document.getElementById('gdsInstallRegister'))return;
+  const b=document.createElement('button');b.type='button';b.id='gdsInstallRegister';
+  b.textContent='📱 Já usa nosso aplicativo?';b.setAttribute('aria-label','Confirmar voluntariamente instalação do aplicativo');
+  b.style.cssText='position:fixed;right:12px;bottom:92px;z-index:90;border:1px solid #f3acc8;background:#fff;color:#ad1454;border-radius:99px;padding:10px 13px;box-shadow:0 8px 24px #42112629;font:800 12px system-ui;max-width:85vw;cursor:pointer';
+  b.onclick=showForm;document.body.appendChild(b);
+ }
+ function showForm(){
+  let d=document.getElementById('gdsInstallOptInDialog');
+  if(!d){
+   d=document.createElement('dialog');d.id='gdsInstallOptInDialog';d.setAttribute('aria-label','Identificar uso do aplicativo');
+   d.style.cssText='border:1px solid #f4d6e2;background:#fff;color:#351523;border-radius:18px;padding:21px;width:min(430px,calc(100vw - 32px));max-height:80dvh;overflow:auto;box-shadow:0 20px 70px #210d1647;font:14px/1.5 system-ui';
+   d.innerHTML='<form method="dialog" id="gdsInstallForm"><h2 style="margin:0 0 7px;font-size:21px">📱 Nosso aplicativo no seu celular</h2><p style="color:#765866;font-size:13px">Se você instalou nossa loja, pode se identificar voluntariamente. Assim poderemos reconhecer no nosso painel quem nos acompanha pelo aplicativo.</p><label style="display:block;font-weight:800;margin-top:12px">Seu nome<input name="name" maxlength="100" autocomplete="name" required style="display:block;width:100%;padding:11px;margin-top:4px;border:1px solid #eacfd9;border-radius:10px"></label><label style="display:block;font-weight:800;margin-top:10px">WhatsApp com DDD<input name="phone" type="tel" maxlength="18" autocomplete="tel" required style="display:block;width:100%;padding:11px;margin-top:4px;border:1px solid #eacfd9;border-radius:10px"></label><label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#765866;margin-top:13px"><input name="consent" type="checkbox" required style="margin-top:3px">Autorizo o registro do meu nome e WhatsApp, apenas para identificar que informei o uso do aplicativo à Geladinho do Sonhos.</label><p id="gdsInstallError" role="alert" style="color:#a31542;font-weight:800" hidden></p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button id="gdsInstallSave" type="submit" style="border:0;background:#ed1768;color:#fff;border-radius:10px;padding:12px;font-weight:900;cursor:pointer">Confirmar</button><button id="gdsInstallCancel" type="button" style="border:1px solid #ecc7d7;background:#fff;color:#542336;border-radius:10px;padding:12px;font-weight:900;cursor:pointer">Agora não</button></div></form>';
+   document.body.appendChild(d);
+   d.querySelector('#gdsInstallCancel').onclick=()=>d.close();
+   d.querySelector('#gdsInstallForm').onsubmit=async e=>{
+    e.preventDefault();
+    const form=d.querySelector('form'),name=form.elements.name.value.trim(),phone=String(form.elements.phone.value).replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'');
+    if(name.length<2||!/^\d{10,11}$/.test(phone)||!form.elements.consent.checked){
+     const msg=d.querySelector('#gdsInstallError');msg.textContent='Informe nome e WhatsApp válidos e autorize o registro.';msg.hidden=false;return
+    }
+    const save=d.querySelector('#gdsInstallSave');save.disabled=true;save.textContent='Salvando...';
+    try{
+      await api('/rest/v1/site_app_installations',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({customer_name:name,customer_phone:phone,install_signal:signal})});
+      try{localStorage.setItem('gds_install_optin_v1','yes')}catch(_){}
+      document.getElementById('gdsInstallRegister')?.remove();d.close();
+      alert('Obrigado! Seu uso do aplicativo foi registrado com sua autorização.');
+    }catch(e){const msg=d.querySelector('#gdsInstallError');msg.textContent='Não foi possível registrar agora: '+e.message;msg.hidden=false}
+    finally{save.disabled=false;save.textContent='Confirmar'}
+   };
+  }
+  d.showModal();
+ }
+ if(signal)offer();
+ window.addEventListener('appinstalled',()=>{signal='appinstalled';offer()});
+}
+
+bind();updateCartCount();restoreLastOrder();setupInstall();setupInstallRegistration();replaceOldServiceWorker();startPresence();loadStore();setInterval(()=>{if(document.visibilityState==='visible')refreshStockOnly().catch(()=>{})},10000);window.addEventListener('focus',()=>refreshStockOnly().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshStockOnly().catch(()=>{})});
 })();
