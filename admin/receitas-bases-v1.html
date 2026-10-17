@@ -778,7 +778,7 @@ function renderBook(){
    (b.preparation?'<h3 style="margin:13px 0 5px;font-size:14px">Modo de preparo</h3><p class="small">'+esc(b.preparation)+'</p>':'')+
    (b.notes?'<p class="small"><strong>Observações:</strong> '+esc(b.notes)+'</p>':'')+
    '<div class="book-meta">Esta ficha registra as informações salvas; não movimenta o estoque.</div></details>'+
-   '<div class="actions"><button type="button" class="secondary" data-edit-book="'+esc(b.id)+'">✏️ Editar nome, ingredientes e preços</button><button type="button" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção</button></div></article>';
+   '<div class="actions"><button type="button" class="secondary" data-edit-book="'+esc(b.id)+'">✏️ Editar receita / adicionar ingredientes</button><button type="button" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção</button></div></article>';
  }).join('')||'<p class="small">Nenhuma receita encontrada. Preencha uma base, informe o nome do sabor e clique em Salvar receita no Livro.</p>';
  renderProductionHistory();
  if(state.selectedBookId){const selected=state.book.find(x=>x.id===state.selectedBookId);if(selected){$('productionPanel').hidden=false;$('productionRecipeName').textContent=selected.recipe_name+' — '+(state.bases.find(x=>x.id===selected.base_id)?.name||'Base');renderProductionCalc();}else{$('productionPanel').hidden=true;}}
