@@ -281,7 +281,7 @@ footer .footer img{
 /* v142 — cardápio completo: sabores sem estoque ficam visíveis, mas não podem ser comprados */
 .product-unavailable{border-color:#e6d7dd;background:#fffafc}
 .product-unavailable .photo img{filter:saturate(.8);opacity:.82}
-.product-unavailable .sold{position:absolute;top:10px;right:10px;left:auto;bottom:auto;inset:auto 10px auto auto;display:block;background:#571f34e8;color:#fff;font-size:11px;letter-spacing:.02em;font-weight:950;border-radius:999px;padding:7px 11px;box-shadow:0 4px 11px #25132029}
+.product-unavailable .sold{position:absolute;top:10px;right:10px;left:auto;bottom:auto;inset:10px 10px auto auto;display:block;background:#571f34e8;color:#fff;font-size:11px;letter-spacing:.02em;font-weight:950;border-radius:999px;padding:7px 11px;box-shadow:0 4px 11px #25132029}
 .product-unavailable .stock-out{color:#a13256}
 .product-unavailable .pickQty{opacity:.6;pointer-events:none}
 .product-unavailable .pickLabel{color:#925a6d}
