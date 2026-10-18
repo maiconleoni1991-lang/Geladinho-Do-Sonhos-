@@ -71,29 +71,29 @@ async function loadStore(){
   $('products').innerHTML='<div class="loadingBox" style="grid-column:1/-1">Carregando sabores disponíveis…</div>';
   try{
     const [p,s,t]=await Promise.all([
-      api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&order=category.asc,name.asc'),
+      api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&order=category.asc,name.asc'),
       api('/rest/v1/store_settings?id=eq.main&select=is_open'),
       api('/rest/v1/public_testimonials?select=rating,comment,created_at&order=created_at.desc&limit=6')
     ]);
     products=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
     const catOrder={Tradicional:0,Cremoso:1,Gourmet:2,Trufado:3};
-    products.sort((a,b)=>(a.stock<=0?1:0)-(b.stock<=0?1:0)||(catOrder[a.category]??99)-(catOrder[b.category]??99)||(Number(a.sort_order)||999)-(Number(b.sort_order)||999)||String(a.name).localeCompare(String(b.name),'pt-BR'));
+    products.sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99)||String(a.name).localeCompare(String(b.name),'pt-BR',{sensitivity:'base'}));
     storeOpen=!!s?.[0]?.is_open;
-    renderStatus();renderFilters();renderProducts();renderTestimonials(Array.isArray(t)?t:[]);cleanCart();
+    renderStatus();cleanCart();renderFilters();renderProducts();renderTestimonials(Array.isArray(t)?t:[]);
   }catch(e){
     console.error(e);storeOpen=false;renderStatus('Não foi possível conectar à loja agora.');
     $('products').innerHTML=`<div class="errorBox" style="grid-column:1/-1"><b>Não conseguimos carregar o cardápio.</b><br>${esc(e.message)}<br><button class="secondary" style="margin-top:12px" onclick="location.reload()">Tentar novamente</button></div>`;
   }
 }
-function cleanCart(){let changed=false;for(const slug of Object.keys(cart)){const p=products.find(x=>x.slug===slug);if(!p||p.stock<=0){delete cart[slug];changed=true}else if(cart[slug]>p.stock){cart[slug]=p.stock;changed=true}}if(changed)saveCart();else updateCartCount()}
+function cleanCart(){let changed=false;for(const slug of Object.keys(cart)){const p=products.find(x=>x.slug===slug);if(!p||p.stock<=0||!p.active){delete cart[slug];changed=true}else if(cart[slug]>p.stock){cart[slug]=p.stock;changed=true}}if(changed)saveCart();else updateCartCount()}
 async function refreshStockOnly(){
   if(stockRefreshBusy||checkoutBusy)return;
   stockRefreshBusy=true;
   try{
-    const p=await api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&order=category.asc,name.asc');
+    const p=await api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&order=category.asc,name.asc');
     products=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
     const catOrder={Tradicional:0,Cremoso:1,Gourmet:2,Trufado:3};
-    products.sort((a,b)=>(a.stock<=0?1:0)-(b.stock<=0?1:0)||(catOrder[a.category]??99)-(catOrder[b.category]??99)||(Number(a.sort_order)||999)-(Number(b.sort_order)||999)||String(a.name).localeCompare(String(b.name),'pt-BR'));
+    products.sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99)||String(a.name).localeCompare(String(b.name),'pt-BR',{sensitivity:'base'}));
     cleanCart();renderFilters();renderProducts();
     if($('cartOverlay')?.classList.contains('show'))renderCart();
   }finally{stockRefreshBusy=false}
@@ -116,7 +116,7 @@ async function verifyCartStock(){
 }
 function renderStatus(custom){const b=$('storeStatus');b.className='statusbar '+(custom?'closed':storeOpen?'open':'closed');b.textContent=custom|| (storeOpen?'● Vendas online abertas · Faça seu pedido pelo site.':'● Vendas online fechadas · Cardápio disponível somente para consulta.');const c=$('checkoutBtn');if(c){c.disabled=checkoutBusy||!storeOpen;c.textContent=checkoutBusy?'Registrando pedido…':(storeOpen?'Confirmar pedido':'Loja fechada para pedidos online')}}
 function renderFilters(){
-  const available=products.filter(p=>p.stock>0);
+  const available=products.filter(p=>p.category);
   const base=['Tradicional','Cremoso','Gourmet','Trufado'].filter(c=>available.some(p=>p.category===c));
   const extras=[...new Set(available.map(p=>p.category).filter(Boolean).filter(c=>!base.includes(c)))];
   const cats=['Todos',...base,...extras];
@@ -126,19 +126,21 @@ function renderFilters(){
 }
 function renderProducts(){
   const q=term.trim().toLowerCase();
-  const list=products.filter(p=>p.stock>0&&(filter==='Todos'||p.category===filter)&&(!q||`${p.name} ${p.category} ${p.description||''}`.toLowerCase().includes(q)));
-  if(!list.length){$('products').innerHTML='<div class="emptyBox" style="grid-column:1/-1">'+(q||filter!=='Todos'?'Nenhum sabor encontrado.':'Nenhum sabor disponível no momento.')+'</div>';return}
+  const list=products.filter(p=>(filter==='Todos'||p.category===filter)&&(!q||`${p.name} ${p.category} ${p.description||''}`.toLowerCase().includes(q)));
+  if(!list.length){$('products').innerHTML='<div class="emptyBox" style="grid-column:1/-1">'+(q||filter!=='Todos'?'Nenhum sabor encontrado.':'Nosso cardápio está sendo preparado.')+'</div>';return}
   $('products').innerHTML=list.map(p=>{
-    const selected=Number(cart[p.slug]||0);
-    const blocked=p.stock<=0||!storeOpen;
-    return `<article class="product">
-      <div class="photo">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:''}</div>
+    const available=!!p.active&&p.stock>0;
+    const selected=available?Number(cart[p.slug]||0):0;
+    const blocked=!available||!storeOpen;
+    const stockLabel=available?'Disponível':p.stock<=0?'Esgotado':'Indisponível';
+    return `<article class="product ${available?'':'product-unavailable'}">
+      <div class="photo">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:''}${available?'':`<span class="sold">${stockLabel}</span>`}</div>
       <div class="body">
         <div class="cat">${esc(p.category)}</div>
         <h3>${esc(p.name)}</h3>
         <div class="desc">${esc(p.description||'Geladinho preparado com muito sabor e cremosidade.')}</div>
-        <div class="meta"><div class="price">${money(p.price)}</div><div class="stock">Disponível</div></div>
-        <div class="pickLabel">${blocked?(!storeOpen?'Loja fechada':'Indisponível'):'Escolha a quantidade'}</div>
+        <div class="meta"><div class="price">${money(p.price)}</div><div class="stock ${available?'':'stock-out'}">${stockLabel}</div></div>
+        <div class="pickLabel">${blocked?(!storeOpen?'Loja fechada':stockLabel==='Esgotado'?'Em breve, de volta ao estoque':'Sabor indisponível no momento'):'Escolha a quantidade'}</div>
         <div class="pickQty ${selected>0?'selected':''}">
           <button type="button" data-card-dec="${esc(p.slug)}" aria-label="Diminuir ${esc(p.name)}" ${blocked||selected<=0?'disabled':''}>−</button>
           <div class="pickCount"><b>${selected}</b><small>${selected===1?'unidade':'unidades'}</small></div>
@@ -152,7 +154,7 @@ function renderProducts(){
 }
 function cardAdjust(slug,d){
   const p=products.find(x=>x.slug===slug);
-  if(!p||p.stock<=0||!storeOpen)return;
+  if(!p||!p.active||p.stock<=0||!storeOpen)return;
   const current=Number(cart[slug]||0),next=current+d;
   if(next<=0)delete cart[slug];
   else if(next<=p.stock)cart[slug]=next;
@@ -166,7 +168,7 @@ function cardAdjust(slug,d){
 function addToCart(slug){cardAdjust(slug,1)}
 function changeQty(slug,d){
   const p=products.find(x=>x.slug===slug);
-  if(!p)return;
+  if(!p||!p.active||p.stock<=0)return;
   const n=(cart[slug]||0)+d;
   if(n<=0)delete cart[slug];
   else if(n<=p.stock)cart[slug]=n;
@@ -302,7 +304,7 @@ async function enableStoreOpenPush(){
   }
 }
 
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=141');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=142');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 
 function setupInstallRegistration(){
