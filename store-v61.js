@@ -71,7 +71,7 @@ async function loadStore(){
   $('products').innerHTML='<div class="loadingBox" style="grid-column:1/-1">Carregando sabores disponíveis…</div>';
   try{
     const [p,s,t]=await Promise.all([
-      api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&order=category.asc,name.asc'),
+      api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&stock=gt.0&order=category.asc,name.asc'),
       api('/rest/v1/store_settings?id=eq.main&select=is_open'),
       api('/rest/v1/public_testimonials?select=rating,comment,created_at&order=created_at.desc&limit=6')
     ]);
@@ -90,7 +90,7 @@ async function refreshStockOnly(){
   if(stockRefreshBusy||checkoutBusy)return;
   stockRefreshBusy=true;
   try{
-    const p=await api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&order=category.asc,name.asc');
+    const p=await api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&stock=gt.0&order=category.asc,name.asc');
     products=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
     const catOrder={Tradicional:0,Cremoso:1,Gourmet:2,Trufado:3};
     products.sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99)||String(a.name).localeCompare(String(b.name),'pt-BR',{sensitivity:'base'}));
@@ -116,7 +116,7 @@ async function verifyCartStock(){
 }
 function renderStatus(custom){const b=$('storeStatus');b.className='statusbar '+(custom?'closed':storeOpen?'open':'closed');b.textContent=custom|| (storeOpen?'● Vendas online abertas · Faça seu pedido pelo site.':'● Vendas online fechadas · Cardápio disponível somente para consulta.');const c=$('checkoutBtn');if(c){c.disabled=checkoutBusy||!storeOpen;c.textContent=checkoutBusy?'Registrando pedido…':(storeOpen?'Confirmar pedido':'Loja fechada para pedidos online')}}
 function renderFilters(){
-  const available=products.filter(p=>p.category);
+  const available=products.filter(p=>p.active&&p.stock>0&&p.category);
   const base=['Tradicional','Cremoso','Gourmet','Trufado'].filter(c=>available.some(p=>p.category===c));
   const extras=[...new Set(available.map(p=>p.category).filter(Boolean).filter(c=>!base.includes(c)))];
   const cats=['Todos',...base,...extras];
@@ -126,8 +126,8 @@ function renderFilters(){
 }
 function renderProducts(){
   const q=term.trim().toLowerCase();
-  const list=products.filter(p=>(filter==='Todos'||p.category===filter)&&(!q||`${p.name} ${p.category} ${p.description||''}`.toLowerCase().includes(q)));
-  if(!list.length){$('products').innerHTML='<div class="emptyBox" style="grid-column:1/-1">'+(q||filter!=='Todos'?'Nenhum sabor encontrado.':'Nosso cardápio está sendo preparado.')+'</div>';return}
+  const list=products.filter(p=>p.active&&p.stock>0&&(filter==='Todos'||p.category===filter)&&(!q||`${p.name} ${p.category} ${p.description||''}`.toLowerCase().includes(q)));
+  if(!list.length){$('products').innerHTML='<div class="emptyBox" style="grid-column:1/-1">'+(q||filter!=='Todos'?'Nenhum sabor encontrado.':'Nenhum sabor disponível no momento.')+'</div>';return}
   $('products').innerHTML=list.map(p=>{
     const available=!!p.active&&p.stock>0;
     const selected=available?Number(cart[p.slug]||0):0;
@@ -304,7 +304,7 @@ async function enableStoreOpenPush(){
   }
 }
 
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=142');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=143');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 
 function setupInstallRegistration(){
