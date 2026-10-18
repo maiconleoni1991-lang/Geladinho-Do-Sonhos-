@@ -15,7 +15,7 @@
 <script>(async()=>{
 'use strict';
 const $=id=>document.getElementById(id),GOAL=30;
-let products=[],orders=[],events=[],orderItems=[],eventItems=[],visitors=new Map(),visitorRange='',loading=false;
+let products=[],orders=[],events=[],orderItems=[],eventItems=[],visitors=new Map(),visitorRange='',visitorsReady=false,loading=false;
 const soldStatuses=['Aceito','Em preparação','Saiu para entrega','Entregue','Finalizado'];
 function setMsg(t,c=''){$('msg').textContent=t;$('msg').className='msg '+c}
 function money(v){return GDS48.money(v)}
@@ -31,14 +31,14 @@ function paidEvent(x){return x.status!=='Cancelado'&&x.payment_status==='Pago'}
 function rowList(object,fn=v=>v){return Object.entries(object).sort((a,b)=>String(a[0]).localeCompare(String(b[0]),'pt-BR')).map(([k,v])=>'<div class="row"><span>'+GDS48.esc(k)+'</span><b>'+fn(v)+'</b></div>').join('')||'<div class="empty">Sem registros neste período.</div>'}
 function selectedDates(){let a=$('from').value||spDate(),b=$('to').value||a;if(a>b){[a,b]=[b,a];$('from').value=a;$('to').value=b}return[a,b]}
 async function loadVisitors(a,b){
- const key=a+'|'+b;visitorRange=key;visitors=new Map();
+ const key=a+'|'+b;visitorRange=key;visitorsReady=false;visitors=new Map();
  $('periodVisitors').textContent='Consultando…';
  try{
   const {data,error}=await GDS48.sb.rpc('get_store_visit_totals_v141',{p_start_date:a,p_end_date:b});
   if(error)throw error;
   if(visitorRange!==key)return;
-  visitors=new Map((data||[]).map(x=>[x.visit_date,n(x.visitors)]));
- }catch(e){if(visitorRange===key){visitorRange='ERRO';$('periodVisitors').textContent='Indisponível';setMsg('⚠️ Contador de visitas indisponível: '+e.message,'err')}return}
+  visitors=new Map((data||[]).map(x=>[x.visit_date,n(x.visitors)]));visitorsReady=true;
+ }catch(e){if(visitorRange===key){visitorsReady=false;visitorRange='ERRO';$('periodVisitors').textContent='Indisponível';setMsg('⚠️ Contador de visitas indisponível: '+e.message,'err')}return}
  render();
 }
 function render(){
@@ -66,7 +66,7 @@ function render(){
  $('periodGoal').textContent=totalUnits+' / '+goal+' ('+percent+'%)';
  $('goalDetails').textContent=totalUnits>=goal?'✅ Meta atingida!':'Faltam '+(goal-totalUnits)+' geladinhos para a meta do período';
  $('goalFill').style.width=Math.min(100,percent)+'%';
- const visitsReady=visitorRange===rangeKey;
+ const visitsReady=visitorRange===rangeKey&&visitorsReady;
  if(visitsReady)$('periodVisitors').textContent=[...visitors.values()].reduce((sum,x)=>sum+x,0)+' visitas';
  const statuses={};ordered.forEach(x=>{statuses[x.status]=(statuses[x.status]||0)+1});$('statuses').innerHTML=rowList(statuses);
  const cat={};products.forEach(x=>cat[x.category]=(cat[x.category]||0)+n(x.stock));$('cats').innerHTML=rowList(cat);
