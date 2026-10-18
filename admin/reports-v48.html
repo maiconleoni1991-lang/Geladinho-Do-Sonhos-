@@ -1,63 +1,109 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#ff0f68"><title>Relatórios de Vendas — GDS Admin</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script><style>
-*{box-sizing:border-box}body{margin:0;background:#fff8fb;font-family:Inter,system-ui;color:#29171d}.wrap{max-width:1160px;margin:auto;padding:16px 12px 70px}.head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.head h1{margin:0;color:#4a101e}.sp{flex:1}.btn{border:1px solid #efdde4;background:#fff;color:#4a101e;border-radius:11px;padding:10px 12px;font-weight:900;cursor:pointer}.btn.primary{background:#ff0f68;color:#fff;border-color:#ff0f68}.btn.active{background:#4a101e;color:#fff;border-color:#4a101e}.msg{margin:12px 0;padding:11px;background:#fff;border:1px solid #efdde4;border-radius:11px;color:#78616a}.ok{color:#14753e}.err{color:#b02a42}.filterCard,.stat,.card{background:#fff;border:1px solid #efdde4;border-radius:17px;padding:14px}.filterCard{margin:12px 0}.filterTitle{font-weight:950;color:#4a101e;margin-bottom:10px}.filterGrid{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end}.field label{display:block;font-size:11px;font-weight:900;color:#78616a;margin-bottom:5px}.field input{width:100%;border:1px solid #efdde4;border-radius:11px;padding:11px;background:#fff;color:#29171d}.quickBtns{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat small{color:#78616a}.stat b{display:block;font-size:23px;color:#4a101e;margin-top:4px}.stat.main{background:linear-gradient(180deg,#fff,#fff3f8)}.stat.main b{color:#ff0f68}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.card h2{margin:0 0 10px;color:#4a101e;font-size:17px}.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f4e9ed;font-size:13px}.row:last-child{border-bottom:0}.tableWrap{overflow:auto}.daily{width:100%;border-collapse:collapse;font-size:12px}.daily th,.daily td{padding:9px 8px;border-bottom:1px solid #f4e9ed;text-align:right;white-space:nowrap}.daily th:first-child,.daily td:first-child{text-align:left}.daily th{color:#78616a;font-size:11px}.daily td:last-child,.daily th:last-child{font-weight:950;color:#4a101e}.empty{padding:18px;text-align:center;color:#78616a}@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.filterGrid{grid-template-columns:1fr 1fr}.filterGrid .apply{grid-column:1/-1}.grid{grid-template-columns:1fr}}@media(max-width:520px){.stats{grid-template-columns:1fr}.filterGrid{grid-template-columns:1fr}.quickBtns .btn{flex:1}}</style></head><body><script src="admin-common-v48.js?v=140"></script><main class="wrap"><div class="head"><div><h1>Relatórios</h1><div style="font-size:12px;color:#78616a">Vendas por dia, período, canal e eventos pagos</div></div><div class="sp"></div><button id="refresh" class="btn">↻ Atualizar</button></div>
+*{box-sizing:border-box}body{margin:0;background:#fff8fb;font-family:Inter,system-ui;color:#29171d}.wrap{max-width:1160px;margin:auto;padding:16px 12px 70px}.head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.head h1{margin:0;color:#4a101e}.sp{flex:1}.btn{border:1px solid #efdde4;background:#fff;color:#4a101e;border-radius:11px;padding:10px 12px;font-weight:900;cursor:pointer}.btn.primary{background:#ff0f68;color:#fff;border-color:#ff0f68}.btn.active{background:#4a101e;color:#fff;border-color:#4a101e}.msg{margin:12px 0;padding:11px;background:#fff;border:1px solid #efdde4;border-radius:11px;color:#78616a}.ok{color:#14753e}.err{color:#b02a42}.filterCard,.stat,.card{background:#fff;border:1px solid #efdde4;border-radius:17px;padding:14px}.filterCard{margin:12px 0}.filterTitle{font-weight:950;color:#4a101e;margin-bottom:10px}.filterGrid{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end}.field label{display:block;font-size:11px;font-weight:900;color:#78616a;margin-bottom:5px}.field input{width:100%;border:1px solid #efdde4;border-radius:11px;padding:11px;background:#fff;color:#29171d}.quickBtns{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat small{color:#78616a}.stat b{display:block;font-size:23px;color:#4a101e;margin-top:4px}.stat.main{background:linear-gradient(180deg,#fff,#fff3f8)}.stat.main b{color:#ff0f68}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.card h2{margin:0 0 10px;color:#4a101e;font-size:17px}.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f4e9ed;font-size:13px}.row:last-child{border-bottom:0}.tableWrap{overflow:auto}.daily{width:100%;border-collapse:collapse;font-size:12px}.daily th,.daily td{padding:9px 8px;border-bottom:1px solid #f4e9ed;text-align:right;white-space:nowrap}.daily th:first-child,.daily td:first-child{text-align:left}.daily th{color:#78616a;font-size:11px}.daily td:last-child,.daily th:last-child{font-weight:950;color:#4a101e}.empty{padding:18px;text-align:center;color:#78616a}@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.filterGrid{grid-template-columns:1fr 1fr}.filterGrid .apply{grid-column:1/-1}.grid{grid-template-columns:1fr}}@media(max-width:520px){.stats{grid-template-columns:1fr}.filterGrid{grid-template-columns:1fr}.quickBtns .btn{flex:1}}.goal-track{height:9px;margin-top:9px;background:#f2e9ee;border-radius:9px;overflow:hidden}.goal-track>div{height:100%;width:0;background:#14a36a;border-radius:9px;transition:width .25s}</style></head><body><script src="admin-common-v48.js?v=141"></script><main class="wrap"><div class="head"><div><h1>Relatórios</h1><div style="font-size:12px;color:#78616a">Vendas por dia, período, canal e eventos pagos</div></div><div class="sp"></div><button id="refresh" class="btn">↻ Atualizar</button></div>
 
 <section class="filterCard"><div class="filterTitle">📅 Filtrar vendas por dia ou período</div><div class="filterGrid"><div class="field"><label>DATA INICIAL</label><input id="from" type="date"></div><div class="field"><label>DATA FINAL</label><input id="to" type="date"></div><button id="apply" class="btn primary apply">Aplicar filtro</button></div><div class="quickBtns"><button class="btn" data-range="today">Hoje</button><button class="btn" data-range="yesterday">Ontem</button><button class="btn" data-range="7">Últimos 7 dias</button><button class="btn" data-range="30">Últimos 30 dias</button></div></section>
 
-<div id="msg" class="msg">Carregando relatórios…</div>
+<div id="msg" class="msg">Carregando relatórios…</div><p class="msg" style="margin-top:-4px">As unidades representam a soma de itens em vendas online, locais e eventos pagos, sem pedidos cancelados. A meta é de <b>30 geladinhos por dia</b>. O histórico de visitas começa após a ativação do contador.</p>
 
-<section class="stats"><div class="stat main"><small>Total vendido no período</small><b id="periodTotal">—</b></div><div class="stat"><small>Pedidos online</small><b id="onlineTotal">—</b></div><div class="stat"><small>Venda no local</small><b id="localTotal">—</b></div><div class="stat"><small>Eventos pagos</small><b id="eventTotal">—</b></div><div class="stat"><small>Quantidade de vendas</small><b id="saleCount">—</b></div><div class="stat"><small>💵 Recebido no período</small><b id="periodReceived">—</b></div></section>
+<section class="stats"><div class="stat main"><small>Total vendido no período</small><b id="periodTotal">—</b></div><div class="stat"><small>Pedidos online</small><b id="onlineTotal">—</b></div><div class="stat"><small>Venda no local</small><b id="localTotal">—</b></div><div class="stat"><small>Eventos pagos</small><b id="eventTotal">—</b></div><div class="stat"><small>Quantidade de vendas</small><b id="saleCount">—</b></div><div class="stat"><small>💵 Recebido no período</small><b id="periodReceived">—</b></div>
+<div class="stat main"><small>🍧 Geladinhos vendidos no período</small><b id="periodUnits">—</b><small id="unitBreakdown">Online · Local · Eventos</small></div>
+<div class="stat"><small>🎯 Meta de vendas (30 por dia)</small><b id="periodGoal">—</b><small id="goalDetails">Meta para os dias selecionados</small><div class="goal-track"><div id="goalFill"></div></div></div>
+<div class="stat"><small>👀 Visitas à loja no período</small><b id="periodVisitors">—</b><small>Visitantes por navegador/dia, desde a ativação</small></div></section>
 
-<section class="grid"><div class="card" style="grid-column:1/-1"><h2>Vendas por dia</h2><div class="tableWrap"><table class="daily"><thead><tr><th>Dia</th><th>Vendas</th><th>Online</th><th>Local</th><th>Eventos</th><th>Total</th></tr></thead><tbody id="dailyRows"></tbody></table></div></div><div class="card"><h2>Pedidos por status no período</h2><div id="statuses"></div></div><div class="card"><h2>Resumo do período</h2><div id="values"></div></div><div class="card"><h2>Estoque por categoria</h2><div id="cats"></div></div><div class="card"><h2>Eventos por status</h2><div id="eventStatuses"></div></div></section></main>
+<section class="grid"><div class="card" style="grid-column:1/-1"><h2>Vendas por dia</h2><div class="tableWrap"><table class="daily"><thead><tr><th>Dia</th><th>Vendas</th><th>Geladinhos</th><th>Meta (30)</th><th>Visitantes</th><th>Online</th><th>Local</th><th>Eventos</th><th>Total</th></tr></thead><tbody id="dailyRows"></tbody></table></div></div><div class="card"><h2>Pedidos por status no período</h2><div id="statuses"></div></div><div class="card"><h2>Resumo do período</h2><div id="values"></div></div><div class="card"><h2>Estoque por categoria</h2><div id="cats"></div></div><div class="card"><h2>Eventos por status</h2><div id="eventStatuses"></div></div></section></main>
 
 <script>(async()=>{
-const $=x=>document.getElementById(x);
-let products=[],orders=[],events=[];
+'use strict';
+const $=id=>document.getElementById(id),GOAL=30;
+let products=[],orders=[],events=[],orderItems=[],eventItems=[],visitors=new Map(),visitorRange='',visitorsReady=false,loading=false;
 const soldStatuses=['Aceito','Em preparação','Saiu para entrega','Entregue','Finalizado'];
 function setMsg(t,c=''){$('msg').textContent=t;$('msg').className='msg '+c}
-function rows(obj,fmt=v=>v){return Object.entries(obj).sort((a,b)=>String(a[0]).localeCompare(String(b[0]),'pt-BR')).map(([k,v])=>'<div class="row"><span>'+GDS48.esc(k)+'</span><b>'+fmt(v)+'</b></div>').join('')||'<div class="empty">Sem dados neste período.</div>'}
-function spDate(d=new Date()){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);const o={};parts.forEach(p=>o[p.type]=p.value);return o.year+'-'+o.month+'-'+o.day}
-function dateFromYmd(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,12,0,0)}
-function addDays(ymd,n){const d=dateFromYmd(ymd);d.setDate(d.getDate()+n);return spDate(d)}
-function formatDate(ymd){const [y,m,d]=ymd.split('-');return d+'/'+m+'/'+y}
+function money(v){return GDS48.money(v)}
+function n(v){return Number(v)||0}
+function spDate(d=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d),obj={};parts.forEach(p=>obj[p.type]=p.value);return obj.year+'-'+obj.month+'-'+obj.day}
+function addDays(date,days){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)}
+function fmt(date){const [y,m,d]=date.split('-');return d+'/'+m+'/'+y}
+function inRange(date,a,b){return date>=a&&date<=b}
 function orderDay(x){return spDate(new Date(x.created_at))}
-function eventDay(x){if(x.payment_confirmed_at)return spDate(new Date(x.payment_confirmed_at));if(x.created_at)return spDate(new Date(x.created_at));return x.event_date||''}
-function inRange(day,a,b){return day&&day>=a&&day<=b}
-function setRange(kind){const today=spDate();let a=today,b=today;if(kind==='yesterday'){a=b=addDays(today,-1)}else if(kind==='7'){a=addDays(today,-6)}else if(kind==='30'){a=addDays(today,-29)}$('from').value=a;$('to').value=b;render()}
-function isSoldOrder(x){return !x.deleted_at&&x.status!=='Cancelado'&&soldStatuses.includes(x.status)&&(['Entregue','Finalizado'].includes(x.status)||Number(x.paid_amount||0)>0)}
+function eventDay(x){return spDate(new Date(x.payment_confirmed_at||x.created_at))}
+function validSale(x){return !x.deleted_at&&x.status!=='Cancelado'&&soldStatuses.includes(x.status)&&(['Entregue','Finalizado'].includes(x.status)||n(x.paid_amount)>0)}
+function paidEvent(x){return x.status!=='Cancelado'&&x.payment_status==='Pago'}
+function rowList(object,fn=v=>v){return Object.entries(object).sort((a,b)=>String(a[0]).localeCompare(String(b[0]),'pt-BR')).map(([k,v])=>'<div class="row"><span>'+GDS48.esc(k)+'</span><b>'+fn(v)+'</b></div>').join('')||'<div class="empty">Sem registros neste período.</div>'}
+function selectedDates(){let a=$('from').value||spDate(),b=$('to').value||a;if(a>b){[a,b]=[b,a];$('from').value=a;$('to').value=b}return[a,b]}
+async function loadVisitors(a,b){
+ const key=a+'|'+b;visitorRange=key;visitorsReady=false;visitors=new Map();
+ $('periodVisitors').textContent='Consultando…';
+ try{
+  const {data,error}=await GDS48.sb.rpc('get_store_visit_totals_v141',{p_start_date:a,p_end_date:b});
+  if(error)throw error;
+  if(visitorRange!==key)return;
+  visitors=new Map((data||[]).map(x=>[x.visit_date,n(x.visitors)]));visitorsReady=true;
+ }catch(e){if(visitorRange===key){visitorsReady=false;visitorRange='ERRO';$('periodVisitors').textContent='Indisponível';setMsg('⚠️ Contador de visitas indisponível: '+e.message,'err')}return}
+ render();
+}
 function render(){
- let a=$('from').value||spDate(),b=$('to').value||a;if(a>b){const t=a;a=b;b=t;$('from').value=a;$('to').value=b}
- const periodOrders=orders.filter(x=>inRange(orderDay(x),a,b));
- const sold=periodOrders.filter(isSoldOrder);
- const online=sold.filter(x=>(x.sales_channel||'online')!=='local');
- const local=sold.filter(x=>x.sales_channel==='local');
- const paidEvents=events.filter(x=>x.status!=='Cancelado'&&x.payment_status==='Pago'&&inRange(eventDay(x),a,b));
- const onlineValue=online.reduce((n,x)=>n+(Number(x.total)||0),0);
- const localValue=local.reduce((n,x)=>n+(Number(x.total)||0),0);
- const eventValue=paidEvents.reduce((n,x)=>n+(Number(x.subtotal)||0)+(Number(x.delivery_fee)||0),0);
- const totalValue=onlineValue+localValue+eventValue;const receivedValue=sold.reduce((n,x)=>n+(Number(x.paid_amount)||0),0)+eventValue;
- $('periodTotal').textContent=GDS48.money(totalValue);$('onlineTotal').textContent=GDS48.money(onlineValue);$('localTotal').textContent=GDS48.money(localValue);$('eventTotal').textContent=GDS48.money(eventValue);$('saleCount').textContent=sold.length+paidEvents.length;$('periodReceived').textContent=GDS48.money(receivedValue);
- const st={};periodOrders.forEach(x=>st[x.status]=(st[x.status]||0)+1);$('statuses').innerHTML=rows(st);
- const cats={};products.forEach(x=>cats[x.category]=(cats[x.category]||0)+(Number(x.stock)||0));$('cats').innerHTML=rows(cats);
- const est={};events.filter(x=>inRange(eventDay(x),a,b)).forEach(x=>est[x.status]=(est[x.status]||0)+1);$('eventStatuses').innerHTML=rows(est);
- $('values').innerHTML=rows({'Pedidos online':onlineValue,'Vendas no local':localValue,'Eventos pagos':eventValue,'Total vendido':totalValue,'Valor recebido':receivedValue,'Saldo a receber':Math.max(0,totalValue-receivedValue)},GDS48.money);
- const map={};
- sold.forEach(x=>{const d=orderDay(x);map[d]??={count:0,online:0,local:0,event:0};map[d].count++;if(x.sales_channel==='local')map[d].local+=Number(x.total)||0;else map[d].online+=Number(x.total)||0});
- paidEvents.forEach(x=>{const d=eventDay(x);map[d]??={count:0,online:0,local:0,event:0};map[d].count++;map[d].event+=(Number(x.subtotal)||0)+(Number(x.delivery_fee)||0)});
- const keys=Object.keys(map).sort((x,y)=>y.localeCompare(x));
- $('dailyRows').innerHTML=keys.length?keys.map(d=>{const v=map[d],t=v.online+v.local+v.event;return '<tr><td>'+formatDate(d)+'</td><td>'+v.count+'</td><td>'+GDS48.money(v.online)+'</td><td>'+GDS48.money(v.local)+'</td><td>'+GDS48.money(v.event)+'</td><td>'+GDS48.money(t)+'</td></tr>'}).join(''):'<tr><td colspan="6" class="empty">Nenhuma venda encontrada neste período.</td></tr>';
- setMsg('🟢 Período: '+formatDate(a)+' até '+formatDate(b)+' · vendido '+GDS48.money(totalValue)+' · recebido '+GDS48.money(receivedValue),'ok');
+ const[a,b]=selectedDates(),rangeKey=a+'|'+b;
+ if(visitorRange!==rangeKey){void loadVisitors(a,b)}
+ const ordered=orders.filter(x=>inRange(orderDay(x),a,b));
+ const sold=ordered.filter(validSale);
+ const online=sold.filter(x=>(x.sales_channel||'online')!=='local'),local=sold.filter(x=>x.sales_channel==='local');
+ const paidEvents=events.filter(x=>paidEvent(x)&&inRange(eventDay(x),a,b));
+ const onlineValue=online.reduce((sum,x)=>sum+n(x.total),0),localValue=local.reduce((sum,x)=>sum+n(x.total),0);
+ const eventValue=paidEvents.reduce((sum,x)=>sum+n(x.subtotal)+n(x.delivery_fee),0);
+ const total=onlineValue+localValue+eventValue,received=sold.reduce((sum,x)=>sum+n(x.paid_amount),0)+eventValue;
+ const onlineIds=new Set(online.map(x=>x.id)),localIds=new Set(local.map(x=>x.id)),eventsIds=new Set(paidEvents.map(x=>x.id));
+ const oUnits=orderItems.reduce((sum,i)=>sum+(onlineIds.has(i.order_id)?n(i.quantity):0),0);
+ const lUnits=orderItems.reduce((sum,i)=>sum+(localIds.has(i.order_id)?n(i.quantity):0),0);
+ const eUnits=eventItems.reduce((sum,i)=>sum+(eventsIds.has(i.event_id)?n(i.quantity):0),0);
+ const totalUnits=oUnits+lUnits+eUnits;
+ const periodDays=Math.round((Date.parse(b+'T12:00:00Z')-Date.parse(a+'T12:00:00Z'))/86400000)+1,goal=periodDays*GOAL;
+ const percent=goal?Math.round(totalUnits/goal*100):0;
+ $('periodTotal').textContent=money(total);$('onlineTotal').textContent=money(onlineValue);$('localTotal').textContent=money(localValue);
+ $('eventTotal').textContent=money(eventValue);$('saleCount').textContent=sold.length+paidEvents.length;
+ $('periodReceived').textContent=money(received);
+ $('periodUnits').textContent=totalUnits+' unidades';
+ $('unitBreakdown').textContent='Online: '+oUnits+' · Local: '+lUnits+' · Eventos: '+eUnits;
+ $('periodGoal').textContent=totalUnits+' / '+goal+' ('+percent+'%)';
+ $('goalDetails').textContent=totalUnits>=goal?'✅ Meta atingida!':'Faltam '+(goal-totalUnits)+' geladinhos para a meta do período';
+ $('goalFill').style.width=Math.min(100,percent)+'%';
+ const visitsReady=visitorRange===rangeKey&&visitorsReady;
+ if(visitsReady)$('periodVisitors').textContent=[...visitors.values()].reduce((sum,x)=>sum+x,0)+' visitas';
+ const statuses={};ordered.forEach(x=>{statuses[x.status]=(statuses[x.status]||0)+1});$('statuses').innerHTML=rowList(statuses);
+ const cat={};products.forEach(x=>cat[x.category]=(cat[x.category]||0)+n(x.stock));$('cats').innerHTML=rowList(cat);
+ const eventStatuses={};events.filter(x=>inRange(eventDay(x),a,b)).forEach(x=>eventStatuses[x.status]=(eventStatuses[x.status]||0)+1);$('eventStatuses').innerHTML=rowList(eventStatuses);
+ $('values').innerHTML=rowList({'Pedidos online':onlineValue,'Vendas locais':localValue,'Eventos pagos':eventValue,'Total vendido':total,'Valor recebido':received,'Saldo a receber':Math.max(0,total-received)},money);
+ const dayMap={};
+ const ensureDay=d=>dayMap[d]??={count:0,online:0,local:0,event:0,units:0};
+ sold.forEach(x=>{const d=orderDay(x),v=ensureDay(d);v.count++;if(x.sales_channel==='local')v.local+=n(x.total);else v.online+=n(x.total)});
+ paidEvents.forEach(x=>{const d=eventDay(x),v=ensureDay(d);v.count++;v.event+=n(x.subtotal)+n(x.delivery_fee)});
+ const saleDates=new Map(sold.map(x=>[x.id,orderDay(x)])),eventDates=new Map(paidEvents.map(x=>[x.id,eventDay(x)]));
+ orderItems.forEach(i=>{const d=saleDates.get(i.order_id);if(d)ensureDay(d).units+=n(i.quantity)});
+ eventItems.forEach(i=>{const d=eventDates.get(i.event_id);if(d)ensureDay(d).units+=n(i.quantity)});
+ const days=[];for(let d=a;d<=b;d=addDays(d,1)){days.push(d);if(days.length>3660)break}
+ $('dailyRows').innerHTML=days.reverse().map(d=>{const v=ensureDay(d),t=v.online+v.local+v.event;
+  const goalText=v.units>=GOAL?'✅ '+v.units+'/'+GOAL:'Faltam '+(GOAL-v.units);
+  return '<tr><td>'+fmt(d)+'</td><td>'+v.count+'</td><td><b>'+v.units+'</b></td><td>'+goalText+'</td><td>'+(visitsReady?n(visitors.get(d)):'…')+'</td><td>'+money(v.online)+'</td><td>'+money(v.local)+'</td><td>'+money(v.event)+'</td><td>'+money(t)+'</td></tr>'
+ }).join('')||'<tr><td colspan="9" class="empty">Sem dados.</td></tr>';
+ if(visitsReady)setMsg('🟢 '+fmt(a)+' a '+fmt(b)+' · '+totalUnits+' geladinhos vendidos · '+percent+'% da meta diária acumulada','ok');
 }
+function setRange(type){const now=spDate();let a=now,b=now;if(type==='yesterday')a=b=addDays(now,-1);else if(type==='7')a=addDays(now,-6);else if(type==='30')a=addDays(now,-29);$('from').value=a;$('to').value=b;render()}
 async function load(){
- setMsg('Carregando relatórios…');
- const [p,o,e]=await Promise.all([
-   GDS48.sb.from('products').select('category,stock,active'),
-   GDS48.sb.from('orders').select('status,total,paid_amount,created_at,archived_at,deleted_at,sales_channel,payment_status,payment_method'),
-   GDS48.sb.from('events').select('status,subtotal,delivery_fee,event_date,payment_status,payment_confirmed_at,created_at')
- ]);
- if(p.error||o.error||e.error){setMsg((p.error||o.error||e.error).message,'err');return}
- products=p.data||[];orders=o.data||[];events=e.data||[];render();
+ if(loading)return;loading=true;setMsg('Atualizando relatórios…');
+ try{
+  const [p,o,e,oi,ei]=await Promise.all([
+   GDS48.sb.from('products').select('category,stock,active').limit(5000),
+   GDS48.sb.from('orders').select('id,status,total,paid_amount,created_at,archived_at,deleted_at,sales_channel,payment_status,payment_method').limit(5000),
+   GDS48.sb.from('events').select('id,status,subtotal,delivery_fee,event_date,payment_status,payment_confirmed_at,created_at').limit(5000),
+   GDS48.sb.from('order_items').select('order_id,quantity').limit(10000),
+   GDS48.sb.from('event_items').select('event_id,quantity').limit(10000)
+  ]);
+  for(const r of [p,o,e,oi,ei])if(r.error)throw r.error;
+  products=p.data||[];orders=o.data||[];events=e.data||[];orderItems=oi.data||[];eventItems=ei.data||[];
+  render();
+ }catch(err){setMsg('Erro: '+err.message,'err')}
+ finally{loading=false}
 }
-$('apply').onclick=render;$('refresh').onclick=load;document.querySelectorAll('[data-range]').forEach(b=>b.onclick=()=>setRange(b.dataset.range));
-const today=spDate();$('from').value=today;$('to').value=today;
-try{await GDS48.ensure('reports');await load()}catch(err){if(!['NO_SESSION','MFA_REQUIRED'].includes(err.message))setMsg('Erro de acesso: '+err.message,'err')}
-})();</script><script src="reports-date-v99.js?v=132"></script></body></html>
+$('apply').onclick=render;$('refresh').onclick=load;document.querySelectorAll('[data-range]').forEach(x=>x.onclick=()=>setRange(x.dataset.range));
+$('from').value=spDate();$('to').value=spDate();
+try{await GDS48.ensure('reports');await load();window.setInterval(()=>{if(!document.hidden)void load()},30000)}catch(err){if(!['NO_SESSION','MFA_REQUIRED'].includes(err.message))setMsg('Erro de acesso: '+err.message,'err')}
+})();</script></body></html>

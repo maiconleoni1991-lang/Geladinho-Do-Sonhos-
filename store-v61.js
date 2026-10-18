@@ -35,6 +35,31 @@ async function api(path,opt={}){
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function loadCart(){try{return JSON.parse(localStorage.getItem('gds_cart_v63')||'{}')||{}}catch(_){return {}}}
+
+// Contagem diária por navegador, sem nome, telefone ou identificação de clientes.
+let lastVisitDay='',visitRequest=false;
+function storeDaySP(){
+ const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),v={};
+ p.forEach(x=>v[x.type]=x.value);return v.year+'-'+v.month+'-'+v.day;
+}
+async function recordDailyVisit(){
+ const day=storeDaySP();
+ if(visitRequest||lastVisitDay===day)return;
+ visitRequest=true;
+ try{
+  const key='gds_visitor_id_v141';
+  let visitor=null;
+  try{visitor=localStorage.getItem(key)}catch(_){}
+  if(!visitor||!/^[0-9a-f-]{36}$/i.test(visitor)){
+   visitor=crypto.randomUUID();
+   try{localStorage.setItem(key,visitor)}catch(_){}
+  }
+  await api('/rest/v1/rpc/record_store_visit_v141',{method:'POST',body:JSON.stringify({p_visitor_id:visitor})});
+  lastVisitDay=day;
+ }catch(e){console.warn('Contador de visitas temporariamente indisponível',e)}
+ finally{visitRequest=false}
+}
+
 function saveCart(){localStorage.setItem('gds_cart_v63',JSON.stringify(cart));updateCartCount();if(cartQty()>0)setPresenceActivity('carrinho com itens')}
 function cartQty(){return Object.values(cart).reduce((a,b)=>a+Number(b||0),0)}
 function updateCartCount(){const n=cartQty();document.querySelectorAll('[data-cart-count]').forEach(x=>x.textContent=n)}
@@ -277,7 +302,7 @@ async function enableStoreOpenPush(){
   }
 }
 
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=137');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=141');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 
 function setupInstallRegistration(){
@@ -321,5 +346,5 @@ function setupInstallRegistration(){
  window.addEventListener('appinstalled',()=>{signal='appinstalled';offer()});
 }
 
-bind();updateCartCount();restoreLastOrder();setupInstall();setupInstallRegistration();replaceOldServiceWorker();startPresence();loadStore();setInterval(()=>{if(document.visibilityState==='visible')refreshStockOnly().catch(()=>{})},10000);window.addEventListener('focus',()=>refreshStockOnly().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshStockOnly().catch(()=>{})});
+bind();updateCartCount();restoreLastOrder();setupInstall();setupInstallRegistration();replaceOldServiceWorker();startPresence();void recordDailyVisit();loadStore();setInterval(()=>{if(document.visibilityState==='visible')refreshStockOnly().catch(()=>{})},10000);setInterval(()=>{if(document.visibilityState==='visible')void recordDailyVisit()},60000);window.addEventListener('focus',()=>{refreshStockOnly().catch(()=>{});void recordDailyVisit()});document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshStockOnly().catch(()=>{});void recordDailyVisit()}});
 })();

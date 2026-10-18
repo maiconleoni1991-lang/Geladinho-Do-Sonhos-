@@ -104,10 +104,19 @@ body>#gdsAdminNav48,body>#gdsMobileBar48,body>#gdsMore48{display:none!important}
 @media(max-width:1200px){.sidebar{padding:15px 9px}.layout{grid-template-columns:222px minmax(0,1fr)}.main{padding:18px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.actions{grid-template-columns:repeat(3,minmax(0,1fr))}.bottom-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:850px){.layout{display:block}.sidebar{display:none}.main{padding:12px 12px 93px}.section-grid,.bottom-grid{grid-template-columns:1fr}.toolbar{gap:8px}.searchbox{width:100%}.store-btn{white-space:nowrap}.heading{align-items:start}.heading h1{font-size:27px}.actions{grid-template-columns:repeat(2,minmax(0,1fr))}.mobile-menu{position:fixed;display:grid;z-index:30;grid-template-columns:repeat(4,minmax(0,1fr));bottom:8px;left:8px;right:8px;background:#fff;box-shadow:0 8px 35px #25152730;border:1px solid #f0e0e9;border-radius:19px;padding:6px;gap:5px}.mobile-menu a{display:grid;justify-items:center;align-content:center;min-height:56px;font-size:10px;font-weight:900;border-radius:12px}.mobile-menu .active{color:#fff;background:var(--pink)}.mobile-menu .ico{font-size:20px}}
 @media(max-width:480px){.toolbar-right .avatar{display:none}.date-badge{display:none}.metrics{gap:8px}.metric{min-height:118px;padding:12px 9px;gap:8px}.metric .metric-icon{width:35px;height:36px;font-size:19px}.metric small{font-size:11px}.metric strong{font-size:17px}.panel{padding:13px}.action{gap:7px;padding:9px}.action .icon{width:34px;height:36px}.action small{font-size:9px}}
+.daily-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.daily-summary-card{background:#fff;border:1px solid #e9e6ef;border-radius:16px;padding:18px;display:flex;align-items:center;gap:14px}
+.daily-summary-icon{display:grid;place-items:center;background:#fff0f6;width:52px;height:52px;flex-shrink:0;border-radius:13px;font-size:25px}
+.daily-summary-card h2{font-size:13px;margin:0 0 3px;color:#596079}
+.daily-summary-card strong{font-size:27px;color:#b30c4d}
+.daily-summary-card small{display:block;font-size:12px;color:#777b96}
+.daily-goal-track{width:100%;height:8px;background:#f2e7ed;border-radius:15px;overflow:hidden;margin-top:9px}
+.daily-goal-track div{height:100%;width:0;background:#15965e;border-radius:15px;transition:width .3s}
+@media(max-width:640px){.daily-summary{grid-template-columns:1fr}.daily-summary-card{padding:13px}.daily-summary-card strong{font-size:24px}}
 </style>
 </head>
 <body>
-<script src="./admin-common-v48.js?v=140"></script>
+<script src="./admin-common-v48.js?v=141"></script>
 <div id="loading" style="padding:30px;text-align:center">🔐 Verificando acesso administrativo…</div>
 <div id="dashboard" hidden>
 <div class="layout">
@@ -145,6 +154,10 @@ body>#gdsAdminNav48,body>#gdsMobileBar48,body>#gdsMore48{display:none!important}
 <div class="metric cream"><div class="metric-icon">📦</div><div><small>Produção de hoje</small><strong id="madeToday">—</strong><span class="detail" id="productionCount">Receitas produzidas</span></div></div>
 <div class="metric blue"><div class="metric-icon">🗃️</div><div><small>Estoque total</small><strong id="stockTotal">—</strong><span class="detail" id="stockCount">Produtos cadastrados</span></div></div>
 </div>
+<section class="daily-summary" aria-label="Visitas e meta diária">
+<div class="daily-summary-card"><div class="daily-summary-icon">👀</div><div><h2>Visitantes da loja hoje</h2><strong id="visitorsToday">—</strong><small>Navegadores diferentes que acessaram a loja hoje</small></div></div>
+<div class="daily-summary-card"><div class="daily-summary-icon">🎯</div><div style="flex:1"><h2>Meta de vendas · 30 geladinhos por dia</h2><strong id="soldUnitsToday">—</strong><small id="soldUnitsDetails">Online + local + eventos pagos</small><div class="daily-goal-track"><div id="dailyGoalFill"></div></div></div></div>
+</section>
 <div class="section-grid">
 <section class="panel"><div class="panel-head"><h2>📈 Vendas da semana</h2><a href="reports-v48.html?v=140">Ver relatório</a></div>
 <div class="channels"><div class="channel online"><label>🌐 Vendas online hoje</label><strong id="onlineToday">—</strong><span id="onlineCount">Concluídas</span></div><div class="channel local"><label>🏪 Vendas locais hoje</label><strong id="localToday">—</strong><span id="localCount">Concluídas</span></div></div>
@@ -197,16 +210,18 @@ $('logout').onclick=()=>GDS48.logout();
 $('installAdmin').onclick=()=>GDS48.installAdmin();
 async function load(){
 const sb=GDS48.sb;
-const [pr,or,ev,items,logs,books]=await Promise.all([
+const [pr,or,ev,items,logs,books,eventItems,visits]=await Promise.all([
  sb.from('products').select('id,name,category,stock,active,price'),
  sb.from('orders').select('id,public_code,customer_name,status,total,paid_amount,payment_status,payment_received_at,created_at,deleted_at,sales_channel').order('created_at',{ascending:false}).limit(1000),
  sb.from('events').select('id,status,subtotal,delivery_fee,payment_status,payment_confirmed_at,created_at').limit(1000),
  sb.from('order_items').select('order_id,product_name,quantity').limit(1000),
  sb.from('gds_recipe_production_logs').select('id,recipe_id,production_date,finished_units,created_at,recipe_snapshot').order('created_at',{ascending:false}).limit(300),
- sb.from('gds_recipe_book').select('id,recipe_name').limit(500)
+ sb.from('gds_recipe_book').select('id,recipe_name').limit(500),
+ sb.from('event_items').select('event_id,quantity').limit(5000),
+ sb.rpc('get_store_visit_totals_v141',{p_start_date:dayKey(new Date()),p_end_date:dayKey(new Date())})
 ]);
-for(const r of [pr,or,ev,items,logs,books])if(r.error)throw r.error;
-const products=pr.data||[],orders=(or.data||[]).filter(x=>!x.deleted_at),events=ev.data||[],orderItems=items.data||[],productions=logs.data||[],book=books.data||[];
+for(const r of [pr,or,ev,items,logs,books,eventItems])if(r.error)throw r.error;
+const products=pr.data||[],orders=(or.data||[]).filter(x=>!x.deleted_at),events=ev.data||[],orderItems=items.data||[],productions=logs.data||[],book=books.data||[],allEventItems=eventItems.data||[];
 const today=dayKey(new Date());
 const dateText=new Intl.DateTimeFormat('pt-BR',{timeZone:tz,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
 setText('todayLabel',dateText);setText('dateBadge','📅 '+new Intl.DateTimeFormat('pt-BR',{timeZone:tz,day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()));
@@ -217,6 +232,7 @@ setText('salesCount',todayCompleted.length+' pedidos concluídos');
 setText('onlineToday',money(sumTotal(online)));
 setText('localToday',money(sumTotal(local)));
 setText('onlineCount',online.length+' pedidos online');
+setText('visitorsToday',visits.error?'Indisponível':String((visits.data||[]).reduce((sum,v)=>sum+Number(v.visitors||0),0)));
 setText('localCount',local.length+' vendas locais');
 const paidOrders=orders.filter(o=>o.status!=='Cancelado'&&dayKey(o.payment_received_at)===today).reduce((n,o)=>n+num(o.paid_amount),0);
 const paidEvents=events.filter(e=>e.status!=='Cancelado'&&e.payment_status==='Pago'&&dayKey(e.payment_confirmed_at)===today).reduce((n,e)=>n+num(e.subtotal)+num(e.delivery_fee),0);
@@ -225,6 +241,18 @@ setText('madeToday',productions.filter(p=>p.production_date===today).reduce((n,p
 setText('productionCount',productions.filter(p=>p.production_date===today).length+' produções registradas');
 setText('stockTotal',products.reduce((n,p)=>n+num(p.stock),0)+' un.');
 setText('stockCount',products.length+' produtos · '+products.filter(p=>p.active).length+' ativos');
+const soldStatuses=['Aceito','Em preparação','Saiu para entrega','Entregue','Finalizado'];
+const saleToday=orders.filter(o=>dayKey(o.created_at)===today&&soldStatuses.includes(o.status)&&(['Entregue','Finalizado'].includes(o.status)||num(o.paid_amount)>0));
+const saleIds=new Set(saleToday.map(o=>o.id));
+const todayEvents=events.filter(e=>e.status!=='Cancelado'&&e.payment_status==='Pago'&&dayKey(e.payment_confirmed_at||e.created_at)===today);
+const todayEventIds=new Set(todayEvents.map(e=>e.id));
+const orderUnits=orderItems.reduce((sum,x)=>sum+(saleIds.has(x.order_id)?num(x.quantity):0),0);
+const eventUnits=allEventItems.reduce((sum,x)=>sum+(todayEventIds.has(x.event_id)?num(x.quantity):0),0);
+const soldUnits=orderUnits+eventUnits,meta=30;
+setText('soldUnitsToday',soldUnits+' / '+meta+' un.');
+setText('soldUnitsDetails',soldUnits>=meta?'✅ Meta de vendas atingida!':'Faltam '+(meta-soldUnits)+' geladinhos · '+Math.round(soldUnits/meta*100)+'% da meta');
+$('dailyGoalFill').style.width=Math.min(100,soldUnits/meta*100)+'%';
+
 const days=Array.from({length:7},(_,i)=>minusDays(today,6-i));
 const sums=days.map(d=>sumTotal(completed.filter(o=>dayKey(o.created_at)===d)));
 const max=Math.max(...sums,1),wd=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
