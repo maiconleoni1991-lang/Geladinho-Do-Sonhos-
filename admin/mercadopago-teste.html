@@ -17,7 +17,7 @@ button{background:#ec1768;color:#fff;border:0;padding:12px 18px;border-radius:12
 button.secondary{background:#fce4ef;color:#8e1648}button:disabled{opacity:.55;cursor:wait}
 .actions{display:flex;gap:10px;flex-wrap:wrap}.notice{border-left:4px solid #ec1768;background:#fff5f9;padding:11px 13px;font-size:14px}
 dt{font-size:12px;color:#7d7379;margin-top:12px}dd{margin:3px 0 0;font-weight:750;overflow-wrap:anywhere}
-.success{color:#14743e}.fail{color:#b32044}#result{white-space:pre-wrap;font:13px/1.5 ui-monospace,Consolas,monospace;background:#fbf6f9;padding:14px;border-radius:10px;overflow-wrap:anywhere}
+.success{color:#14743e}.fail{color:#b32044}#pixPreview{border:2px solid #d9a7bd}#qrImage{min-height:225px;margin:15px 0;display:flex;justify-content:center;align-items:center}#qrImage img,#qrImage canvas{max-width:100%;height:auto}#pixCode{width:100%;resize:vertical;min-height:95px;padding:10px;border:1px solid #e8cbd9;border-radius:10px;font:12px/1.45 ui-monospace,Consolas,monospace}.test-info{font-size:13px;color:#755167}#result{white-space:pre-wrap;font:13px/1.5 ui-monospace,Consolas,monospace;background:#fbf6f9;padding:14px;border-radius:10px;overflow-wrap:anywhere}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -48,10 +48,23 @@ dt{font-size:12px;color:#7d7379;margin-top:12px}dd{margin:3px 0 0;font-weight:75
 </dl>
 <p id="result" role="status" aria-live="polite"></p>
 </section>
+<section id="pixPreview" hidden>
+<h2>QR Code Pix de teste</h2>
+<div class="notice"><strong>Apenas simulação.</strong> Não tente pagar este QR Code com dinheiro real. Este código existe somente para validar a exibição do Pix no site.</div>
+<div id="qrImage" aria-label="Representação do QR Code Pix de teste"></div>
+<label for="pixCode"><strong>Pix Copia e Cola (teste)</strong></label>
+<textarea id="pixCode" readonly spellcheck="false" aria-label="Código Pix de teste"></textarea>
+<div class="actions" style="margin-top:11px">
+<button id="copyPix" class="secondary" type="button">Copiar código fictício</button>
+<a id="mpTicket" target="_blank" rel="noopener noreferrer" hidden>Ver instruções no ambiente de testes do Mercado Pago</a>
+</div>
+<p id="qrInfo" class="test-info" role="status"></p>
+</section>
 <section><h2>O que esse teste valida?</h2>
 <p>Valida se a credencial de teste funciona, se a Orders API cria uma cobrança fictícia e se conseguimos consultar seu status. <strong>Não ativa pagamentos de clientes.</strong> A integração em produção só será liberada após conciliação segura dos pedidos e testes adicionais.</p>
 </section>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
 (async()=>{
 'use strict';
@@ -60,6 +73,41 @@ const KEY='sb_publishable_JVYvfl7nrRmlm17qF_KI8A_1H8mtvLk';
 const sb=window.supabase.createClient(SB,KEY);
 const $=id=>document.getElementById(id);
 let orderId='',busy=false,consultas=0;
+function renderSandboxPix(x){
+ const panel=$('pixPreview'),img=$('qrImage'),ticket=$('mpTicket');
+ img.replaceChildren();$('pixCode').value='';ticket.hidden=true;ticket.removeAttribute('href');
+ const code=String(x.pix_qr_code||'');
+ const pending=x.status==='action_required';
+ if(!pending||!code){
+   panel.hidden=true;return;
+ }
+ panel.hidden=false;$('pixCode').value=code;
+ const b64=String(x.pix_qr_base64||'');
+ if(b64 && /^[A-Za-z0-9+/=]+$/.test(b64)){
+   const photo=document.createElement('img');
+   photo.alt='QR Code Pix fictício, apenas para testes';
+   photo.width=220;photo.height=220;photo.src='data:image/png;base64,'+b64;
+   photo.onerror=()=>{photo.remove();drawLocalQR(img,code);};
+   img.append(photo);
+ }else drawLocalQR(img,code);
+ const link=String(x.pix_ticket_url||'');
+ if(link.startsWith('https://www.mercadopago.com.br/sandbox/payments/')){
+    ticket.href=link;ticket.hidden=false;
+ }
+ $('qrInfo').textContent='Pix fictício exibido somente enquanto a order aguarda pagamento. Não use dinheiro real.';
+}
+function drawLocalQR(container,text){
+ if(typeof window.QRCode==='function'){
+   try{new window.QRCode(container,{text,width:220,height:220,correctLevel:window.QRCode.CorrectLevel.M});return;}catch(e){}
+ }
+ const info=document.createElement('p');
+ info.textContent='A imagem não pôde ser renderizada neste dispositivo. Use o código de teste acima ou as instruções do Mercado Pago.';
+ info.className='fail';container.append(info);
+}
+$('copyPix').onclick=async()=>{
+ try{await navigator.clipboard.writeText($('pixCode').value);$('copyPix').textContent='Código de teste copiado';}
+ catch(_){$('pixCode').focus();$('pixCode').select();$('copyPix').textContent='Selecione e copie o código acima';}
+};
 try{
  const {data:{session}}=await sb.auth.getSession();
  if(!session){$('auth').innerHTML='Entre primeiro no <a href="./login-v48.html">painel administrativo</a> e volte a esta página.';return;}
@@ -99,6 +147,7 @@ async function call(action){
    $('payment').textContent=x.payment_status||'—';
    $('qr').textContent=x.pix_code_generated?'Sim (dados de teste)':
      (x.status==='processed'?'Não retornado. O teste foi aprovado automaticamente.':'Não retornado pela API nesta resposta.');
+   renderSandboxPix(x);
    const ok=x.status==='processed'&&x.status_detail==='accredited';
    const same=action==='status'&&previousStatus===x.status;
    $('result').textContent=action==='status'?
