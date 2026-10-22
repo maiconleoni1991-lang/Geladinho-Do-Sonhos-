@@ -30,7 +30,7 @@ dt{font-size:12px;color:#7d7379;margin-top:12px}dd{margin:3px 0 0;font-weight:75
 <p id="auth">Verificando acesso ao painel...</p>
 <div class="actions" id="buttons" hidden>
 <button id="create">1. Criar Pix de teste (R$ 50,00 fictícios)</button>
-<button class="secondary" id="check" disabled>2. Consultar status</button>
+<button class="secondary" id="check" disabled>2. Consultar status novamente</button>
 </div>
 </section>
 <section id="output" hidden>
@@ -42,9 +42,11 @@ dt{font-size:12px;color:#7d7379;margin-top:12px}dd{margin:3px 0 0;font-weight:75
 <dt>Status</dt><dd id="state">—</dd>
 <dt>Detalhe</dt><dd id="detail">—</dd>
 <dt>Status do pagamento</dt><dd id="payment">—</dd>
-<dt>QR Code Pix de teste gerado?</dt><dd id="qr">—</dd>
+<dt>QR Code Pix retornado?</dt><dd id="qr">—</dd>
+<dt>Última verificação na API</dt><dd id="checked">—</dd>
+<dt>Consultas de status realizadas</dt><dd id="count">0</dd>
 </dl>
-<p id="result"></p>
+<p id="result" role="status" aria-live="polite"></p>
 </section>
 <section><h2>O que esse teste valida?</h2>
 <p>Valida se a credencial de teste funciona, se a Orders API cria uma cobrança fictícia e se conseguimos consultar seu status. <strong>Não ativa pagamentos de clientes.</strong> A integração em produção só será liberada após conciliação segura dos pedidos e testes adicionais.</p>
@@ -57,7 +59,7 @@ const SB='https://qpqruhcspbdxjcnbhdhn.supabase.co';
 const KEY='sb_publishable_JVYvfl7nrRmlm17qF_KI8A_1H8mtvLk';
 const sb=window.supabase.createClient(SB,KEY);
 const $=id=>document.getElementById(id);
-let orderId='',busy=false;
+let orderId='',busy=false,consultas=0;
 try{
  const {data:{session}}=await sb.auth.getSession();
  if(!session){$('auth').innerHTML='Entre primeiro no <a href="./login-v48.html">painel administrativo</a> e volte a esta página.';return;}
@@ -82,15 +84,31 @@ async function call(action){
    }
    if(!data?.ok||!data?.sample)throw new Error(data?.error||'Resposta inesperada');
    const x=data.sample;
-   if(action==='create')orderId=x.id;
+   const previousStatus=$('state').dataset.status||'';
+   if(action==='create'){orderId=x.id;consultas=0;}
+   else consultas++;
+   const now=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'medium'}).format(new Date());
+   $('checked').textContent=now;
+   $('count').textContent=String(consultas);
+   $('state').dataset.status=x.status||'';
    $('oid').textContent=x.id||'—';
    $('ext').textContent=x.external_reference||'—';
    $('amount').textContent='R$ '+(x.amount||'50.00').replace('.',',')+' (teste)';
    $('state').textContent=x.status||'—';
    $('detail').textContent=x.status_detail||'—';
    $('payment').textContent=x.payment_status||'—';
-   $('qr').textContent=x.pix_code_generated?'Sim (de teste)':'Não informado';
-   $('result').textContent='✅ Comunicação com a Orders API realizada. O teste não modifica pedidos do site.';
+   $('qr').textContent=x.pix_code_generated?'Sim (dados de teste)':
+     (x.status==='processed'?'Não retornado. O teste foi aprovado automaticamente.':'Não retornado pela API nesta resposta.');
+   const ok=x.status==='processed'&&x.status_detail==='accredited';
+   const same=action==='status'&&previousStatus===x.status;
+   $('result').textContent=action==='status'?
+     ('✅ Consulta nº '+consultas+' realizada em '+now+'. '+
+      (same?'O status continua '+x.status+'; não houve mudança desde a última consulta.':'Status atual: '+x.status+'.')+
+      (ok?' O pagamento fictício já está aprovado.':' Aguarde atualizações do ambiente de testes.')+
+      ' Nenhuma venda da loja foi alterada.'):
+     ('✅ Order fictícia criada e resposta recebida às '+now+'. '+
+      (ok?'O Mercado Pago aprovou automaticamente o pagamento de teste.':'Status inicial: '+x.status+'. Use “Consultar status novamente”.')+
+      ' Nenhuma venda da loja foi alterada.');
    $('result').className='success';
  }catch(e){$('result').textContent='❌ '+e.message+'\nNão houve alteração nas vendas. Envie apenas esta mensagem de erro, sem credenciais.';$('result').className='fail'}
  finally{busy=false;$('create').disabled=false;$('check').disabled=!orderId}
