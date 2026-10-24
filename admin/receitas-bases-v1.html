@@ -162,15 +162,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="cols">
 <label class="field">Nome do produto<input id="compName" placeholder="Ex.: Nutella, Abacaxi, Cookies de Alpino" autocomplete="off"></label>
 <label class="field">Marca<input id="compBrand" placeholder="Ex.: Ferrero, Paçoquita ou sem marca"></label>
-<label class="field">Forma de compra<select id="compFormat"><option value="peso">Por peso (gramas)</option><option value="caixa">Caixa</option><option value="pacote">Pacote</option></select></label>
-<label class="field"><span id="compQtyLabel">Peso total comprado (g)</span><input id="compQty" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 350"></label>
+<label class="field">Como comprou o produto?<select id="compFormat"><option value="peso">Por peso (gramas)</option><option value="caixa">Caixa</option><option value="pacote">Pacote</option></select></label>
+<label class="field"><span id="compQtyLabel">Peso da embalagem comprada (g)</span><input id="compQty" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 350"></label>
 <label class="field" id="compWeightField" hidden>Peso por caixa/pacote (g) <small>Preencha se usar apenas uma parte em gramas. Deixe vazio se usa caixas/pacotes inteiros.</small><input id="compWeight" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 350"></label>
 <label class="field">Valor total pago (R$)<input id="compPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Informe o custo da compra"></label>
 </div>
 <div class="note" style="margin-top:12px">
 <div class="flex"><span>Quantidade para cálculo: <strong id="compNorm">—</strong></span><span>Custo unitário: <strong id="compUnitCost">—</strong></span></div>
+<p class="hint" id="compPerGramHint" style="margin:8px 0 0">O preço por grama será calculado automaticamente.</p>
 <p class="hint" style="margin:8px 0 0">Se comprar uma caixa ou pacote e usar somente 30 g, informe o peso por embalagem: o custo será calculado por grama. Se usar o pacote inteiro, deixe esse campo vazio e a receita contará por caixa ou pacote.</p>
 </div>
+<div class="cols" style="margin-top:12px"><label class="field">Quantidade que pretende usar na receita (g)<input id="compUsageQty" type="number" min="0" step="any" inputmode="decimal" placeholder="Ex.: 150"></label><div class="note" style="margin:0"><strong>🧮 Custo simulado para a receita</strong><div id="compUsageCost" style="font-size:20px;font-weight:900;margin-top:7px">—</div><span class="small">Somente simulação, sem salvar nem alterar receitas ou estoque.</span></div></div>
 <div class="actions"><button type="button" id="compSave">💾 Salvar complemento</button><button type="button" id="compClear" class="secondary">+ Novo complemento</button></div>
 </div>
 <div class="panel">
@@ -420,16 +422,27 @@ return {valid:true,qty:weight>0?q*weight:q,unit:weight>0?'g':format==='caixa'?'c
 function updateComplementForm(){
 const f=compFormat(),packed=f!=='peso';
 $('compWeightField').hidden=!packed;
-$('compQtyLabel').textContent=f==='peso'?'Peso total comprado (g)':f==='caixa'?'Quantidade de caixas compradas':'Quantidade de pacotes comprados';
-$('compQty').step=packed?'1':'any';$('compQty').placeholder=packed?'Ex.: 2':'Ex.: 350';
+$('compQtyLabel').textContent=f==='peso'?'Peso da embalagem comprada (g)':f==='caixa'?'Quantidade de caixas compradas':'Quantidade de pacotes comprados';
+$('compQty').step=packed?'1':'any';$('compQty').placeholder=packed?'Ex.: 2':'Ex.: 400';
 const c=compComputed();
 $('compNorm').textContent=c.valid?fmt(c.qty)+' '+c.unit:'Informe a quantidade';
 $('compUnitCost').textContent=c.valid&&c.price!==null?precise(c.price/c.qty)+' / '+c.unit:'Preço pendente';
+updateComplementUsage();
+}
+function updateComplementUsage(){
+const c=compComputed(),used=val('compUsageQty');
+const possible=c.valid&&c.unit==='g'&&c.price!==null&&c.price>=0&&c.qty>0;
+$('compPerGramHint').textContent=possible
+ ?'Custo por grama: '+precise(c.price/c.qty)+' / g. A receita utilizará somente a quantidade que você informar.'
+ :'Para calcular por grama, informe o peso em gramas e o valor da compra. Para caixas/pacotes, informe também o peso de cada embalagem.';
+$('compUsageCost').textContent=possible&&used!==null&&used>=0
+ ?money(used*c.price/c.qty)+' ('+fmt(used)+' g)'
+ :'Informe uma quantidade em gramas para simular.';
 }
 function clearComplement(){
 state.complementEditing=null;
 $('compFormTitle').textContent='🍫 Cadastrar recheio ou complemento';
-['compName','compBrand','compQty','compWeight','compPrice'].forEach(id=>$(id).value='');
+['compName','compBrand','compQty','compWeight','compPrice','compUsageQty'].forEach(id=>$(id).value='');
 $('compFormat').value='peso';updateComplementForm();
 }
 function editComplement(id){
@@ -928,6 +941,7 @@ $('powderCards').addEventListener('click',e=>{const btn=e.target.closest('[data-
 $('openComplementCatalog').addEventListener('click',e=>{e.preventDefault();state.active='complements';location.hash='complements';render();window.scrollTo({top:0,behavior:'smooth'})});
 $('compFormat').addEventListener('change',updateComplementForm);
 ['compQty','compWeight','compPrice'].forEach(id=>$(id).addEventListener('input',updateComplementForm));
+$('compUsageQty').addEventListener('input',updateComplementUsage);
 $('compSave').onclick=saveComplement;$('compClear').onclick=clearComplement;
 $('compSearch').addEventListener('input',renderComplementCatalog);
 $('compCatalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit-complement]');if(btn)editComplement(btn.dataset.editComplement)});
