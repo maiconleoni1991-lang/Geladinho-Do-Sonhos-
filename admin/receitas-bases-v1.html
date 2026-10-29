@@ -134,7 +134,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="metric"><small>Comissão total</small><b id="commissionValue">—</b></div>
 <div class="metric good"><small>Lucro estimado do lote</small><b id="profit">—</b></div>
 <div class="metric good"><small>Lucro por unidade / margem</small><b id="margin">—</b></div>
-</div><div id="calcMessage" class="msg"></div><p class="hint">Lucro estimado considera os valores informados de ingredientes, embalagens, custos extras e comissão. Impostos ou despesas não cadastradas não entram no cálculo. Este módulo não movimenta estoque.</p>
+<div class="metric good"><small>🏭 Reinvestimento (50% do lucro)</small><b id="reinvest">—</b></div>
+<div class="metric good"><small>👩‍💼 Pró-labore (50% do lucro)</small><b id="prolabore">—</b></div>
+</div><div id="calcMessage" class="msg"></div><p class="hint">Lucro estimado considera os valores informados de ingredientes, embalagens, custos extras e comissão. Impostos ou despesas não cadastradas não entram no cálculo. A divisão de 50% para reinvestimento e 50% para pró-labore é aplicada sobre o lucro positivo depois dos custos informados. Se houver prejuízo, as duas parcelas ficam zeradas. Estes valores são projeções e não retiradas financeiras automáticas. Este módulo não movimenta estoque.</p>
 </div>
 </section>
 <section id="materialsPanel" hidden>
@@ -249,6 +251,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 const $=id=>document.getElementById(id),sb=GDS48.sb,esc=GDS48.esc;
 const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),precise=n=>'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:6}),fmt=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:5});
 const num=v=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
+// Repartição gerencial de lucro já descontado dos custos e comissões.
+// Um eventual centavo ímpar é atribuído ao pró-labore.
+function splitNetProfit(value){
+ const cents=Math.max(0,Math.round((Number(value)||0)*100));
+ const reinvestCents=Math.floor(cents/2);
+ return {reinvest:reinvestCents/100,prolabore:(cents-reinvestCents)/100};
+}
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
 const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','powders','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null};
@@ -351,9 +360,9 @@ updateLineCosts();
 const el=(id,v)=>$(id).textContent=v;
 el('costBase',missing.length?'Parcial: '+money(costBase):money(costBase));
 el('costComplements',missing.length?'Parcial: '+money(costComplements):money(costComplements));
-if(missing.length){['costAll','costUnit','revenue','commissionValue','profit','margin'].forEach(id=>el(id,'—'));el('unitsTotal',yieldOne>0&&lots>0?String(yieldOne*lots):'—');$('calcMessage').className='msg';$('calcMessage').textContent='⚠️ Para calcular o lucro com segurança, complete: '+missing.join('; ')+'.';return;}
+if(missing.length){['costAll','costUnit','revenue','commissionValue','profit','margin','reinvest','prolabore'].forEach(id=>el(id,'—'));el('unitsTotal',yieldOne>0&&lots>0?String(yieldOne*lots):'—');$('calcMessage').className='msg';$('calcMessage').textContent='⚠️ Para calcular o lucro com segurança, complete: '+missing.join('; ')+'.';return;}
 const units=lots*yieldOne,total=(costBase+costComplements+yieldOne*packUnit+overhead)*lots,gross=units*sale,fee=gross*commission/100,profit=gross-total-fee;
-el('costAll',money(total));el('costUnit',money(total/units));el('unitsTotal',String(units));el('revenue',money(gross));el('commissionValue',money(fee));el('profit',money(profit));el('margin',money(profit/units)+' / '+fmt(gross?profit/gross*100:0)+'%');
+const split=splitNetProfit(profit);el('costAll',money(total));el('costUnit',money(total/units));el('unitsTotal',String(units));el('revenue',money(gross));el('commissionValue',money(fee));el('profit',money(profit));el('margin',money(profit/units)+' / '+fmt(gross?profit/gross*100:0)+'%');el('reinvest',money(split.reinvest));el('prolabore',money(split.prolabore));
 $('calcMessage').textContent='✅ Cálculo completo com os valores informados. Produção de '+lots+' receita(s), total de '+units+' geladinhos.';$('calcMessage').className='msg ok';
 }
 
@@ -687,7 +696,7 @@ function updateBookEditCalculation(){
   cost.textContent=i.active===false?'Não incluído no custo':num(i.cost)===null?'Custo pendente':'Custo na receita: '+money(i.cost);
  });
  if(!x.valid){msg.textContent='⚠️ Ficha financeira incompleta: '+x.missing.join('; ')+'. O cálculo de lucro só fica disponível quando todos os valores estiverem preenchidos.';return;}
- msg.textContent='Custo da base: '+money(x.base)+' • Recheios: '+money(x.comps)+' • Custo total: '+money(x.total)+' • Custo por geladinho: '+money(x.costUnit)+' • Lucro potencial por receita: '+money(x.profit)+'.';
+ const split=splitNetProfit(x.profit);msg.textContent='Custo da base: '+money(x.base)+' • Recheios: '+money(x.comps)+' • Custo total: '+money(x.total)+' • Custo por geladinho: '+money(x.costUnit)+' • Lucro potencial por receita: '+money(x.profit)+' • Reinvestimento (50%): '+money(split.reinvest)+' • Pró-labore (50%): '+money(split.prolabore)+'.';
 }
 function updateBookEditItem(e){
  const row=e.target.closest('[data-edit-item]'),b=state.bookEditing;if(!row||!b)return;
@@ -767,6 +776,7 @@ function renderBook(){
    used=ingredients.filter(i=>i.active!==false),
    pending=used.filter(i=>num(i.cost)===null),
    partialCost=used.reduce((total,i)=>total+(num(i.cost)??0),0);
+  const split=ready&&num(b.estimated_profit)!==null?splitNetProfit(b.estimated_profit):null;
   const lines=ingredients.map(i=>{
    const quantity=i.display_quantity||((i.quantity_used===null||i.quantity_used===undefined)?'Quantidade pendente':fmt(i.quantity_used)+' '+(i.unit||''));
    if(i.active===false)return '<div class="book-item" style="opacity:.65"><strong>'+esc(i.name)+'</strong> — '+esc(quantity)+' • Opcional/inativo</div>';
@@ -784,7 +794,8 @@ function renderBook(){
    '<div class="book-pills"><span>Investimento em ingredientes: '+(pending.length?'parcial — ':'')+money(partialCost)+'</span><span>Rendimento: '+(num(b.yield_units)>0?fmt(b.yield_units)+' unidades':'pendente')+'</span><span>Custo de ingredientes/un.: '+(num(b.yield_units)>0&&!pending.length?money(partialCost/num(b.yield_units)):'pendente')+'</span></div>'+
    '<div class="book-pills"><span>Custo total com despesas: '+(num(b.cost_total)!==null?money(b.cost_total):'pendente')+'</span><span>Preço de venda/un.: '+(num(b.sale_price)!==null?money(b.sale_price):'não informado')+'</span><span>Faturamento previsto: '+(num(b.sale_price)!==null&&num(b.yield_units)>0?money(num(b.sale_price)*num(b.yield_units)):'pendente')+'</span></div>'+
    '<div class="book-pills"><span>Lucro potencial/un.: '+(ready&&num(b.estimated_profit)!==null?money(num(b.estimated_profit)/num(b.yield_units)):'pendente')+'</span><span>Margem estimada: '+(ready&&num(b.sale_price)>0&&num(b.estimated_profit)!==null?(100*num(b.estimated_profit)/(num(b.sale_price)*num(b.yield_units))).toFixed(1).replace('.',',')+'%':'pendente')+'</span></div>'+
-   (relevant.length?'<div class="book-pills"><span>Custos das produções: '+money(totalSpent)+'</span><span>Custo médio real/un.: '+money(finished?totalSpent/finished:0)+'</span><span>Vendas potenciais: '+money(totalPotential)+'</span></div>':'')+
+   (split?'<div class="book-pills"><span>🏭 Reinvestimento (50% do lucro): '+money(split.reinvest)+'</span><span>👩‍💼 Pró-labore (50% do lucro): '+money(split.prolabore)+'</span></div>':'')+
+    (relevant.length?'<div class="book-pills"><span>Custos das produções: '+money(totalSpent)+'</span><span>Custo médio real/un.: '+money(finished?totalSpent/finished:0)+'</span><span>Vendas potenciais: '+money(totalPotential)+'</span></div>':'')+
    '<div class="'+(ready?'book-total':'book-pending')+'">'+(ready&&num(b.estimated_profit)!==null?'Lucro potencial por receita: '+money(b.estimated_profit):'⚠️ Lucro projetado pendente: confira preço de venda, embalagens, despesas e comissão. O custo dos ingredientes aparece acima.')+'</div>'+
    (!ready&&partialCost>0?'<div class="small">Soma parcial de ingredientes com preço: '+money(partialCost)+' (não representa custo total).</div>':'')+
    (pending.length?'<div class="small book-pending">Aguardando preço de: '+esc(pending.map(i=>i.name).join(', '))+'.</div>':'')+
@@ -813,6 +824,7 @@ function renderProductionHistory(){
    '<div class="book-pills"><span>Custo total: '+money(p.production_cost_total)+'</span><span>Custo/un.: '+money(p.production_cost_unit)+'</span></div>'+
    '<div class="small">Preço de venda/un.: '+money(p.sale_price)+' • Lucro <strong>potencial</strong>/un.: '+money(p.profit_potential_unit)+'</div>'+
    '<div class="small">Faturamento <strong>potencial</strong> do lote: '+money(p.potential_revenue)+' • Lucro <strong>potencial</strong> do lote: '+money(p.potential_profit)+'</div>'+
+   (num(p.potential_profit)!==null?'<div class="book-pills"><span>🏭 Reinvestimento (50%): '+money(splitNetProfit(p.potential_profit).reinvest)+'</span><span>👩‍💼 Pró-labore (50%): '+money(splitNetProfit(p.potential_profit).prolabore)+'</span></div>':'')+
    (p.production_notes?'<div class="book-meta">Obs.: '+esc(p.production_notes)+'</div>':'')+'</article>';
  }).join('')||'<p class="small">Nenhuma produção registrada ainda. As produções aparecerão aqui por sabor e data.</p>';
 }
@@ -849,10 +861,12 @@ function renderProductionCalc(){
  ['Preço de venda por unidade',money(f.salePrice)],
  ['Venda potencial do lote',money(f.revenue)],
  ['Lucro potencial por unidade',money(f.profitUnit)],
- ['Lucro potencial do lote',money(f.profit)]
+ ['Lucro potencial do lote',money(f.profit)],
+ ['🏭 Reinvestimento — 50% do lucro',money(splitNetProfit(f.profit).reinvest)],
+ ['👩‍💼 Pró-labore — 50% do lucro',money(splitNetProfit(f.profit).prolabore)]
  ];
  target.innerHTML=fields.map(([label,value],i)=>'<div class="metric '+(label==='Lucro potencial do lote'||label==='Lucro potencial por unidade'?'good':'')+'"><small>'+esc(label)+'</small><b>'+esc(value)+'</b></div>').join('');
- msg.textContent='Esta ficha usa os custos salvos no Livro e o rendimento real informado. Comissão potencial: '+money(f.commissionValue)+'. O valor de venda é uma projeção; faturamento real depende das vendas registradas.';
+ msg.textContent='Esta ficha usa os custos salvos no Livro e o rendimento real informado. Comissão potencial: '+money(f.commissionValue)+'. A divisão de 50% do lucro para reinvestimento e 50% para pró-labore é apenas uma previsão, sem transferência automática. O valor de venda é uma projeção; faturamento real depende das vendas registradas.';
  msg.className='msg ok';
 }
 function selectBookForProduction(id){
