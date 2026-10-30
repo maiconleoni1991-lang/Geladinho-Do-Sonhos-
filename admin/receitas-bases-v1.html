@@ -773,9 +773,9 @@ function stockManagerHtml(m){
   '<details class="stock-management-form" data-stock-editor><summary>➕ Registrar compra, consumo, perda ou ajuste</summary><div class="stock-management-body">'+
   '<div class="stock-entry-grid">'+
   '<label class="field stock-wide">Tipo de movimentação<select data-stock-kind>'+types+'</select></label>'+
-  '<label class="field" data-stock-purchase>Como comprou?<select data-stock-package-kind><option value="fardo">Fardo</option><option value="caixa">Caixa</option><option value="pacote">Pacote</option><option value="unidade">Unidade</option><option value="saco">Saco</option><option value="pote">Pote</option><option value="outro">Outro</option></select></label>'+
-  '<label class="field" data-stock-purchase>Quantas embalagens?<input type="number" data-stock-packs min="1" step="1" value="2"></label>'+
-  '<label class="field" data-stock-purchase>Unidades por embalagem<input type="number" data-stock-units-per-package min="1" step="1" value="12"></label>'+
+  '<label class="field" data-stock-purchase>Como comprou?<select data-stock-package-kind><option value="fardo">Fardo</option><option value="caixa">Caixa</option><option value="pacote">Pacote</option><option value="unidade" selected>Unidade</option><option value="saco">Saco</option><option value="pote">Pote</option><option value="outro">Outro</option></select></label>'+
+  '<label class="field" data-stock-purchase>Quantas embalagens?<input type="number" data-stock-packs min="1" step="1" value="1"></label>'+
+  '<label class="field" data-stock-purchase>Unidades por embalagem<input type="number" data-stock-units-per-package min="1" step="1" value="1"></label>'+
   '<label class="field" data-stock-purchase>Conteúdo por unidade<input type="number" data-stock-amount-per-unit min="0.0001" step="any" value="1"></label>'+
   '<label class="field" data-stock-purchase>Unidade do conteúdo<select data-stock-display-unit>'+units+'</select></label>'+
   '<label class="field" data-stock-purchase>Preço por embalagem (R$)<input type="number" data-stock-package-price min="0" step="0.01" placeholder="Ex.: 60,00"></label>'+
@@ -785,7 +785,7 @@ function stockManagerHtml(m){
   '<label class="field stock-wide">Observação opcional<input data-stock-note maxlength="500" placeholder="Ex.: Fornecedor, número da compra ou motivo do ajuste"></label>'+
   '</div><div class="stock-preview" data-stock-preview>Informe os dados e confira a conversão antes de salvar.</div>'+
   '<button type="button" class="stock-action-submit" data-stock-submit>💾 Confirmar e registrar movimentação</button>'+
-  '<p class="hint">O registro é manual e fica no histórico. O custo da compra não substitui automaticamente o preço cadastrado nas receitas.</p>'+
+  '<p class="hint">Exemplo para leite: 2 fardos × 12 caixas por fardo × 1 L por caixa, a R$ 60,00 por fardo. O registro é manual; o custo da compra não substitui automaticamente o preço cadastrado nas receitas.</p>'+
   '</div></details>'+
   '<details class="stock-history"><summary>📋 Histórico de movimentações ('+rows.length+')</summary>'+
   '<div class="stock-ledger-list">'+(rows.length?rows.map(r=>stockHistoryEntry(r,m)).join(''):'<p class="small">Nenhuma movimentação neste controle.</p>')+'</div></details>'+
@@ -818,7 +818,7 @@ function stockMovementFromForm(panel,m){
    display_quantity_per_unit,display_unit,package_price,total_cost},
    preview:'Entrada de '+fmt(quantity)+' '+m.unit+' ('+stockUnitDisplay(quantity,m.unit)+') · '+fmt(package_count)+' '+package_kind+
     (package_count===1?'':'s')+' × '+fmt(units_per_package)+' unidade(s) × '+fmt(display_quantity_per_unit)+' '+display_unit+
-    ' · Total: '+money(total_cost)+' · '+money(total_cost/quantity)+'/'+m.unit};
+    ' · Total: '+money(total_cost)+' · '+precise(total_cost/quantity)+'/'+m.unit};
  }
  const qty=num(panel.querySelector('[data-stock-simple-qty]').value);
  const unit=panel.querySelector('[data-stock-simple-unit]').value;
@@ -1834,6 +1834,10 @@ $('materialNewTop').onclick=()=>{clearMaterial();$('materialFormTitle').scrollIn
 $('catalog').addEventListener('change',e=>{
  const section=e.target.closest('[data-ledger-material]');
  if(section&&e.target.matches('select,input')){
+  if(e.target.matches('[data-stock-package-kind]')){
+   const kind=e.target.value;
+   section.querySelector('[data-stock-units-per-package]').value=kind==='fardo'?'12':'1';
+  }
   const m=material(section.dataset.ledgerMaterial);
   if(m)stockPreviewPanel(section,m);
  }
