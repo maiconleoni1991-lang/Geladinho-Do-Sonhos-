@@ -202,6 +202,31 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #bookCards .quick-preview-grid span{background:#fff;border-radius:7px;padding:6px}
 #bookCards .quick-preview-grid strong{display:block;color:#622c41;font-size:14px}
 @media(max-width:560px){#bookCards .quick-table{min-width:375px}#bookCards .quick-add{grid-template-columns:minmax(0,1fr) 76px}#bookCards .quick-add button{grid-column:1/-1}}
+
+/* Cadastro de materiais: lista compacta, alfabética e recolhível */
+#catalog.catalog-list{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+#catalog .material-entry{display:block;padding:0;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:none}
+#catalog .material-entry[open]{border-color:#e9b7ca}
+#catalog .material-summary{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;list-style:none;min-height:69px}
+#catalog .material-summary::-webkit-details-marker{display:none}
+#catalog .material-summary:hover{background:#fff6fa}
+#catalog .material-summary:focus-visible{outline:3px solid #f99bbd;outline-offset:-3px}
+#catalog .material-chevron{flex:0 0 auto;font-size:16px;font-weight:900;color:#b3245a;transition:transform .15s ease}
+#catalog .material-entry[open] .material-chevron{transform:rotate(90deg)}
+#catalog .material-summary-name{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+#catalog .material-summary-name strong{font-size:15px;color:var(--dark);overflow-wrap:anywhere}
+#catalog .material-summary-name small{font-size:12px;color:var(--muted)}
+#catalog .material-summary-price{font-size:14px;line-height:1.3;font-weight:800;color:var(--green);text-align:right;min-width:118px;overflow-wrap:anywhere}
+#catalog .material-details{border-top:1px solid var(--line);padding:14px 16px 16px;background:#fffafd}
+#catalog .material-details-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:13px}
+#catalog .material-detail{padding:11px 12px;border:1px solid #f0dce5;background:#fff;border-radius:10px;min-width:0}
+#catalog .material-detail small{display:block;color:#826577;font-size:11px;margin-bottom:5px}
+#catalog .material-detail strong{display:block;color:#552840;font-size:14px;overflow-wrap:anywhere}
+#catalog .material-detail .price{color:var(--green);font-size:16px}
+#catalog .material-details button{min-height:40px}
+#materialNewTop{white-space:nowrap}
+@media(max-width:700px){#catalog .material-details-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#catalog .material-summary-price{min-width:82px;font-size:12px}#catalog .material-summary{padding:12px 10px;gap:8px}}
+@media(max-width:390px){#catalog .material-details-grid{grid-template-columns:1fr}#catalog .material-summary-name strong{font-size:13px}#catalog .material-summary-name small{font-size:11px}}
 </style></head><body>
 <script src="admin-common-v48.js?v=141"></script>
 <main>
@@ -271,7 +296,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="panel" style="margin-top:12px;background:#fff8fb"><div class="flex"><span>Preço por <span id="priceUnit">g</span>:</span><strong id="pricePer" class="price">Preencha peso e preço</strong></div></div>
 <div class="actions"><button type="button" id="saveMaterial">💾 Salvar produto</button><button type="button" id="clearMaterial" class="secondary">Limpar / novo produto</button></div>
 </div>
-<div class="panel"><div class="flex"><h2>Materiais cadastrados</h2><span id="materialCount" class="badge">—</span></div>
+<div class="panel"><div class="flex"><h2>Materiais cadastrados</h2><div class="flex"><span id="materialCount" class="badge">—</span><button type="button" id="materialNewTop" class="secondary">➕ Novo material</button></div></div>
 <label class="field">Buscar um produto<input id="materialSearch" type="search" placeholder="Buscar pelo nome ou marca"></label>
 <div id="catalog" class="catalog-list"></div>
 </div>
@@ -379,6 +404,7 @@ function splitNetProfit(value){
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
 const openedBookRecipes=new Set();
+const openedMaterialCards=new Set();
  const bookQuickDrafts=new Map();let bookQuickSaving=false;
  const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','powders','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null,productPhotos:[]};
 const isNewRecipe=()=>state.active==='new_recipe';
@@ -628,14 +654,32 @@ note('✅ Recheio/complemento salvo no Supabase. Seu custo estará disponível n
 finally{btn.disabled=false}
 }
 function renderCatalog(){
-const basics=state.materials.filter(m=>m.material_type!=='Complemento');
-$('materialCount').textContent=basics.length+' produtos';
-const search=$('materialSearch').value.toLowerCase().trim();const list=basics.filter(m=>(m.name+' '+(m.brand||'')).toLowerCase().includes(search));
-$('catalog').innerHTML=list.map(m=>{
-const pack=num(m.pack_quantity),price=num(m.pack_cost),known=pack>0&&price!==null;
-return '<div class="product-card"><strong>'+esc(m.name)+'</strong><span class="small">'+esc(m.brand||'Sem marca')+' • '+esc(m.material_type)+'</span><span>Peso / quantidade: '+(pack===null?'Pendente':fmt(pack)+' '+esc(m.unit))+'</span><span>Preço do pacote: '+(price===null?'Pendente':money(price))+'</span><span class="price">'+(known?money(price/pack)+' / '+esc(m.unit):'Custo unitário pendente')+'</span><button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button></div>';
-}).join('')||'<p class="small">Nenhum material encontrado.</p>';
+ const basics=state.materials.filter(m=>m.material_type!=='Complemento');
+ $('materialCount').textContent=basics.length+' produtos';
+ const search=$('materialSearch').value.toLowerCase().trim();
+ const list=basics.filter(m=>(m.name+' '+(m.brand||'')).toLowerCase().includes(search))
+  .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR',{sensitivity:'base'}));
+ $('catalog').innerHTML=list.map(m=>{
+  const pack=num(m.pack_quantity),price=num(m.pack_cost),known=pack>0&&price!==null;
+  const perUnit=known?money(price/pack)+' / '+esc(m.unit):'Custo unitário pendente';
+  const detail=(label,value,extra='')=>'<div class="material-detail"><small>'+label+'</small><strong'+extra+'>'+value+'</strong></div>';
+  return '<details class="product-card material-entry" data-material-id="'+esc(m.id)+'"'+(openedMaterialCards.has(String(m.id))?' open':'')+'>'+
+   '<summary class="material-summary"><span class="material-chevron" aria-hidden="true">▶</span>'+
+   '<span class="material-summary-name"><strong>'+esc(m.name)+'</strong><small>'+esc(m.brand||'Sem marca')+' • '+esc(m.material_type)+'</small></span>'+
+   '<span class="material-summary-price">'+perUnit+'</span></summary>'+
+   '<div class="material-details"><div class="material-details-grid">'+
+   detail('Produto / ingrediente',esc(m.name))+
+   detail('Marca',esc(m.brand||'Sem marca'))+
+   detail('Categoria',esc(m.material_type))+
+   detail('Peso / quantidade comprada',pack===null?'Pendente':fmt(pack)+' '+esc(m.unit))+
+   detail('Preço do pacote',price===null?'Pendente':money(price))+
+   detail('Custo unitário',perUnit,' class="price"')+
+   detail('Unidade de cálculo',esc(m.unit))+
+   detail('Estoque de pó',isPowder(m.id)?'Acompanha estoque':'Sem controle de pó')+
+   '</div><button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button></div></details>';
+ }).join('')||'<p class="small">Nenhum material encontrado.</p>';
 }
+
 function clearMaterial(){
 state.materialEditing=null;$('materialFormTitle').textContent='Cadastrar produto / material';
 ['matName','matBrand','matQty','matPrice'].forEach(id=>$(id).value='');$('matType').value='Ingrediente';$('matUnit').value='g';$('matPowder').checked=false;updatePricePreview();
@@ -1537,6 +1581,13 @@ $('lots').addEventListener('input',()=>{calc();renderPowderRecipeInfo()});
 $('saveRecipe').onclick=saveRecipe;
 ['matQty','matPrice','matUnit'].forEach(id=>$(id).addEventListener('input',updatePricePreview));
 $('saveMaterial').onclick=saveMaterial;$('clearMaterial').onclick=clearMaterial;$('materialSearch').addEventListener('input',renderCatalog);
+$('materialNewTop').onclick=()=>{clearMaterial();$('materialFormTitle').scrollIntoView({behavior:'smooth',block:'center'});$('matName').focus({preventScroll:true});};
+$('catalog').addEventListener('toggle',e=>{
+ const card=e.target;
+ if(!card.matches?.('details.material-entry')||!card.isConnected)return;
+ const id=card.dataset.materialId;
+ if(card.open)openedMaterialCards.add(id);else openedMaterialCards.delete(id);
+},true);
 $('catalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit]');if(btn)editMaterial(btn.dataset.edit)});
 (async()=>{try{await GDS48.ensure(location.hash==='#book'?'book':'bases');await load();note('✅ Acesso administrativo confirmado • três bases e catálogo conectados ao Supabase.');}catch(e){note('Não foi possível abrir a gestão de receitas: '+e.message,true)}})();
 })();
