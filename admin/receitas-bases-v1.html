@@ -1285,14 +1285,15 @@ function removeIngredientFromBookEdit(index){
  b.ingredients.forEach((i,k)=>i.position=k+1);
  renderBookEditItems();updateBookEditCalculation();
 }
+
 function bookEditFigure(){
  const b=state.bookEditing;if(!b)return{valid:false,missing:['Escolha uma receita para editar']};
- const y=val('bookEditYield'),sale=val('bookEditSale'),pack=val('bookEditPackaging'),other=val('bookEditOverhead'),commission=val('bookEditCommission');
- let base=0,comps=0,active=0;
- const missing=[];
+ const y=val('bookEditYield'),sale=val('bookEditSale'),pack=val('bookEditPackaging'),
+  other=val('bookEditOverhead'),commission=val('bookEditCommission');
+ let base=0,comps=0,active=0;const missing=[];
  b.ingredients=(b.ingredients||[]).map(i=>{
   const x={...i},q=num(i.quantity_used),size=num(i.pack_quantity),price=num(i.pack_cost);
-  if(i.active===false){x.cost=null;x.unit_cost=size>0&&price!==null?price/size:null;return x;}
+  if(i.active===false){x.cost=null;x.unit_cost=size>0&&price!==null?price/size:null;return x}
   active++;
   if(!String(i.name||'').trim()){missing.push('Um ingrediente está sem nome');x.cost=null;return x}
   if(!(q>0)){missing.push(i.name+': informe quantidade usada maior que zero');x.cost=null;return x}
@@ -1304,16 +1305,23 @@ function bookEditFigure(){
  if(!active)missing.push('Ative pelo menos um ingrediente.');
  if(!(y>0&&Number.isInteger(y)))missing.push('Rendimento previsto em unidades.');
  if(sale===null||sale<0)missing.push('Preço de venda.');
- if(pack===null||pack<0)missing.push('Custo da embalagem por geladinho (informe zero se não houver).');
- if(other===null||other<0)missing.push('Outros custos da receita (informe zero se não houver).');
- if(commission===null||commission<0||commission>100)missing.push('Comissão em porcentagem (informe zero se não houver).');
+ if(pack===null||pack<0)missing.push('Custo da embalagem por geladinho.');
+ if(other!==null&&other<0)missing.push('Outros custos negativos.');
+ if(commission!==null&&(commission<0||commission>100))missing.push('Comissão inválida.');
  if(missing.length)return{valid:false,missing,base,comps,y,sale,pack,other,commission};
- const total=base+comps+pack*y+other,gross=sale*y,fee=gross*commission/100,profit=gross-fee-total;
+ const total=base+comps+pack*y+(other??0),gross=sale*y;
+ const financialReady=other!==null&&commission!==null;
+ const fee=commission===null?null:gross*commission/100;
+ const profit=financialReady?gross-fee-total:null;
  const round=(x,d=4)=>Number(x.toFixed(d));
  return{valid:true,base:round(base),comps:round(comps),y,sale,pack,other,commission,
- total:round(total),costUnit:round(total/y,6),gross:round(gross),fee:round(fee),profit:round(profit),profitUnit:round(profit/y,6),
- margin:gross>0?round(profit/gross*100):null};
+  total:round(total),costUnit:round(total/y,6),gross:round(gross),
+  fee:fee===null?null:round(fee),profit:profit===null?null:round(profit),
+  profitUnit:profit===null?null:round(profit/y,6),
+  margin:profit!==null&&gross>0?round(profit/gross*100):null,
+  incompleteFinancial:!financialReady};
 }
+
 function updateBookEditCalculation(){
  const x=bookEditFigure(),msg=$('bookEditCalc');
  $('bookEditItems').querySelectorAll('[data-edit-item]').forEach(row=>{
@@ -1327,7 +1335,9 @@ function updateBookEditCalculation(){
     ' para '+(num($('bookEditYield').value)??'—')+' geladinhos';
  });
  if(!x.valid){msg.textContent='⚠️ Ficha financeira incompleta: '+x.missing.join('; ')+'. O cálculo de lucro só fica disponível quando todos os valores estiverem preenchidos.';return;}
- const split=splitNetProfit(x.profit);msg.textContent='Custo da base: '+money(x.base)+' • Recheios: '+money(x.comps)+' • Custo total: '+money(x.total)+' • Custo por geladinho: '+money(x.costUnit)+' • Lucro potencial por receita: '+money(x.profit)+' • Reinvestimento (50%): '+money(split.reinvest)+' • Pró-labore (50%): '+money(split.prolabore)+'.';
+ const split=x.incompleteFinancial?null:splitNetProfit(x.profit);
+ msg.textContent='Custo da base: '+money(x.base)+' • Recheios: '+money(x.comps)+' • '+(x.incompleteFinancial?'Custo conhecido':'Custo total')+': '+money(x.total)+' • Custo por geladinho: '+money(x.costUnit)+
+ (x.incompleteFinancial?' • ⚠️ Lucro pendente: despesas extras ou comissão ainda não informadas.':' • Lucro potencial por receita: '+money(x.profit)+' • Reinvestimento (50%): '+money(split.reinvest)+' • Pró-labore (50%): '+money(split.prolabore))+'.';
 }
 function updateBookEditItem(e){
  const row=e.target.closest('[data-edit-item]'),b=state.bookEditing;if(!row||!b)return;
@@ -1392,7 +1402,7 @@ async function saveBookEdit(){
   const result=await sb.from('gds_recipe_book').update(change).eq('id',b.id).select('*').single();if(result.error)throw result.error;
   const index=state.book.findIndex(r=>r.id===b.id);if(index>=0)state.book[index]=result.data;
   state.bookEditing=null;$('bookEditPanel').hidden=true;renderBook();
-  note(x.valid?'✅ Preços e ficha de '+result.data.recipe_name+' atualizados. Os próximos lotes usarão esses custos.':'✅ Ficha salva. Ainda há itens pendentes; o cálculo de lucro permanecerá bloqueado até serem preenchidos.');
+  note(x.valid?'✅ Ficha de '+result.data.recipe_name+' atualizada. Os próximos lotes usarão esses custos.'+(x.incompleteFinancial?' Lucro pendente até cadastrar despesas extras e comissão.':''):'✅ Ficha salva. Ainda há itens pendentes; o cálculo de lucro permanecerá bloqueado até serem preenchidos.');
  }catch(e){note('Erro ao salvar ficha: '+e.message,true)}
  finally{btn.disabled=false}
 }
@@ -1420,6 +1430,7 @@ function quickDraft(b){
  });
  return bookQuickDrafts.get(b.id);
 }
+
 function quickFigure(b,items){
  const y=num(b.yield_units),sale=num(b.sale_price),pack=num(b.packaging_unit_cost),
   other=num(b.overhead_cost),commission=num(b.commission_percent);
@@ -1437,15 +1448,21 @@ function quickFigure(b,items){
  if(!(y>0&&Number.isInteger(y)))missing.push('Rendimento previsto da receita');
  if(sale===null||sale<0)missing.push('Preço de venda');
  if(pack===null||pack<0)missing.push('Custo de embalagem');
- if(other===null||other<0)missing.push('Outras despesas');
- if(commission===null||commission<0||commission>100)missing.push('Comissão');
+ if(other!==null&&other<0)missing.push('Outras despesas negativas');
+ if(commission!==null&&(commission<0||commission>100))missing.push('Comissão inválida');
  if(missing.length)return{valid:false,missing,base:quickRound(base),comps:quickRound(comps)};
- const total=base+comps+pack*y+other,gross=sale*y,fee=gross*commission/100,profit=gross-fee-total;
+ // Valores financeiros em branco nunca viram lucro fictício. Custos já conhecidos podem ser salvos.
+ const total=base+comps+pack*y+(other??0),gross=sale*y;
+ const financialReady=other!==null&&commission!==null;
+ const fee=commission===null?null:quickRound(gross*commission/100);
+ const profit=financialReady?quickRound(gross-fee-total):null;
  return{valid:true,base:quickRound(base),comps:quickRound(comps),total:quickRound(total),
- costUnit:quickRound(total/y,6),gross:quickRound(gross),fee:quickRound(fee),
- profit:quickRound(profit),profitUnit:quickRound(profit/y,6),
- margin:gross>0?quickRound(profit/gross*100):null};
+  costUnit:quickRound(total/y,6),gross:quickRound(gross),fee,
+  profit,profitUnit:financialReady?quickRound(profit/y,6):null,
+  margin:financialReady&&gross>0?quickRound(profit/gross*100):null,
+  incompleteFinancial:!financialReady};
 }
+
 function quickMaterials(){
  return state.materials.filter(m=>m.unit==='g'&&num(m.pack_quantity)>0&&num(m.pack_cost)!==null&&num(m.pack_cost)>=0)
   .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR',{sensitivity:'base'}));
@@ -1495,17 +1512,21 @@ function quickTableHtml(b,ingredients,type){
  }
  return '<div class="quick-section"><h5>'+title+'</h5>'+table+add+'</div>';
 }
+
 function quickPreviewHtml(b,fig,dirty){
  const stat=(label,value)=>'<span>'+esc(label)+'<strong>'+value+'</strong></span>';
  const label=dirty?'🧮 Simulação das alterações — ainda não salva':'🧮 Calculadora de custos da receita';
  const values='<div class="quick-preview-grid">'+
-  stat('Ingredientes da base',money(fig.base))+
-  stat('Recheios',money(fig.comps))+
-  (fig.valid?stat('Custo total da receita',money(fig.total))+stat('Custo por geladinho',money(fig.costUnit))+
-  stat('Lucro potencial por receita',money(fig.profit))+stat('Lucro potencial por geladinho',money(fig.profitUnit)):'')+'</div>';
+  stat('Ingredientes da base',money(fig.base))+stat('Recheios',money(fig.comps))+
+  (fig.valid?stat(fig.incompleteFinancial?'Custo conhecido da receita':'Custo total da receita',money(fig.total))+
+    stat('Custo por geladinho',money(fig.costUnit))+
+    (!fig.incompleteFinancial?stat('Lucro potencial por receita',money(fig.profit))+
+     stat('Lucro potencial por geladinho',money(fig.profitUnit)):''):'')+'</div>';
  return '<div class="quick-preview" data-quick-preview><b>'+label+'</b>'+values+
-  (!fig.valid?'<div class="quick-explanation">Faltando para cálculo completo: '+esc(fig.missing.join('; '))+'.</div>':'')+'</div>';
+  (!fig.valid?'<div class="quick-explanation">Faltando para cálculo completo: '+esc(fig.missing.join('; '))+'.</div>':
+   fig.incompleteFinancial?'<div class="quick-explanation">⚠️ Despesas extras ou comissão não cadastradas. O custo conhecido pode ser salvo, mas o lucro continua pendente até preencher esses campos.</div>':'')+'</div>';
 }
+
 function quickEditorHtml(b){
  const d=quickDraft(b),figure=quickFigure(b,d.ingredients);
  return quickTableHtml(b,d.ingredients,'base')+quickTableHtml(b,d.ingredients,'complemento')+
