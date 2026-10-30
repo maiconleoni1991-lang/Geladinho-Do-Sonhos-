@@ -164,6 +164,44 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #bookCards .reader-panel .book-meta{line-height:1.55}
 #bookCards .reader-footer{border-top:0}
 @media(max-width:580px){#bookCards .reader-panel-cost .book-pills{grid-template-columns:1fr}}
+
+/* Tabelas compactas de ingredientes, quantidades e custos, editaveis na ficha */
+#bookCards .quick-section{border:1px solid #f0dce5;border-radius:12px;background:#fff;padding:10px;margin:9px 0}
+#bookCards .quick-section h5{font-size:15px;margin:0 0 8px;color:#812746}
+#bookCards .quick-table-wrap{max-width:100%;overflow-x:auto}
+#bookCards .quick-table{width:100%;border-collapse:collapse;font:12px/1.4 system-ui;text-align:left;table-layout:fixed}
+#bookCards .quick-table thead{background:#fff1f5;color:#762547}
+#bookCards .quick-table th{padding:9px 6px;font-weight:850}
+#bookCards .quick-table td{padding:8px 5px;border-bottom:1px solid #eedde4;vertical-align:middle;overflow-wrap:anywhere}
+#bookCards .quick-table th:nth-child(1){width:37%}#bookCards .quick-table th:nth-child(2){width:41%}#bookCards .quick-table th:nth-child(3){width:22%;text-align:right}
+#bookCards .quick-name{font-weight:800;color:#522338}
+#bookCards .quick-name small{display:block;font-weight:500;color:#806474;margin-top:3px}
+#bookCards .quick-cost{font-weight:800;text-align:right;color:#6d2847;white-space:nowrap}
+#bookCards .quick-cost small{display:block;font-size:10px;font-weight:500;white-space:normal;color:#806474}
+#bookCards .quick-qty-control{display:flex;align-items:center;gap:3px}
+#bookCards .quick-qty-control input{width:63px;min-width:45px;height:35px;border:1px solid #d9bcc8;background:#fff;border-radius:7px;text-align:center;color:#51182f;padding:5px 2px;font:700 12px system-ui}
+#bookCards .quick-qty-control button{width:27px;min-width:27px;height:35px;border:1px solid #e9ccd7;background:#fff3f8;color:#8b2351;border-radius:7px;cursor:pointer;padding:0;font-size:17px;font-weight:850}
+#bookCards .quick-unit{font-size:11px;white-space:nowrap;color:#68445a}
+#bookCards .quick-qty-note{font-size:10px;color:#806474;margin-top:3px}
+#bookCards .quick-remove{margin-top:5px;border:0;background:transparent;color:#ae2e54;padding:0;font:700 11px system-ui;cursor:pointer;text-decoration:underline}
+#bookCards .quick-add{display:grid;grid-template-columns:minmax(0,1fr) 80px auto;align-items:end;gap:7px;padding-top:10px}
+#bookCards .quick-add label{display:grid;gap:5px;font:700 11px system-ui;color:#6e3b50}
+#bookCards .quick-add select,#bookCards .quick-add input{width:100%;height:40px;padding:7px;border:1px solid #dac0ca;border-radius:8px;background:#fff;color:#4c2739;font:12px system-ui}
+#bookCards .quick-add button,#bookCards .quick-toolbar button{min-height:38px;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:850;cursor:pointer}
+#bookCards .quick-add button{background:#8e1f4d;color:#fff;border:0}
+#bookCards .quick-explanation{font-size:11px;color:#80596c;line-height:1.5;margin:8px 0 0}
+#bookCards .quick-toolbar{margin-top:12px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;border-top:1px solid #ead4dd;padding-top:12px}
+#bookCards [data-quick-save]{background:#087e4a;color:white;border:0}
+#bookCards [data-quick-cancel]{background:#fff;color:#8e1f4d;border:1px solid #d9b9c7}
+#bookCards .quick-toolbar button:disabled{opacity:.55;cursor:wait}
+#bookCards .quick-status{padding:8px;margin-top:10px;border-radius:9px;background:#fff2e3;border:1px solid #edd3a4;color:#77501e;font-size:12px;font-weight:750}
+#bookCards .quick-status.ok{background:#ebf8f0;border-color:#c6e6d3;color:#12613d}
+#bookCards .quick-preview{margin:10px 0;background:#fff7e9;border:1px solid #e5d1a8;border-radius:11px;padding:10px;font:12px/1.5 system-ui}
+#bookCards .quick-preview b{display:block;margin-bottom:5px;color:#70451d}
+#bookCards .quick-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+#bookCards .quick-preview-grid span{background:#fff;border-radius:7px;padding:6px}
+#bookCards .quick-preview-grid strong{display:block;color:#622c41;font-size:14px}
+@media(max-width:560px){#bookCards .quick-table{min-width:375px}#bookCards .quick-add{grid-template-columns:minmax(0,1fr) 76px}#bookCards .quick-add button{grid-column:1/-1}}
 </style></head><body>
 <script src="admin-common-v48.js?v=141"></script>
 <main>
@@ -341,6 +379,7 @@ function splitNetProfit(value){
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
 const openedBookRecipes=new Set();
+ const bookQuickDrafts=new Map();let bookQuickSaving=false;
  const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','powders','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null,productPhotos:[]};
 const isNewRecipe=()=>state.active==='new_recipe';
 const currentBase=()=>state.bases.find(x=>x.code===(isNewRecipe()?(state.newRecipeDraft?.base_code||'gourmet_nova'):state.active));
@@ -366,7 +405,7 @@ const pending=()=>note('✏️ Alterações na receita ainda não salvas. Clique
 async function load(){
 const [b,i,m,p,k,l,photos]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*'),sb.from('gds_recipe_book').select('*').order('updated_at',{ascending:false}),sb.from('gds_recipe_production_logs').select('*').order('production_date',{ascending:false}).order('created_at',{ascending:false}).limit(1000),sb.from('products').select('name,image_url').limit(500)]);
 if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;if(p.error)throw p.error;if(k.error)throw k.error;if(l.error)throw l.error;
-state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];state.production=l.data||[];state.productPhotos=photos.error?[]:(photos.data||[]);
+state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];state.production=l.data||[];state.productPhotos=photos.error?[]:(photos.data||[]);bookQuickDrafts.clear();
 if(!codes.every(code=>state.bases.some(b=>b.code===code)))throw Error('As três bases não foram encontradas.');
 if(isNewRecipe()&&!state.newRecipeDraft)state.newRecipeDraft=makeNewRecipe();
 render();
@@ -852,6 +891,158 @@ function recipePicture(b){
  const url=String(p?.image_url||'');
  return /^(https?:\/\/|\/(?!\/))/.test(url)?url:'';
 }
+
+// Editor de quantidade na propria ficha. Nada no banco e alterado ate confirmar Salvar.
+const quickRound=(n,d=4)=>Number(Number(n).toFixed(d));
+function quickDraft(b){
+ if(!bookQuickDrafts.has(b.id))bookQuickDrafts.set(b.id,{
+  ingredients:JSON.parse(JSON.stringify(Array.isArray(b.ingredients)?b.ingredients:[])),
+  timestamp:b.updated_at||null,dirty:false
+ });
+ return bookQuickDrafts.get(b.id);
+}
+function quickFigure(b,items){
+ const y=num(b.yield_units),sale=num(b.sale_price),pack=num(b.packaging_unit_cost),
+  other=num(b.overhead_cost),commission=num(b.commission_percent);
+ let base=0,comps=0,active=0;const missing=[];
+ items.forEach(i=>{
+  if(i.active===false)return;
+  active++;const qty=num(i.quantity_used),size=num(i.pack_quantity),price=num(i.pack_cost);
+  if(!String(i.name||'').trim()){missing.push('Ingrediente sem nome');i.cost=null;return}
+  if(!(qty>0)){missing.push(i.name+': quantidade maior que zero');i.cost=null;return}
+  if(!(size>0)||price===null||price<0){missing.push(i.name+': preço ou quantidade comprada pendente');i.cost=null;return}
+  i.unit_cost=quickRound(price/size,6);i.cost=quickRound(qty*price/size,4);
+  if(i.type==='complemento')comps+=i.cost;else base+=i.cost;
+ });
+ if(!active)missing.push('Pelo menos um ingrediente ativo');
+ if(!(y>0&&Number.isInteger(y)))missing.push('Rendimento previsto da receita');
+ if(sale===null||sale<0)missing.push('Preço de venda');
+ if(pack===null||pack<0)missing.push('Custo de embalagem');
+ if(other===null||other<0)missing.push('Outras despesas');
+ if(commission===null||commission<0||commission>100)missing.push('Comissão');
+ if(missing.length)return{valid:false,missing,base:quickRound(base),comps:quickRound(comps)};
+ const total=base+comps+pack*y+other,gross=sale*y,fee=gross*commission/100,profit=gross-fee-total;
+ return{valid:true,base:quickRound(base),comps:quickRound(comps),total:quickRound(total),
+ costUnit:quickRound(total/y,6),gross:quickRound(gross),fee:quickRound(fee),
+ profit:quickRound(profit),profitUnit:quickRound(profit/y,6),
+ margin:gross>0?quickRound(profit/gross*100):null};
+}
+function quickMaterials(){
+ return state.materials.filter(m=>m.unit==='g'&&num(m.pack_quantity)>0&&num(m.pack_cost)!==null&&num(m.pack_cost)>=0)
+  .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR',{sensitivity:'base'}));
+}
+function quickRowHtml(i,index,b){
+ const unit=String(i.unit||'g'),perUnit=i.type==='complemento'&&unit==='g'&&num(b.yield_units)>0;
+ const q=num(i.quantity_used),shown=q===null?'':String(perUnit?quickRound(q/num(b.yield_units),4):q);
+ const inactive=i.active===false,step=unit==='cx'?'0.1':'1';
+ const control=inactive?'<span class="quick-unit">Inativo</span>':
+  '<div class="quick-qty-control"><button type="button" data-quick-step="-1" data-index="'+index+'" aria-label="Diminuir quantidade de '+esc(i.name)+'">−</button>'+
+  '<input type="number" inputmode="decimal" min="0.0001" step="'+step+'" value="'+esc(shown)+'" data-quick-quantity="'+index+'" aria-label="Quantidade de '+esc(i.name)+(perUnit?' por geladinho':' na receita')+'">'+
+  '<button type="button" data-quick-step="1" data-index="'+index+'" aria-label="Aumentar quantidade de '+esc(i.name)+'">+</button>'+
+  '<span class="quick-unit">'+(perUnit?'g/un.':esc(unit))+'</span></div>'+
+  (perUnit?'<div class="quick-qty-note" data-quick-total="'+index+'">'+fmt(q??0)+' g por receita</div>':'');
+ return '<tr data-quick-row="'+index+'"><td class="quick-name">'+esc(i.name||'Ingrediente')+
+  (i.brand?'<small>'+esc(i.brand)+'</small>':'')+
+  (i.__quickNew?'<button type="button" class="quick-remove" data-quick-remove="'+index+'">Retirar recheio adicionado</button>':'')+
+  '</td><td>'+control+'</td><td class="quick-cost" data-quick-cost="'+index+'">'+
+  (inactive?'Não incluído':num(i.cost)===null?'Pendente':money(i.cost))+
+  (perUnit&&num(i.cost)!==null?'<small>'+money(num(i.cost)/num(b.yield_units))+'/un.</small>':'')+
+  '</td></tr>';
+}
+function quickTableHtml(b,ingredients,type){
+ const rows=ingredients.map((i,index)=>({i,index})).filter(({i})=>type==='complemento'?i.type==='complemento':i.type!=='complemento');
+ const filling=type==='complemento';
+ const title=filling?'🍫 Recheios e complementos':'🥛 Ingredientes da base';
+ const table='<div class="quick-table-wrap"><table class="quick-table"><thead><tr><th>INGREDIENTE</th><th>QUANTIDADE</th><th>CUSTO</th></tr></thead>'+
+  '<tbody>'+(rows.map(({i,index})=>quickRowHtml(i,index,b)).join('')||'<tr><td colspan="3" class="quick-explanation">Nenhum ingrediente nesta seção.</td></tr>')+
+  '</tbody></table></div>';
+ let add='';
+ if(filling){
+  const materials=quickMaterials();
+  const chosen=materials.find(m=>/gotas de chocolate branco/i.test(m.name))||materials.find(m=>/chocolate branco/i.test(m.name));
+  add='<div class="quick-add"><label>Adicionar recheio do estoque de materiais<select data-quick-material>'+
+    '<option value="">Escolha o ingrediente...</option>'+materials.map(m=>'<option value="'+esc(m.id)+'" '+(chosen?.id===m.id?'selected':'')+'>'+esc(m.name+(m.brand?' — '+m.brand:'')+' · '+money(m.pack_cost)+' / '+fmt(m.pack_quantity)+' g')+'</option>').join('')+
+    '</select></label><label>g/geladinho<input data-quick-grams type="number" min="0.1" step="1" value="30"></label>'+
+    '<button type="button" data-quick-add>+ Adicionar</button></div>'+
+    '<p class="quick-explanation">Exemplo: 30 g de chocolate branco <b>por geladinho</b> × rendimento da receita. O custo é calculado usando o preço por grama cadastrado. Nenhum recheio é incluído sem clicar em Adicionar.</p>';
+ }
+ return '<div class="quick-section"><h5>'+title+'</h5>'+table+add+'</div>';
+}
+function quickPreviewHtml(b,fig,dirty){
+ const stat=(label,value)=>'<span>'+esc(label)+'<strong>'+value+'</strong></span>';
+ const label=dirty?'🧮 Simulação das alterações — ainda não salva':'🧮 Calculadora de custos da receita';
+ const values='<div class="quick-preview-grid">'+
+  stat('Ingredientes da base',money(fig.base))+
+  stat('Recheios',money(fig.comps))+
+  (fig.valid?stat('Custo total da receita',money(fig.total))+stat('Custo por geladinho',money(fig.costUnit))+
+  stat('Lucro potencial por receita',money(fig.profit))+stat('Lucro potencial por geladinho',money(fig.profitUnit)):'')+'</div>';
+ return '<div class="quick-preview" data-quick-preview><b>'+label+'</b>'+values+
+  (!fig.valid?'<div class="quick-explanation">Faltando para cálculo completo: '+esc(fig.missing.join('; '))+'.</div>':'')+'</div>';
+}
+function quickEditorHtml(b){
+ const d=quickDraft(b),figure=quickFigure(b,d.ingredients);
+ return quickTableHtml(b,d.ingredients,'base')+quickTableHtml(b,d.ingredients,'complemento')+
+  quickPreviewHtml(b,figure,d.dirty)+
+  '<div class="quick-toolbar"><button type="button" data-quick-save '+(!d.dirty?'disabled':'')+'>✅ Salvar alterações da receita</button>'+
+  '<button type="button" data-quick-cancel '+(!d.dirty?'disabled':'')+'>↶ Descartar ajustes</button></div>'+
+  '<div class="quick-status'+(d.dirty?'':' ok')+'" data-quick-status>'+
+  (d.dirty?'⚠️ Você alterou quantidades. Clique em Salvar para atualizar os custos usados nas próximas produções.':'✅ Quantidades exibidas conforme a ficha salva. Alterar pelas setas não modifica o banco automaticamente.')+
+  '</div>';
+}
+function quickUpdatePreview(card,b){
+ const d=quickDraft(b),fig=quickFigure(b,d.ingredients),target=card.querySelector('[data-quick-preview]');
+ if(target)target.outerHTML=quickPreviewHtml(b,fig,d.dirty);
+ d.ingredients.forEach((i,index)=>{
+  const cell=card.querySelector('[data-quick-cost="'+index+'"]');
+  if(cell)cell.innerHTML=i.active===false?'Não incluído':num(i.cost)===null?'Pendente':money(i.cost)+
+   (i.type==='complemento'&&i.unit==='g'&&num(b.yield_units)>0?'<small>'+money(num(i.cost)/num(b.yield_units))+'/un.</small>':'');
+  const total=card.querySelector('[data-quick-total="'+index+'"]');
+  if(total)total.textContent=num(i.quantity_used)===null?'Quantidade pendente':fmt(i.quantity_used)+' g por receita';
+ });
+ const save=card.querySelector('[data-quick-save]'),cancel=card.querySelector('[data-quick-cancel]');
+ if(save)save.disabled=!d.dirty||bookQuickSaving;
+ if(cancel)cancel.disabled=!d.dirty||bookQuickSaving;
+ const status=card.querySelector('[data-quick-status]');
+ if(status){status.className='quick-status'+(d.dirty?'':' ok');
+ status.textContent=d.dirty?'⚠️ Alterações ainda não salvas. Os valores da ficha financeira à esquerda só serão atualizados após Salvar.':'✅ Quantidades iguais à ficha salva.'}
+}
+function quickCardData(target){
+ const card=target.closest('details.book-accordion'),b=state.book.find(x=>x.id===card?.dataset.recipeId);
+ return card&&b?{card,b,d:quickDraft(b)}:null;
+}
+function quickSetQuantity(target){
+ const context=quickCardData(target);if(!context)return;
+ const {card,b,d}=context,idx=Number(target.dataset.quickQuantity),item=d.ingredients[idx],v=num(target.value);
+ if(!item)return;
+ item.quantity_used=v===null?null:quickRound(v*(item.type==='complemento'&&item.unit==='g'&&num(b.yield_units)>0?num(b.yield_units):1),6);
+ item.display_quantity=v===null?null:fmt(item.quantity_used)+' '+(item.unit||'g');
+ d.dirty=true;quickUpdatePreview(card,b);
+}
+async function quickSave(card,b){
+ if(bookQuickSaving)return;
+ const d=bookQuickDrafts.get(b.id);if(!d?.dirty)return;
+ const fig=quickFigure(b,d.ingredients);
+ if(!fig.valid)return alert('Não foi possível salvar. Revise as quantidades e preços: '+fig.missing.join('; '));
+ if(!d.timestamp)return alert('Data de atualização da receita indisponível. Recarregue a página antes de salvar.');
+ if(!confirm('Salvar as novas quantidades e custos de '+b.recipe_name+'?\n\nOs próximos lotes utilizarão esses valores. Produções antigas, vendas e estoque continuarão inalterados.'))return;
+ bookQuickSaving=true;quickUpdatePreview(card,b);
+ try{
+  const ingredients=d.ingredients.map(({__quickNew,...i},index)=>({...i,position:index+1}));
+  const patch={ingredients,cost_base:fig.base,cost_complements:fig.comps,cost_total:fig.total,
+   cost_unit:fig.costUnit,revenue:fig.gross,commission_value:fig.fee,
+   estimated_profit:fig.profit,profit_unit:fig.profitUnit,margin_percent:fig.margin,
+   updated_at:new Date().toISOString()};
+  const {data,error}=await sb.from('gds_recipe_book').update(patch)
+   .eq('id',b.id).eq('updated_at',d.timestamp).select('*');
+  if(error)throw error;
+  if(!data||data.length!==1)throw Error('Esta ficha foi alterada em outro local. Atualize a página para evitar sobrescrever alterações.');
+  const idx=state.book.findIndex(x=>x.id===b.id);if(idx>=0)state.book[idx]=data[0];
+  bookQuickDrafts.delete(b.id);openedBookRecipes.add(String(b.id));
+  renderBook();
+  note('✅ Quantidades e custos de '+b.recipe_name+' atualizados. Produções antigas e estoque foram preservados.');
+ }catch(e){alert('Não foi possível salvar a receita: '+e.message)}
+ finally{bookQuickSaving=false;const fresh=$('bookCards').querySelector('[data-recipe-id="'+b.id+'"]');if(fresh)quickUpdatePreview(fresh,state.book.find(x=>x.id===b.id)||b)}
+}
 function renderBook(){
  const search=field('bookSearch').trim().toLocaleLowerCase('pt-BR'),filter=field('bookFilter');
  const list=state.book.filter(b=>(!filter||b.category===filter)&&(!search||(b.recipe_name+' '+(b.category||'')).toLocaleLowerCase('pt-BR').includes(search))).sort((a,b)=>String(a.recipe_name||'').localeCompare(String(b.recipe_name||''),'pt-BR',{sensitivity:'base'}));
@@ -902,7 +1093,7 @@ function renderBook(){
    (!ready&&partialCost>0?'<div class="small">Soma parcial de ingredientes com preço: '+money(partialCost)+' (não representa custo total).</div>':'')+
    (pending.length?'<div class="small book-pending">Aguardando preço de: '+esc(pending.map(i=>i.name).join(', '))+'.</div>':'')+
    '</section><section class="reader-panel reader-panel-ingredients">'+
-   '<section class="book-detail-section"><h4>🥣 Ingredientes, complementos e preparo</h4>'+lines+
+   '<section class="book-detail-section"><h4>🥣 Ingredientes / quantidades / custo</h4>'+quickEditorHtml(b)+
    (comps.length?'<h3 style="margin:13px 0 5px;font-size:14px">Complementos opcionais</h3>'+addons:'')+
    (b.preparation?'<h3 style="margin:13px 0 5px;font-size:14px">Modo de preparo</h3><p class="small">'+esc(b.preparation)+'</p>':'')+
    (b.notes?'<p class="small"><strong>Observações:</strong> '+esc(b.notes)+'</p>':'')+
@@ -1071,8 +1262,60 @@ $('bookNewRecipe').onclick=startNewRecipe;
 $('bookSearch').addEventListener('input',renderBook);$('bookFilter').addEventListener('change',renderBook);
 $('productionFilter').addEventListener('change',renderProductionHistory);
 $('bookCards').addEventListener('click',e=>{
- const edit=e.target.closest('[data-edit-book]');if(edit){beginBookEdit(edit.dataset.editBook);return;}
- const btn=e.target.closest('[data-produce-book]');if(btn)selectBookForProduction(btn.dataset.produceBook);
+ const step=e.target.closest('[data-quick-step]');
+ if(step){
+  const context=quickCardData(step);if(!context)return;
+  const input=context.card.querySelector('[data-quick-quantity="'+step.dataset.index+'"]');
+  if(!input)return;
+  const increment=num(input.step)||1,old=num(input.value)??0;
+  input.value=String(quickRound(Math.max(increment/10,old+Number(step.dataset.quickStep)*increment),4));
+  input.dispatchEvent(new Event('input',{bubbles:true}));return;
+ }
+ const remove=e.target.closest('[data-quick-remove]');
+ if(remove){
+  const context=quickCardData(remove);if(!context)return;
+  const {b,d}=context,idx=Number(remove.dataset.quickRemove);
+  if(!d.ingredients[idx]?.__quickNew)return;
+  d.ingredients.splice(idx,1);d.dirty=true;openedBookRecipes.add(String(b.id));renderBook();return;
+ }
+ const add=e.target.closest('[data-quick-add]');
+ if(add){
+  const context=quickCardData(add);if(!context)return;
+  const {b,d}=context,materialId=context.card.querySelector('[data-quick-material]')?.value;
+  const m=quickMaterials().find(x=>x.id===materialId),grams=num(context.card.querySelector('[data-quick-grams]')?.value);
+  if(!m)return alert('Escolha um recheio com preço por grama cadastrado em Produtos e Materiais.');
+  if(!(grams>0)||!(num(b.yield_units)>0))return alert('Informe gramas por geladinho e confira o rendimento da receita.');
+  const total=quickRound(grams*num(b.yield_units),6);
+  if(d.ingredients.some(i=>i.active!==false&&i.type==='complemento'&&i.material_id===m.id))return alert('Este recheio já existe. Ajuste a quantidade na linha correspondente.');
+  d.ingredients.push({position:d.ingredients.length+1,name:m.name,classification:'Complemento',type:'complemento',active:true,
+   material_id:m.id,brand:m.brand||null,unit:'g',quantity_used:total,
+   pack_quantity:num(m.pack_quantity),pack_cost:num(m.pack_cost),unit_cost:quickRound(num(m.pack_cost)/num(m.pack_quantity),6),
+   cost:quickRound(total*num(m.pack_cost)/num(m.pack_quantity)),display_quantity:fmt(total)+' g',__quickNew:true});
+  d.dirty=true;openedBookRecipes.add(String(b.id));renderBook();return;
+ }
+ const discard=e.target.closest('[data-quick-cancel]');
+ if(discard){
+  const context=quickCardData(discard);if(!context)return;
+  if(!confirm('Descartar as alterações de quantidades ainda não salvas?'))return;
+  bookQuickDrafts.delete(context.b.id);openedBookRecipes.add(String(context.b.id));renderBook();return;
+ }
+ const save=e.target.closest('[data-quick-save]');
+ if(save){const context=quickCardData(save);if(context)quickSave(context.card,context.b);return;}
+ const edit=e.target.closest('[data-edit-book]');
+ if(edit){
+  const d=bookQuickDrafts.get(edit.dataset.editBook);
+  if(d?.dirty&&!confirm('Há ajustes não salvos nesta tabela. Descartá-los e abrir a edição completa?'))return;
+  bookQuickDrafts.delete(edit.dataset.editBook);beginBookEdit(edit.dataset.editBook);return;
+ }
+ const btn=e.target.closest('[data-produce-book]');
+ if(btn){
+  if(bookQuickDrafts.get(btn.dataset.produceBook)?.dirty)return alert('Salve ou descarte os ajustes de quantidades antes de registrar produção.');
+  selectBookForProduction(btn.dataset.produceBook);
+ }
+});
+$('bookCards').addEventListener('input',e=>{
+ const input=e.target.closest('[data-quick-quantity]');
+ if(input)quickSetQuantity(input);
 });
 $('bookEditCancel').onclick=()=>{state.bookEditing=null;$('bookEditPanel').hidden=true;};
 $('bookEditAddMaterial').onclick=()=>{
