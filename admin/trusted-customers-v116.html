@@ -1,18 +1,45 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#ff0f68"><meta name="robots" content="noindex,nofollow,noarchive"><title>Clientes Fiado e Site — GDS Admin v139</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script><style>
-*{box-sizing:border-box}body{margin:0;background:#fff8fb;font-family:Inter,system-ui;color:#29171d}.wrap{max-width:1120px;margin:auto;padding:16px 12px 70px}.head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.head h1{margin:0;color:#4a101e}.sp{flex:1}.btn{border:1px solid #efdde4;background:#fff;color:#4a101e;border-radius:11px;padding:10px 12px;font-weight:900;cursor:pointer}.primary{background:#ff0f68;color:#fff;border-color:#ff0f68}.panel{background:#fff;border:1px solid #efdde4;border-radius:18px;padding:14px;margin-top:12px}.form{display:grid;grid-template-columns:1.2fr 1fr 1.5fr auto;gap:8px;align-items:end}.field label{display:block;font-size:11px;font-weight:900;color:#78616a;margin-bottom:5px}.field input,.field textarea{width:100%;border:1px solid #efdde4;border-radius:10px;padding:10px;font:inherit;background:#fff}.field textarea{resize:vertical;min-height:85px}.form{grid-template-columns:repeat(3,minmax(0,1fr))}.form .notes,.form .form-buttons{grid-column:1/-1}.form-buttons{display:flex;gap:8px;flex-wrap:wrap}.tabs{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}.tabs button{min-width:155px}.notesDisplay{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:9px;padding:10px;border-radius:10px;background:#faf6fa;color:#5b4350;font-size:12px}.card .actions>button{cursor:pointer}.badge.bWarning{background:#fff0e6;color:#915522}.badge.bNeutral{background:#f1f2f5;color:#555}.dueBox{margin-top:9px;padding:8px;border:1px solid #f1e3e8;border-radius:10px;color:#705362;font-size:12px}.msg{margin:12px 0;padding:10px;border-radius:11px;background:#fff;border:1px solid #efdde4;color:#78616a}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:#fff;border:1px solid #efdde4;border-radius:16px;padding:13px}.top{display:flex;align-items:center;gap:8px}.name{font-weight:950;color:#4a101e}.badge{margin-left:auto;font-size:11px;font-weight:900;padding:4px 7px;border-radius:99px;background:#eefaf3;color:#14753e}.meta{font-size:12px;color:#78616a;margin-top:4px}.sum{margin:10px 0;padding:10px;border-radius:11px;background:#fff5f8;color:#4a101e;font-weight:900}.debt{border-top:1px solid #f1e3e8;padding:9px 0}.debt:first-child{border-top:0}.debtTop{display:flex;gap:8px;align-items:center}.debtTop b{color:#4a101e}.money{margin-left:auto;color:#ff0f68;font-weight:950}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.actions button{border:1px solid #efdde4;background:#fff;border-radius:9px;padding:8px 9px;font-weight:900}.pix{background:#eef4ff!important;color:#2459a9}.cash{background:#eefaf3!important;color:#14753e}.inactive{opacity:.55}.empty{padding:24px;text-align:center;color:#78616a}@media(max-width:850px){.form{grid-template-columns:1fr 1fr}.form .notes,.form .form-buttons{grid-column:1/-1}.grid{grid-template-columns:1fr}}@media(max-width:520px){.form{grid-template-columns:1fr}.form .notes,.form .form-buttons{grid-column:auto}}</style></head><body><script src="admin-common-v48.js?v=141"></script><main class="wrap"><div class="head"><div><h1>🤝 Clientes de confiança</h1><div style="font-size:12px;color:#78616a">Área exclusiva do Admin para vendas anotadas / fiado.</div></div><div class="sp"></div><button id="refresh" class="btn">↻ Atualizar</button></div><div id="msg" class="msg">Carregando…</div><div class="tabs" role="tablist" aria-label="Tipo de cliente"><button id="tabFiado" class="btn primary" role="tab" aria-selected="true" aria-controls="fiadoArea">🤝 Clientes Fiado</button><button id="tabSite" class="btn" role="tab" aria-selected="false" aria-controls="siteArea">🌐 Clientes do Site</button></div><div id="fiadoArea" role="tabpanel" aria-labelledby="tabFiado"><section class="panel"><b id="formTitle" style="color:#4a101e">Cadastrar pessoa de confiança</b><div class="form" style="margin-top:10px"><div class="field"><label for="name">NOME</label><input id="name" maxlength="100" placeholder="Ex.: Carlos"></div><div class="field"><label for="phone">WHATSAPP (opcional)</label><input id="phone" type="tel" maxlength="18" placeholder="16 9..."></div><div class="field"><label for="due">DATA COMBINADA PARA PAGAMENTO (opcional)</label><input id="due" type="date"></div><div class="field notes"><label for="notes">ANOTAÇÕES (opcional)</label><textarea id="notes" rows="3" maxlength="3000" placeholder="Ex.: combinado de pagamento, endereço, preferências..."></textarea></div><div class="form-buttons"><button id="save" type="button" class="btn primary save">+ Cadastrar</button><button id="cancelEdit" type="button" class="btn" hidden>Cancelar edição</button></div></div></section><div id="dueNotice" class="msg" hidden></div><section class="panel"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap"><b style="color:#4a101e">Pessoas cadastradas</b><span class="sp"></span><span id="totalOpen" style="font-weight:950;color:#ff0f68"></span></div><div id="grid" class="grid"></div></section></div><div id="siteArea" role="tabpanel" aria-labelledby="tabSite" hidden><section class="panel"><h2 style="margin:0 0 8px">🌐 Clientes do Site</h2><p class="meta" style="line-height:1.6">Clientes identificados pelos pedidos feitos na loja. A informação “Aplicativo informado” aparece somente quando o próprio cliente confirma voluntariamente a instalação; não é possível reconhecer automaticamente todos os usuários que instalaram o app.</p><div id="siteSummary" class="sum">Carregando clientes...</div><div id="siteGrid" class="grid"></div></section></div></main><script>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#ff0f68"><meta name="robots" content="noindex,nofollow,noarchive"><title>Clientes Fiado e Site — GDS Admin v142</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script><style>
+*{box-sizing:border-box}body{margin:0;background:#fff8fb;font-family:Inter,system-ui;color:#29171d}.wrap{max-width:1120px;margin:auto;padding:16px 12px 70px}.head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.head h1{margin:0;color:#4a101e}.sp{flex:1}.btn{border:1px solid #efdde4;background:#fff;color:#4a101e;border-radius:11px;padding:10px 12px;font-weight:900;cursor:pointer}.primary{background:#ff0f68;color:#fff;border-color:#ff0f68}.panel{background:#fff;border:1px solid #efdde4;border-radius:18px;padding:14px;margin-top:12px}.form{display:grid;grid-template-columns:1.2fr 1fr 1.5fr auto;gap:8px;align-items:end}.field label{display:block;font-size:11px;font-weight:900;color:#78616a;margin-bottom:5px}.field input,.field textarea{width:100%;border:1px solid #efdde4;border-radius:10px;padding:10px;font:inherit;background:#fff}.field textarea{resize:vertical;min-height:85px}.form{grid-template-columns:repeat(3,minmax(0,1fr))}.form .notes,.form .form-buttons{grid-column:1/-1}.form-buttons{display:flex;gap:8px;flex-wrap:wrap}.tabs{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}.tabs button{min-width:155px}.notesDisplay{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:9px;padding:10px;border-radius:10px;background:#faf6fa;color:#5b4350;font-size:12px}.card .actions>button{cursor:pointer}.badge.bWarning{background:#fff0e6;color:#915522}.badge.bNeutral{background:#f1f2f5;color:#555}.dueBox{margin-top:9px;padding:8px;border:1px solid #f1e3e8;border-radius:10px;color:#705362;font-size:12px}.msg{margin:12px 0;padding:10px;border-radius:11px;background:#fff;border:1px solid #efdde4;color:#78616a}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:#fff;border:1px solid #efdde4;border-radius:16px;padding:13px}.top{display:flex;align-items:center;gap:8px}.name{font-weight:950;color:#4a101e}.badge{margin-left:auto;font-size:11px;font-weight:900;padding:4px 7px;border-radius:99px;background:#eefaf3;color:#14753e}.meta{font-size:12px;color:#78616a;margin-top:4px}.sum{margin:10px 0;padding:10px;border-radius:11px;background:#fff5f8;color:#4a101e;font-weight:900}.debt{border-top:1px solid #f1e3e8;padding:9px 0}.debt:first-child{border-top:0}.debtTop{display:flex;gap:8px;align-items:center}.debtTop b{color:#4a101e}.money{margin-left:auto;color:#ff0f68;font-weight:950}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.actions button{border:1px solid #efdde4;background:#fff;border-radius:9px;padding:8px 9px;font-weight:900}.pix{background:#eef4ff!important;color:#2459a9}.cash{background:#eefaf3!important;color:#14753e}.inactive{opacity:.55}.empty{padding:24px;text-align:center;color:#78616a}@media(max-width:850px){.form{grid-template-columns:1fr 1fr}.form .notes,.form .form-buttons{grid-column:1/-1}.grid{grid-template-columns:1fr}}@media(max-width:520px){.form{grid-template-columns:1fr}.form .notes,.form .form-buttons{grid-column:auto}}
+.creditTools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 12px}
+.creditTools input,.creditTools select{border:1px solid #efdde4;background:#fff;color:#29171d;border-radius:10px;padding:11px;font:inherit}
+.creditTools input{flex:1;min-width:180px}
+.groupTotals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}
+.groupTotal{border:1px solid #f1e3e8;background:#fff9fb;padding:9px;border-radius:10px}
+.groupTotal small{display:block;font-size:10px;font-weight:800;color:#78616a}
+.groupTotal b{display:block;margin-top:3px;font-size:15px;color:#4a101e}
+.groupTotal.debtTotal b{color:#b32d58}
+.history{border-top:1px solid #f1e3e8;padding-top:9px;margin-top:11px}
+.history>summary{cursor:pointer;color:#4a101e;font-weight:950;padding:6px 0}
+.historyOrder{border:1px solid #efdee6;border-radius:11px;margin:8px 0;padding:10px;background:#fff}
+.historyOrder.cancelled{opacity:.65}
+.historyHead{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:12px}
+.historyHead .money{margin-left:auto}
+.purchaseItem{display:flex;justify-content:space-between;gap:12px;margin-top:5px;font-size:12px;color:#604a54}
+.historyFoot{padding:10px;background:#fff1f5;border-radius:10px;color:#4a101e;font-weight:950;margin-top:10px}
+.cadastros{margin-top:12px;padding-top:10px;border-top:1px solid #f1e3e8}
+.cadastros>summary{font-weight:800;cursor:pointer;color:#705362}
+.cadastros .actions{margin-top:7px}
+.fiadoTip{color:#84652b;font-size:11px;padding-top:7px}
+.statusMini{font-size:10px;border-radius:8px;background:#f6f1f3;color:#624d57;padding:3px 6px;font-weight:800}
+.creditCount{color:#735363;font-size:12px;margin-bottom:8px}
+@media(max-width:520px){.groupTotals{grid-template-columns:1fr 1fr}.groupTotal.debtTotal{grid-column:1/-1}}
+</style></head><body><script src="admin-common-v48.js?v=141"></script><main class="wrap"><div class="head"><div><h1>🤝 Clientes de confiança</h1><div style="font-size:12px;color:#78616a">Área exclusiva do Admin para vendas anotadas / fiado.</div></div><div class="sp"></div><button id="refresh" class="btn">↻ Atualizar</button></div><div id="msg" class="msg">Carregando…</div><div class="tabs" role="tablist" aria-label="Tipo de cliente"><button id="tabFiado" class="btn primary" role="tab" aria-selected="true" aria-controls="fiadoArea">🤝 Clientes Fiado</button><button id="tabSite" class="btn" role="tab" aria-selected="false" aria-controls="siteArea">🌐 Clientes do Site</button></div><div id="fiadoArea" role="tabpanel" aria-labelledby="tabFiado"><section class="panel"><b id="formTitle" style="color:#4a101e">Cadastrar pessoa de confiança</b><div class="form" style="margin-top:10px"><div class="field"><label for="name">NOME</label><input id="name" maxlength="100" placeholder="Ex.: Carlos"></div><div class="field"><label for="phone">WHATSAPP (opcional)</label><input id="phone" type="tel" maxlength="18" placeholder="16 9..."></div><div class="field"><label for="due">DATA COMBINADA PARA PAGAMENTO (opcional)</label><input id="due" type="date"></div><div class="field notes"><label for="notes">ANOTAÇÕES (opcional)</label><textarea id="notes" rows="3" maxlength="3000" placeholder="Ex.: combinado de pagamento, endereço, preferências..."></textarea></div><div class="form-buttons"><button id="save" type="button" class="btn primary save">+ Cadastrar</button><button id="cancelEdit" type="button" class="btn" hidden>Cancelar edição</button></div></div></section><div id="dueNotice" class="msg" hidden></div><section class="panel"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap"><b style="color:#4a101e">📒 Fichas dos clientes e vendas fiadas</b><span class="sp"></span><span id="totalOpen" style="font-weight:950;color:#ff0f68"></span></div><div class="creditTools"><input id="creditSearch" type="search" autocomplete="off" aria-label="Pesquisar cliente por nome ou telefone" placeholder="🔎 Buscar cliente pelo nome ou telefone…"><select id="creditFilter" aria-label="Filtrar clientes"><option value="all">Todos os clientes</option><option value="debt">Somente com saldo devedor</option></select></div><div id="creditCount" class="creditCount"></div><div id="grid" class="grid"></div></section></div><div id="siteArea" role="tabpanel" aria-labelledby="tabSite" hidden><section class="panel"><h2 style="margin:0 0 8px">🌐 Clientes do Site</h2><p class="meta" style="line-height:1.6">Clientes identificados pelos pedidos feitos na loja. A informação “Aplicativo informado” aparece somente quando o próprio cliente confirma voluntariamente a instalação; não é possível reconhecer automaticamente todos os usuários que instalaram o app.</p><div id="siteSummary" class="sum">Carregando clientes...</div><div id="siteGrid" class="grid"></div></section></div></main><script>
 
 (async()=>{
 'use strict';
 const $=id=>document.getElementById(id);
 const sb=GDS48.sb;
 const money=GDS48.money,esc=GDS48.esc;
-let customers=[],orders=[],siteOrders=[],installations=[],editingId=null;
+let customers=[],orders=[],siteOrders=[],installations=[],editingId=null,creditGroups=[];
 const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const digits=v=>String(v||'').replace(/\D/g,'');
 const normalizedPhone=v=>{let n=digits(v);if(n.length>=12&&n.startsWith('55'))n=n.slice(2);return n};
 const dateBR=v=>v?String(v).slice(8,10)+'/'+String(v).slice(5,7)+'/'+String(v).slice(0,4):'';
 const balance=o=>Math.max(0,Number(o.total||0)-Number(o.paid_amount||0));
-const outstanding=id=>orders.filter(o=>o.trusted_customer_id===id&&o.payment_status!=='Pago'&&balance(o)>0);
+const outstanding=id=>orders.filter(o=>o.trusted_customer_id===id&&o.status!=='Cancelado'&&o.payment_status!=='Pago'&&balance(o)>0);
+const normalizeName=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
+const creditIdentity=(name,phone)=>{const n=normalizeName(name),p=normalizedPhone(phone);return n&&/^[0-9]{10,11}$/.test(p)?'person:'+n+'|'+p:null};
+const isCreditOrder=o=>o.payment_method==='Fiado'||Boolean(o.trusted_customer_id);
 function setMsg(t){$('msg').textContent=t}
 function resetForm(){
  editingId=null;$('name').value='';$('phone').value='';$('due').value='';$('notes').value='';
@@ -22,29 +49,82 @@ async function load(){
  setMsg('Carregando clientes e fiados…');
  const [c,o,s,i]=await Promise.all([
   sb.from('trusted_customers').select('*').is('deleted_at',null).order('active',{ascending:false}).order('name'),
-  sb.from('orders').select('id,public_code,customer_name,total,paid_amount,created_at,payment_method,payment_status,trusted_customer_id,deleted_at').not('trusted_customer_id','is',null).is('deleted_at',null).order('created_at',{ascending:false}),
+  sb.from('orders').select('id,public_code,customer_name,customer_phone,total,paid_amount,created_at,payment_method,payment_status,trusted_customer_id,deleted_at,status,sales_channel,order_items(product_name,quantity,unit_price)').is('deleted_at',null).order('created_at',{ascending:false}).limit(1000),
   sb.from('orders').select('id,customer_name,customer_phone,created_at,sales_channel,deleted_at').eq('sales_channel','online').is('deleted_at',null).order('created_at',{ascending:false}).limit(1000),
   sb.from('site_app_installations').select('id,customer_name,customer_phone,install_signal,consent_at').order('consent_at',{ascending:false}).limit(1000)
  ]);
  const error=c.error||o.error||s.error||i.error;
  if(error){setMsg('Erro ao carregar: '+error.message);return}
- customers=c.data||[];orders=o.data||[];siteOrders=s.data||[];installations=i.data||[];
+ customers=c.data||[];orders=o.data||[];siteOrders=s.data||[];installations=i.data||[];creditGroups=buildCreditGroups();
  if(editingId&&!customers.some(x=>x.id===editingId))resetForm();
  renderFiado();renderSite();setMsg('🟢 Cadastros atualizados.')
 }
+function buildCreditGroups(){
+ const byKey=new Map(),byId=new Map();
+ function ensure(key,name,phone){
+  if(!byKey.has(key))byKey.set(key,{key,name:name||'Cliente sem nome',phone:phone||'',records:[],purchases:[]});
+  const g=byKey.get(key);
+  if((!g.phone||g.name==='Cliente sem nome')&&phone){g.phone=phone;g.name=name||g.name}
+  return g;
+ }
+ // O mesmo nome E telefone forma uma ficha; cadastros sem telefone continuam separados.
+ customers.forEach(c=>{
+  const key=creditIdentity(c.name,c.phone)||'cadastro:'+c.id;
+  ensure(key,c.name,c.phone).records.push(c);
+  byId.set(c.id,key);
+ });
+ // Pedidos online fiados sem cadastro também geram ficha e podem ser pesquisados.
+ orders.forEach(o=>{
+  if(o.payment_method!=='Fiado'||o.status==='Cancelado')return;
+  const key=byId.get(o.trusted_customer_id)||creditIdentity(o.customer_name,o.customer_phone)||'pedido:'+o.id;
+  ensure(key,o.customer_name,o.customer_phone);
+ });
+ // Inclui todo histórico da pessoa: fiado, Pix, dinheiro, compras quitadas e canceladas.
+ orders.forEach(o=>{
+  const key=byId.get(o.trusted_customer_id)||creditIdentity(o.customer_name,o.customer_phone)||(o.payment_method==='Fiado'?'pedido:'+o.id:null);
+  if(key&&byKey.has(key))byKey.get(key).purchases.push(o);
+ });
+ return [...byKey.values()].map(g=>{
+  g.purchases.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
+  g.valid=g.purchases.filter(o=>o.status!=='Cancelado');
+  g.debts=g.valid.filter(o=>isCreditOrder(o)&&balance(o)>0);
+  g.debtTotal=g.debts.reduce((n,o)=>n+balance(o),0);
+  g.purchasedTotal=g.valid.reduce((n,o)=>n+Number(o.total||0),0);
+  g.receivedTotal=g.valid.reduce((n,o)=>n+Number(o.paid_amount||0),0);
+  return g;
+ }).sort((a,b)=>(b.debtTotal>0)-(a.debtTotal>0)||a.name.localeCompare(b.name,'pt-BR'));
+}
 function renderFiado(){
- const pending=orders.filter(o=>o.payment_status!=='Pago'&&balance(o)>0);
- $('totalOpen').textContent='Em aberto: '+money(pending.reduce((n,o)=>n+balance(o),0));
- const today=todayISO(),dueNow=customers.filter(c=>c.active&&c.payment_due_date===today&&outstanding(c.id).length);
- $('dueNotice').hidden=dueNow.length===0;
- $('dueNotice').textContent=dueNow.length?'🔔 '+dueNow.length+(dueNow.length===1?' cliente tem':' clientes têm')+' pagamento combinado para hoje. Use o botão “Enviar lembrete” para abrir o WhatsApp com a mensagem pronta. Nenhuma mensagem é enviada automaticamente.':'';
- $('grid').innerHTML=customers.length?customers.map(c=>{
-  const debts=outstanding(c.id),total=debts.reduce((n,o)=>n+balance(o),0);
-  const dueToday=c.payment_due_date===today&&total>0;
-  const due=c.payment_due_date?'<div class="dueBox">📅 Pagamento combinado: <b>'+dateBR(c.payment_due_date)+'</b>'+(dueToday?' · <b>HOJE</b>':'')+'</div>':'';
-  const open=debts.length?debts.map(o=>'<div class="debt"><div class="debtTop"><b>'+esc(o.public_code)+'</b><span>'+new Date(o.created_at).toLocaleDateString('pt-BR')+'</span><span class="money">'+money(balance(o))+'</span></div><div class="actions"><button class="pix" onclick="settle(\''+o.id+'\',\'Pix\')">💠 Receber Pix</button><button class="cash" onclick="settle(\''+o.id+'\',\'Dinheiro\')">💵 Receber dinheiro</button></div></div>').join(''):'<div class="empty">Sem valores pendentes.</div>';
-  return '<article class="card '+(c.active?'':'inactive')+'"><div class="top"><span class="name">'+esc(c.name)+'</span><span class="badge">'+(c.active?'ATIVO':'INATIVO')+'</span></div><div class="meta">'+esc(c.phone||'Sem telefone')+'</div>'+(c.notes?'<div class="notesDisplay"><b>📝 Anotações</b>\n'+esc(c.notes)+'</div>':'')+due+'<div class="sum">'+debts.length+' ordem(ns) em aberto · '+money(total)+'</div><div>'+open+'</div><div class="actions"><button type="button" onclick="editCustomer(\''+c.id+'\')">✏️ Editar</button><button type="button" onclick="deleteCustomer(\''+c.id+'\')">🗑️ Excluir</button><button type="button" onclick="toggleCustomer(\''+c.id+'\','+(!c.active)+')">'+(c.active?'Pausar cliente':'Reativar cliente')+'</button>'+(dueToday&&c.active?'<button type="button" class="pix" onclick="sendReminder(\''+c.id+'\')">💬 Enviar lembrete</button>':'')+'</div></article>';
- }).join(''):'<div class="empty">Nenhum cliente fiado cadastrado.</div>';
+ const allPending=creditGroups.reduce((n,g)=>n+g.debtTotal,0);
+ $('totalOpen').textContent='Total fiado a receber: '+money(allPending);
+ const today=todayISO();
+ const dueNow=creditGroups.filter(g=>g.debtTotal>0&&g.records.some(c=>c.active&&c.payment_due_date===today));
+ $('dueNotice').hidden=!dueNow.length;
+ $('dueNotice').textContent=dueNow.length?'🔔 '+dueNow.length+(dueNow.length===1?' cliente tem':' clientes têm')+' pagamento combinado para hoje. Use “Enviar lembrete” na ficha. Nenhuma mensagem é enviada automaticamente.':'';
+ const typed=$('creditSearch').value.trim();
+ const search=normalizeName(typed),phoneSearch=digits(typed);
+ const rows=creditGroups.filter(g=>{
+  const match=!typed||normalizeName(g.name).includes(search)||(phoneSearch.length>=3&&normalizedPhone(g.phone).includes(phoneSearch));
+  return match&&($('creditFilter').value!=='debt'||g.debtTotal>0);
+ });
+ $('creditCount').textContent=rows.length+' ficha(s) encontrada(s) · '+creditGroups.length+' cliente(s) no total';
+ $('grid').innerHTML=rows.length?rows.map(g=>{
+  const active=g.records.length?g.records.some(c=>c.active):true;
+  const dueRecord=g.records.find(c=>c.active&&c.payment_due_date===today);
+  const dueDate=g.records.map(c=>c.payment_due_date).filter(Boolean).sort()[0];
+  const due=dueDate?'<div class="dueBox">📅 Pagamento combinado: <b>'+dateBR(dueDate)+'</b>'+(dueRecord&&g.debtTotal>0?' · <b>HOJE</b>':'')+'</div>':'';
+  const debts=g.debts.length?g.debts.map(o=>'<div class="debt"><div class="debtTop"><b>'+esc(o.public_code||'Pedido')+'</b><span>'+new Date(o.created_at).toLocaleDateString('pt-BR')+'</span><span class="money">'+money(balance(o))+'</span></div><div class="actions"><button class="pix" onclick="settle(\''+o.id+'\',\'Pix\')">💠 Receber Pix</button><button class="cash" onclick="settle(\''+o.id+'\',\'Dinheiro\')">💵 Receber dinheiro</button></div></div>').join(''):'<div class="empty">Nenhum fiado em aberto.</div>';
+  const history=g.purchases.map(o=>{
+   const cancelled=o.status==='Cancelado';
+   const items=(o.order_items||[]).map(item=>'<div class="purchaseItem"><span>'+Number(item.quantity||0)+'× '+esc(item.product_name||'Produto')+'</span><b>'+money(Number(item.quantity||0)*Number(item.unit_price||0))+'</b></div>').join('');
+   const payLabel=esc(o.payment_method||'Não informado');
+   return '<div class="historyOrder '+(cancelled?'cancelled':'')+'"><div class="historyHead"><b>'+esc(o.public_code||'Pedido')+'</b><span>'+new Date(o.created_at).toLocaleString('pt-BR')+'</span><span class="statusMini">'+esc(o.sales_channel==='local'?'Local':'Online')+'</span><span class="money">'+money(o.total)+'</span></div>'+(items||'<div class="meta">Itens não disponíveis</div>')+'<div class="meta">Pagamento: '+payLabel+' · '+esc(cancelled?'Cancelado':o.payment_status||'Pendente')+' · Recebido: '+money(o.paid_amount)+(cancelled?' (não entra nos totais)':'')+(isCreditOrder(o)?' · Saldo fiado: '+money(balance(o)):'')+'</div></div>';
+  }).join('');
+  const notes=g.records.filter(c=>c.notes).map(c=>esc(c.notes)).filter((x,i,a)=>a.indexOf(x)===i).join('<div style="height:5px"></div>');
+  const customerActions=g.records.length?'<details class="cadastros"><summary>✏️ Gerenciar cadastro'+(g.records.length>1?'s ('+g.records.length+')':'')+'</summary>'+g.records.map(c=>'<div class="meta">'+esc(c.name)+' · '+esc(c.phone||'Sem telefone')+' · '+(c.active?'Ativo':'Inativo')+'</div><div class="actions"><button type="button" onclick="editCustomer(\''+c.id+'\')">✏️ Editar</button><button type="button" onclick="deleteCustomer(\''+c.id+'\')">🗑️ Excluir</button><button type="button" onclick="toggleCustomer(\''+c.id+'\','+(!c.active)+')">'+(c.active?'Pausar':'Reativar')+'</button></div>').join('')+'</details>':'<div class="fiadoTip">Pedido online sem cadastro de cliente de confiança. Os registros ficam agrupados por nome e telefone, quando disponíveis.</div>';
+  const rem=dueRecord&&g.debtTotal>0?'<div class="actions"><button type="button" class="pix" onclick="sendReminder(\''+dueRecord.id+'\')">💬 Enviar lembrete</button></div>':'';
+  return '<article class="card '+(active?'':'inactive')+'"><div class="top"><span class="name">'+esc(g.name)+'</span><span class="badge '+(g.debtTotal?'bWarning':'')+'">'+(g.debtTotal?'A RECEBER':'EM DIA')+'</span></div><div class="meta">📱 '+esc(g.phone||'Telefone não informado')+'</div>'+(notes?'<div class="notesDisplay"><b>📝 Anotações</b><div>'+notes+'</div></div>':'')+due+'<div class="groupTotals"><div class="groupTotal"><small>COMPRAS</small><b>'+g.valid.length+' · '+money(g.purchasedTotal)+'</b></div><div class="groupTotal"><small>JÁ RECEBIDO</small><b>'+money(g.receivedTotal)+'</b></div><div class="groupTotal debtTotal"><small>TOTAL FIADO A RECEBER</small><b>'+money(g.debtTotal)+'</b></div></div>'+(g.debts.length?'<div class="meta"><b>Fiados em aberto ('+g.debts.length+')</b></div>':'')+debts+rem+'<details class="history"><summary>🧾 Histórico de pedidos ('+g.purchases.length+')</summary>'+history+'<div class="historyFoot">TOTAL DEVIDO EM FIADOS: '+money(g.debtTotal)+'</div></details>'+customerActions+'</article>';
+ }).join(''):'<div class="empty">Nenhum cliente encontrado para essa busca.</div>';
 }
 function renderSite(){
  const byKey=new Map();
@@ -96,8 +176,9 @@ window.editCustomer=id=>{
 };
 window.deleteCustomer=async id=>{
  const c=customers.find(x=>x.id===id);if(!c)return;
- const debts=outstanding(id);
- if(debts.length)return alert('Não é possível excluir '+c.name+' porque ainda há '+money(debts.reduce((n,o)=>n+balance(o),0))+' em aberto. Receba ou regularize o pagamento antes. Você pode pausar este cliente.');
+ const group=creditGroups.find(g=>g.records.some(item=>item.id===id));
+ const debt=group?.debtTotal||0;
+ if(debt>0)return alert('Não é possível excluir '+c.name+' porque ainda há '+money(debt)+' em aberto na ficha. Receba ou regularize o pagamento antes. Você pode pausar este cliente.');
  if(!confirm('Excluir o cadastro de '+c.name+'?\n\nO cliente será removido da lista, mas pedidos antigos e pagamentos serão preservados.'))return;
  const {data,error}=await sb.from('trusted_customers').update({deleted_at:new Date().toISOString(),active:false,updated_at:new Date().toISOString()}).eq('id',id).is('deleted_at',null).select('id');
  if(error||!data?.length)return alert('Não foi possível excluir: '+(error?.message||'registro não encontrado'));
@@ -110,24 +191,32 @@ window.toggleCustomer=async(id,active)=>{
  await load()
 };
 window.settle=async(id,method)=>{
- if(!confirm('Confirmar recebimento em '+method+'?'))return;
- const {error}=await sb.rpc('settle_trusted_credit_v116',{p_order_id:id,p_payment_method:method});
- if(error)return alert(error.message);await load()
+ const o=orders.find(item=>item.id===id);
+ if(!o||o.status==='Cancelado'||balance(o)<=0)return alert('Pedido sem saldo a receber. Atualize a página.');
+ if(!confirm('Confirmar o recebimento de '+money(balance(o))+' em '+method+' no pedido '+o.public_code+'?\n\nSomente confirme se o dinheiro realmente foi recebido.'))return;
+ const {error}=o.trusted_customer_id
+  ?await sb.rpc('settle_trusted_credit_v116',{p_order_id:id,p_payment_method:method})
+  :await sb.rpc('set_order_payment_v117',{p_order_id:id,p_paid_amount:Number(o.total),p_payment_method:method});
+ if(error)return alert('Não foi possível registrar pagamento: '+error.message);
+ await load();
 };
 window.sendReminder=id=>{
  const c=customers.find(x=>x.id===id);if(!c)return;
- const total=outstanding(id).reduce((n,o)=>n+balance(o),0),today=todayISO();
+ const g=creditGroups.find(item=>item.records.some(record=>record.id===id));
+ const total=g?.debtTotal||0,today=todayISO();
  if(!total||!c.active||c.payment_due_date!==today)return alert('Este lembrete está disponível somente no dia combinado e para clientes com saldo em aberto.');
  const d=String(Number(today.slice(8,10)));
- const message='Olá, '+c.name+'! 💗🍦\n\nTudo bem? Esperamos que seu dia esteja sendo maravilhoso!\n\nPassando para lembrar que hoje, dia *'+d+'*, é a data que combinamos para o acerto dos seus geladinhos da *Geladinho do Sonhos*.\n\n💰 *Valor combinado:* '+money(total)+'\n\nAgradecemos muito pela confiança e por fazer parte dos nossos clientes especiais!\n\nQuando puder, é só nos dar um retorno por aqui.\n\n*Geladinho do Sonhos — Feito para você!* 💕';
- const phone=normalizedPhone(c.phone);
+ const message='Olá, '+(g.name||c.name)+'! 💗🍦\n\nTudo bem? Esperamos que seu dia esteja sendo maravilhoso!\n\nPassando para lembrar que hoje, dia *'+d+'*, é a data que combinamos para o acerto dos seus geladinhos da *Geladinho do Sonhos*.\n\n💰 *Total de fiados em aberto:* '+money(total)+'\n\nAgradecemos muito pela confiança e por fazer parte dos nossos clientes especiais!\n\nQuando puder, é só nos dar um retorno por aqui.\n\n*Geladinho do Sonhos — Feito para você!* 💕';
+ const phone=normalizedPhone(g.phone||c.phone);
  if(!/^[0-9]{10,11}$/.test(phone)){
   if(navigator.clipboard?.writeText)navigator.clipboard.writeText(message).then(()=>alert('Mensagem copiada. O cliente não tem WhatsApp válido cadastrado.')).catch(()=>prompt('Copie a mensagem:',message));
   else prompt('Copie a mensagem:',message);
-  return
+  return;
  }
  window.open('https://wa.me/55'+phone+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
 };
+$('creditSearch').addEventListener('input',renderFiado);
+$('creditFilter').addEventListener('change',renderFiado);
 $('refresh').onclick=load;
 try{await GDS48.ensure('trusted');await load()}catch(err){if(!['NO_SESSION','MFA_REQUIRED'].includes(err.message))setMsg('Erro de acesso: '+err.message)}
 })();
