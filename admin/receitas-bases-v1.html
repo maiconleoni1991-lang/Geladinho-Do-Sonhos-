@@ -14,7 +14,7 @@ h2{font-size:19px;color:var(--dark);margin:0 0 12px}h3{font-size:16px;margin:0 0
 .small,.hint{font-size:12px;color:var(--muted)}.hint{margin:8px 0 0}
 button,input,select{font:inherit}
 button{cursor:pointer;border:0;border-radius:11px;padding:11px 13px;font-weight:750;background:var(--rose);color:#fff}
-button:disabled{opacity:.5;cursor:wait}
+button:disabled{opacity:.5;cursor:not-allowed}
 button.secondary{background:#fff0f6;color:#8a2350;border:1px solid var(--line)}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f99bbd;outline-offset:1px}
 .tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -193,7 +193,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #bookCards .quick-toolbar{margin-top:12px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;border-top:1px solid #ead4dd;padding-top:12px}
 #bookCards [data-quick-save]{background:#087e4a;color:white;border:0}
 #bookCards [data-quick-cancel]{background:#fff;color:#8e1f4d;border:1px solid #d9b9c7}
-#bookCards .quick-toolbar button:disabled{opacity:.55;cursor:wait}
+#bookCards .quick-toolbar button:disabled{opacity:.55;cursor:not-allowed}
 #bookCards .quick-status{padding:8px;margin-top:10px;border-radius:9px;background:#fff2e3;border:1px solid #edd3a4;color:#77501e;font-size:12px;font-weight:750}
 #bookCards .quick-status.ok{background:#ebf8f0;border-color:#c6e6d3;color:#12613d}
 #bookCards .quick-preview{margin:10px 0;background:#fff7e9;border:1px solid #e5d1a8;border-radius:11px;padding:10px;font:12px/1.5 system-ui}
@@ -995,10 +995,10 @@ function quickEditorHtml(b){
  const d=quickDraft(b),figure=quickFigure(b,d.ingredients);
  return quickTableHtml(b,d.ingredients,'base')+quickTableHtml(b,d.ingredients,'complemento')+
   quickPreviewHtml(b,figure,d.dirty)+
-  '<div class="quick-toolbar"><button type="button" data-quick-save '+(!d.dirty?'disabled':'')+'>✅ Salvar alterações da receita</button>'+
+  '<div class="quick-toolbar"><button type="button" data-quick-save>✅ Salvar alterações da receita</button>'+
   '<button type="button" data-quick-cancel '+(!d.dirty?'disabled':'')+'>↶ Descartar ajustes</button></div>'+
   '<div class="quick-status'+(d.dirty?'':' ok')+'" data-quick-status>'+
-  (d.dirty?'⚠️ Você alterou quantidades. Clique em Salvar para atualizar os custos usados nas próximas produções.':'✅ Quantidades exibidas conforme a ficha salva. Alterar pelas setas não modifica o banco automaticamente.')+
+  (d.dirty?'🟢 Alterações detectadas. Clique em Salvar para atualizar os custos usados nas próximas produções.':'ℹ️ Nenhuma alteração pendente. Ajuste uma quantidade ou adicione um ingrediente e depois clique em Salvar.')+
   '</div>';
 }
 function quickUpdatePreview(card,b){
@@ -1012,11 +1012,11 @@ function quickUpdatePreview(card,b){
   if(total)total.textContent=num(i.quantity_used)===null?'Quantidade pendente':fmt(i.quantity_used)+' g por receita';
  });
  const save=card.querySelector('[data-quick-save]'),cancel=card.querySelector('[data-quick-cancel]');
- if(save)save.disabled=!d.dirty||bookQuickSaving;
+ if(save)save.disabled=bookQuickSaving;
  if(cancel)cancel.disabled=!d.dirty||bookQuickSaving;
  const status=card.querySelector('[data-quick-status]');
  if(status){status.className='quick-status'+(d.dirty?'':' ok');
- status.textContent=d.dirty?'⚠️ Alterações ainda não salvas. Os valores da ficha financeira à esquerda só serão atualizados após Salvar.':'✅ Quantidades iguais à ficha salva.'}
+ status.textContent=d.dirty?'🟢 Alterações prontas para salvar. Os valores da ficha financeira à esquerda só serão atualizados após Salvar.':'ℹ️ Nenhuma alteração pendente. Use as setinhas, digite uma quantidade ou adicione um ingrediente.'}
 }
 function quickCardData(target){
  const card=target.closest('details.book-accordion'),b=state.book.find(x=>x.id===card?.dataset.recipeId);
@@ -1065,7 +1065,14 @@ async function quickReadToConfirm(b,patch){
 }
 async function quickSave(card,b){
  if(bookQuickSaving)return;
- const d=bookQuickDrafts.get(b.id);if(!d?.dirty)return;
+ const d=bookQuickDrafts.get(b.id);
+ if(!d?.dirty){
+  const feedback='ℹ️ Nenhuma alteração foi detectada nesta receita. Primeiro ajuste uma quantidade pelas setinhas (+/−), digite um valor ou adicione um ingrediente; depois clique novamente em Salvar.';
+  const status=card.querySelector('[data-quick-status]');
+  if(status){status.className='quick-status';status.textContent=feedback}
+  alert(feedback);
+  return;
+ }
  const fig=quickFigure(b,d.ingredients);
  if(!fig.valid){
   const warning='⚠️ Revise as quantidades e preços antes de salvar: '+fig.missing.join('; ');
