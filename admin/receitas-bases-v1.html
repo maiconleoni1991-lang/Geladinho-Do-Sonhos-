@@ -885,7 +885,7 @@ async function saveStockMovement(panel,m){
 }
 
 function renderCatalog(){
- const basics=state.materials.filter(m=>m.material_type!=='Complemento');
+ const basics=state.materials;
  $('materialCount').textContent=basics.length+' produtos · '+basics.filter(m=>isPowder(m.id)).length+' com estoque';
  const search=$('materialSearch').value.toLocaleLowerCase('pt-BR').trim();
  const list=basics.filter(m=>(m.name+' '+(m.brand||'')).toLocaleLowerCase('pt-BR').includes(search))
@@ -919,7 +919,9 @@ function renderCatalog(){
    detail('Custo unitário',perUnit,' class="price"')+
    detail('Unidade de cálculo',esc(m.unit))+
    detail('Estoque de pó',powder?'Acompanha estoque':'Sem controle de pó')+
-   '</div>'+stockManagerHtml(m)+stockSection+'<button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button></div></details>';
+   '</div>'+stockManagerHtml(m)+stockSection+
+   (m.material_type==='Complemento'?'<button type="button" class="secondary" data-edit-complement-from-material="'+esc(m.id)+'">✏️ Editar recheio/complemento</button>':
+    '<button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button>')+'</div></details>';
  }).join('')||'<p class="small">Nenhum material encontrado.</p>';
 }
 
@@ -1858,6 +1860,11 @@ $('catalog').addEventListener('click',e=>{
  }
  const stock=e.target.closest('[data-save-powder]');
  if(stock){savePowder(stock.dataset.savePowder);return}
+ const complement=e.target.closest('[data-edit-complement-from-material]');
+ if(complement){
+  state.active='complements';location.hash='complements';render();
+  editComplement(complement.dataset.editComplementFromMaterial);return;
+ }
  const edit=e.target.closest('[data-edit]');
  if(edit)editMaterial(edit.dataset.edit);
 });
