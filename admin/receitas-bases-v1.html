@@ -749,7 +749,7 @@ function stockHistoryEntry(r,m){
  const purchase=r.movement_type==='purchase'?'<div class="stock-ledger-info">'+
   fmt(r.package_count)+' '+esc(r.package_kind)+(Number(r.package_count)!==1?'s':'')+
   ' × '+fmt(r.units_per_package)+' unidade(s)/embalagem × '+fmt(r.display_quantity_per_unit)+' '+esc(r.display_unit||m.unit)+
-  ' · '+money(r.package_price)+'/embalagem · custo '+money(r.total_cost/Number(r.quantity))+'/'+esc(m.unit)+'</div>':'';
+  ' · '+money(r.package_price)+'/embalagem · custo '+precise(r.total_cost/Number(r.quantity))+'/'+esc(m.unit)+'</div>':'';
  const date=r.occurred_on?new Date(r.occurred_on+'T12:00:00').toLocaleDateString('pt-BR'):'—';
  return '<div class="stock-ledger-item"><div><span>'+esc(stockMovementName(r.movement_type))+' · '+date+
   '</span><span>'+sign+stockUnitDisplay(r.quantity,m.unit)+' '+price+'</span></div>'+purchase+
@@ -767,7 +767,7 @@ function stockManagerHtml(m){
   '<div class="stock-head-summary">'+
   '<div class="stock-head-stat"><small>Saldo do novo controle</small><strong>'+stockUnitDisplay(totals.balance,m.unit)+'</strong></div>'+
   '<div class="stock-head-stat"><small>Compras registradas</small><strong>'+rows.filter(r=>r.movement_type==='purchase').length+' compra(s)</strong></div>'+
-  '<div class="stock-head-stat"><small>Custo médio das compras</small><strong>'+(totals.average===null?'Não calculado':money(totals.average)+' / '+esc(m.unit))+'</strong></div>'+
+  '<div class="stock-head-stat"><small>Custo médio das compras</small><strong>'+(totals.average===null?'Não calculado':precise(totals.average)+' / '+esc(m.unit))+'</strong></div>'+
   '</div>'+
   (rows.length===0?'<div class="stock-start-warning">📋 O estoque anterior não foi lançado automaticamente. Se já existe material guardado, registre primeiro o <b>saldo inicial conferido</b> para evitar duplicidade.</div>':'')+
   '<details class="stock-management-form" data-stock-editor><summary>➕ Registrar compra, consumo, perda ou ajuste</summary><div class="stock-management-body">'+
@@ -796,7 +796,7 @@ function stockMovementFromForm(panel,m){
  const kind=panel.querySelector('[data-stock-kind]').value;
  const note=panel.querySelector('[data-stock-note]').value.trim();
  const date=panel.querySelector('[data-stock-date]').value;
- if(!date||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date))return {error:'Informe uma data válida.'};
+ if(!date||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date))return {error:'Informe uma data válida.'};
  const base={material_id:m.id,movement_type:kind,unit:m.unit,note:note||null,occurred_on:date};
  if(kind==='purchase'){
   const package_kind=panel.querySelector('[data-stock-package-kind]').value;
