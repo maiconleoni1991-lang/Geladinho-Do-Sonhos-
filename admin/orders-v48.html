@@ -123,7 +123,7 @@ window.markFiadoO=async id=>{
  if(markingFiado)return;
  const o=orders.find(x=>x.id===id);
  if(!o||o.payment_status!=='Pendente'||Number(o.paid_amount||0)!==0||o.status==='Cancelado')return toast('Este pedido não pode ser marcado como fiado. Atualize os pedidos.');
- if(!confirm('Marcar '+o.public_code+' ('+GDS48.esc(o.customer_name||'Cliente')+') como FIADO no valor de '+GDS48.money(o.total)+'?\n\nNenhum Pix será confirmado e nenhum valor entrará no caixa. O pagamento ficará pendente até ser registrado pelo administrador.'))return;
+ if(!confirm('Marcar '+o.public_code+' ('+GDS48.esc(o.customer_name||'Cliente')+') como FIADO no valor de '+GDS48.money(o.total)+'?\n\nATENÇÃO: isso substitui a forma de pagamento original. Se era Pix, o QR Code deixará de aparecer para o cliente. Nenhum Pix será confirmado e nenhum valor entrará no caixa. O pagamento ficará pendente até ser registrado pelo administrador.'))return;
  markingFiado=true;
  setMsg('Marcando pedido como fiado…');
  try{
