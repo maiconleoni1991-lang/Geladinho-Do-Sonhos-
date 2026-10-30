@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#ff0f68"><meta name="robots" content="noindex,nofollow,noarchive"><title>Clientes e Fiados — GDS Admin v143</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script><style>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#ff0f68"><meta name="robots" content="noindex,nofollow,noarchive"><title>Clientes e Fiados — GDS Admin v144</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script><style>
 *{box-sizing:border-box}body{margin:0;background:#fff8fb;font-family:Inter,system-ui;color:#29171d}.wrap{max-width:1120px;margin:auto;padding:16px 12px 70px}.head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.head h1{margin:0;color:#4a101e}.sp{flex:1}.btn{border:1px solid #efdde4;background:#fff;color:#4a101e;border-radius:11px;padding:10px 12px;font-weight:900;cursor:pointer}.primary{background:#ff0f68;color:#fff;border-color:#ff0f68}.panel{background:#fff;border:1px solid #efdde4;border-radius:18px;padding:14px;margin-top:12px}.form{display:grid;grid-template-columns:1.2fr 1fr 1.5fr auto;gap:8px;align-items:end}.field label{display:block;font-size:11px;font-weight:900;color:#78616a;margin-bottom:5px}.field input,.field textarea{width:100%;border:1px solid #efdde4;border-radius:10px;padding:10px;font:inherit;background:#fff}.field textarea{resize:vertical;min-height:85px}.form{grid-template-columns:repeat(3,minmax(0,1fr))}.form .notes,.form .form-buttons{grid-column:1/-1}.form-buttons{display:flex;gap:8px;flex-wrap:wrap}.tabs{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}.tabs button{min-width:155px}.notesDisplay{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:9px;padding:10px;border-radius:10px;background:#faf6fa;color:#5b4350;font-size:12px}.card .actions>button{cursor:pointer}.badge.bWarning{background:#fff0e6;color:#915522}.badge.bNeutral{background:#f1f2f5;color:#555}.dueBox{margin-top:9px;padding:8px;border:1px solid #f1e3e8;border-radius:10px;color:#705362;font-size:12px}.msg{margin:12px 0;padding:10px;border-radius:11px;background:#fff;border:1px solid #efdde4;color:#78616a}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:#fff;border:1px solid #efdde4;border-radius:16px;padding:13px}.top{display:flex;align-items:center;gap:8px}.name{font-weight:950;color:#4a101e}.badge{margin-left:auto;font-size:11px;font-weight:900;padding:4px 7px;border-radius:99px;background:#eefaf3;color:#14753e}.meta{font-size:12px;color:#78616a;margin-top:4px}.sum{margin:10px 0;padding:10px;border-radius:11px;background:#fff5f8;color:#4a101e;font-weight:900}.debt{border-top:1px solid #f1e3e8;padding:9px 0}.debt:first-child{border-top:0}.debtTop{display:flex;gap:8px;align-items:center}.debtTop b{color:#4a101e}.money{margin-left:auto;color:#ff0f68;font-weight:950}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}.actions button{border:1px solid #efdde4;background:#fff;border-radius:9px;padding:8px 9px;font-weight:900}.pix{background:#eef4ff!important;color:#2459a9}.cash{background:#eefaf3!important;color:#14753e}.inactive{opacity:.55}.empty{padding:24px;text-align:center;color:#78616a}@media(max-width:850px){.form{grid-template-columns:1fr 1fr}.form .notes,.form .form-buttons{grid-column:1/-1}.grid{grid-template-columns:1fr}}@media(max-width:520px){.form{grid-template-columns:1fr}.form .notes,.form .form-buttons{grid-column:auto}}
 .creditTools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 12px}
 .creditTools input,.creditTools select{border:1px solid #efdde4;background:#fff;color:#29171d;border-radius:10px;padding:11px;font:inherit}
@@ -75,32 +75,51 @@ async function load(){
  if(editingId&&!customers.some(x=>x.id===editingId))resetForm();
  renderFiado();setMsg('🟢 '+creditGroups.length+' fichas de clientes atualizadas.');
 }
+// Evita fichas duplicadas por acento, capitalizacao ou pequena grafia diferente
+// quando o mesmo telefone valido corresponde ao cliente. Nunca agrupa so pelo nome.
+function sameCustomerName(a,b){
+ a=normalizeName(a);b=normalizeName(b);
+ if(a===b)return true;
+ if(Math.min(a.length,b.length)<5 || Math.abs(a.length-b.length)>1)return false;
+ let i=0,j=0,edits=0;
+ while(i<a.length&&j<b.length){
+  if(a[i]===b[j]){i++;j++;continue}
+  if(++edits>1)return false;
+  if(a.length>b.length)i++;
+  else if(b.length>a.length)j++;
+  else{i++;j++}
+ }
+ return edits+(a.length-i)+(b.length-j)<=1;
+}
 function buildCreditGroups(){
- const byKey=new Map(),byId=new Map();
- function ensure(key,name,phone){
-  if(!byKey.has(key))byKey.set(key,{key,name:name||'Cliente sem nome',phone:phone||'',records:[],purchases:[]});
-  const g=byKey.get(key);
-  if((!g.phone||g.name==='Cliente sem nome')&&phone){g.phone=phone;g.name=name||g.name}
+ const groups=[],byId=new Map();
+ function ensure(name,phone,fallback){
+  const nm=String(name||'').trim(),p=normalizedPhone(phone),n=normalizeName(nm);
+  const valid=/^[0-9]{10,11}$/.test(p);
+  let g=null;
+  if(valid&&n)g=groups.find(candidate=>normalizedPhone(candidate.phone)===p&&candidate.aliases.some(alias=>sameCustomerName(alias,n)));
+  if(!g){
+   g={key:valid&&n?'person:'+n+'|'+p:fallback,name:nm||'Cliente sem nome',phone:phone||'',aliases:[],records:[],purchases:[]};
+   groups.push(g);
+  }
+  if(n&&!g.aliases.includes(n))g.aliases.push(n);
+  if(!g.phone&&phone)g.phone=phone;
+  // Exibe a grafia natural do nome, sem alterar a grafia dos pedidos registrados.
+  if(nm && (g.name==='Cliente sem nome'||(g.name===g.name.toUpperCase()&&nm!==nm.toUpperCase())))g.name=nm;
   return g;
  }
- // O mesmo nome E telefone forma uma ficha; cadastros sem telefone continuam separados.
  customers.forEach(c=>{
-  const key=creditIdentity(c.name,c.phone)||'cadastro:'+c.id;
-  ensure(key,c.name,c.phone).records.push(c);
-  byId.set(c.id,key);
+  const g=ensure(c.name,c.phone,'cadastro:'+c.id);
+  g.records.push(c);
+  byId.set(c.id,g);
  });
- // Pedidos online fiados sem cadastro também geram ficha e podem ser pesquisados.
  orders.forEach(o=>{
   if(o.sales_channel!=='online'&&o.payment_method!=='Fiado'&&!byId.has(o.trusted_customer_id))return;
-  const key=byId.get(o.trusted_customer_id)||creditIdentity(o.customer_name,o.customer_phone)||'pedido:'+o.id;
-  ensure(key,o.customer_name,o.customer_phone);
+  const linked=byId.get(o.trusted_customer_id);
+  const g=linked||ensure(o.customer_name,o.customer_phone,'pedido:'+o.id);
+  if(!g.purchases.some(existing=>existing.id===o.id))g.purchases.push(o);
  });
- // Inclui todo histórico da pessoa: fiado, Pix, dinheiro, compras quitadas e canceladas.
- orders.forEach(o=>{
-  const key=byId.get(o.trusted_customer_id)||creditIdentity(o.customer_name,o.customer_phone)||(o.payment_method==='Fiado'?'pedido:'+o.id:null);
-  if(key&&byKey.has(key))byKey.get(key).purchases.push(o);
- });
- return [...byKey.values()].map(g=>{
+ return groups.map(g=>{
   g.purchases.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
   g.valid=g.purchases.filter(o=>o.status!=='Cancelado');
   g.debts=g.valid.filter(o=>isCreditOrder(o)&&balance(o)>0);
@@ -140,7 +159,7 @@ function renderFiado(){
   const notes=g.records.filter(c=>c.notes).map(c=>esc(c.notes)).filter((x,i,a)=>a.indexOf(x)===i).join('<div style="height:5px"></div>');
   const customerActions=g.records.length?'<details class="cadastros"><summary>✏️ Gerenciar cadastro'+(g.records.length>1?'s ('+g.records.length+')':'')+'</summary>'+g.records.map(c=>'<div class="meta">'+esc(c.name)+' · '+esc(c.phone||'Sem telefone')+' · '+(c.active?'Ativo':'Inativo')+'</div><div class="actions"><button type="button" onclick="editCustomer(\''+c.id+'\')">✏️ Editar</button><button type="button" onclick="deleteCustomer(\''+c.id+'\')">🗑️ Excluir</button><button type="button" onclick="toggleCustomer(\''+c.id+'\','+(!c.active)+')">'+(c.active?'Pausar':'Reativar')+'</button></div>').join('')+'</details>':'<div class="fiadoTip">Pedido online sem cadastro de cliente de confiança. Os registros ficam agrupados por nome e telefone, quando disponíveis.</div>';
   const rem=dueRecord&&g.debtTotal>0?'<div class="actions"><button type="button" class="pix" onclick="sendReminder(\''+dueRecord.id+'\')">💬 Enviar lembrete</button></div>':'';
-  return '<details class="card clientCard '+(active?'':'inactive')+'"><summary class="clientSummary"><span class="clientSummaryLeft"><b>'+esc(g.name)+'</b><small>📱 '+esc(g.phone||'Telefone não informado')+'</small><small>'+g.purchases.length+' pedido(s) · '+g.onlineCount+' online</small></span><span class="clientSummaryRight"><span class="badge '+(g.debtTotal?'bWarning':'')+'">'+(g.debtTotal?'A RECEBER':'EM DIA')+'</span><strong>'+money(g.debtTotal)+'</strong><small>Ver histórico e dívidas</small></span></summary><div class="clientBody">'+(notes?'<div class="notesDisplay"><b>📝 Anotações</b><div>'+notes+'</div></div>':'')+due+'<div class="groupTotals"><div class="groupTotal"><small>COMPRAS</small><b>'+g.valid.length+' · '+money(g.purchasedTotal)+'</b></div><div class="groupTotal"><small>JÁ RECEBIDO</small><b>'+money(g.receivedTotal)+'</b></div><div class="groupTotal debtTotal"><small>TOTAL FIADO A RECEBER</small><b>'+money(g.debtTotal)+'</b></div></div>'+(g.debts.length?'<div class="meta"><b>Fiados em aberto ('+g.debts.length+')</b></div>':'')+debts+rem+'<details class="history" open><summary>🧾 Histórico de pedidos ('+g.purchases.length+')</summary>'+history+'<div class="historyFoot">TOTAL DEVIDO EM FIADOS: '+money(g.debtTotal)+'</div></details>'+customerActions+'</div></details>';
+  return '<details class="card clientCard '+(active?'':'inactive')+'"><summary class="clientSummary"><span class="clientSummaryLeft"><b>'+esc(g.name)+'</b><small>📱 '+esc(g.phone||'Telefone não informado')+'</small><small>'+g.purchases.length+' pedido(s) · '+g.onlineCount+' online</small></span><span class="clientSummaryRight"><span class="badge '+(g.debtTotal?'bWarning':'')+'">'+(g.debtTotal?'A RECEBER':'EM DIA')+'</span><strong>'+money(g.debtTotal)+'</strong><small>Ver histórico e dívidas</small></span></summary><div class="clientBody">'+(notes?'<div class="notesDisplay"><b>📝 Anotações</b><div>'+notes+'</div></div>':'')+due+'<div class="groupTotals"><div class="groupTotal"><small>COMPRAS</small><b>'+g.valid.length+' · '+money(g.purchasedTotal)+'</b></div><div class="groupTotal"><small>JÁ RECEBIDO</small><b>'+money(g.receivedTotal)+'</b></div><div class="groupTotal debtTotal"><small>TOTAL FIADO A RECEBER</small><b>'+money(g.debtTotal)+'</b></div></div>'+(g.debts.length?'<div class="meta"><b>Fiados em aberto ('+g.debts.length+')</b></div>':'')+debts+rem+'<div class="history"><div class="groupTitle">🧾 Histórico de pedidos ('+g.purchases.length+')</div>'+history+'<div class="historyFoot">TOTAL DEVIDO EM FIADOS: '+money(g.debtTotal)+'</div></div>'+customerActions+'</div></details>';
  }).join(''):'<div class="empty">Nenhum cliente encontrado para essa busca.</div>';
 }
 $('cancelEdit').onclick=resetForm;
