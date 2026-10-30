@@ -1114,8 +1114,11 @@ async function quickSave(card,b){
   if(idx>=0)state.book[idx]=saved;
   bookQuickDrafts.delete(b.id);
   openedBookRecipes.add(String(b.id));
-  // Atualiza os custos da esquerda e a tabela da direita com os mesmos dados confirmados.
-  renderBook();
+  // O banco já confirmou o salvamento; uma falha visual não pode ser tratada como erro de gravação.
+  try{renderBook()}catch(displayError){
+   note('✅ A receita foi salva no banco, mas a tela não atualizou completamente. Recarregue a página para consultar os novos valores.',true);
+   return;
+  }
   note('✅ Receita '+b.recipe_name+' salva com sucesso! Custos atualizados; produções antigas e estoque preservados.');
  }catch(e){
   const description=e.message||'Falha desconhecida de comunicação com o banco.';
@@ -1127,14 +1130,15 @@ async function quickSave(card,b){
  }finally{
   bookQuickSaving=false;
   const fresh=$('bookCards').querySelector('[data-recipe-id="'+b.id+'"]')||card;
-  if(!confirmed){
-   const save=fresh.querySelector('[data-quick-save]');
-   if(save){save.textContent='✅ Salvar alterações da receita';save.disabled=false}
-   const cancel=fresh.querySelector('[data-quick-cancel]');
-   if(cancel)cancel.disabled=false;
-  }else{
+  const save=fresh.querySelector('[data-quick-save]');
+  if(save){save.textContent='✅ Salvar alterações da receita';save.disabled=confirmed}
+  const cancel=fresh.querySelector('[data-quick-cancel]');
+  if(cancel)cancel.disabled=confirmed;
+  if(confirmed){
    const freshRecipe=state.book.find(x=>x.id===b.id)||b;
-   quickUpdatePreview(fresh,freshRecipe);
+   try{quickUpdatePreview(fresh,freshRecipe)}catch(displayError){}
+   const status=fresh.querySelector('[data-quick-status]');
+   if(status){status.className='quick-status ok';status.textContent='✅ Receita salva no banco. Os cálculos exibem os novos valores.'}
   }
  }
 }
