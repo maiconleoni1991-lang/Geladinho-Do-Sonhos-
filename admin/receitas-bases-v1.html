@@ -894,6 +894,10 @@ function recipePicture(b){
 
 // Editor de quantidade na propria ficha. Nada no banco e alterado ate confirmar Salvar.
 const quickRound=(n,d=4)=>Number(Number(n).toFixed(d));
+function quickBaseMaterials(){
+ return state.materials.filter(m=>m.material_type!=='Embalagem'&&['g','ml','cx','pct','un'].includes(m.unit)&&num(m.pack_quantity)>0&&num(m.pack_cost)!==null&&num(m.pack_cost)>=0)
+  .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR',{sensitivity:'base'}));
+}
 function quickDraft(b){
  if(!bookQuickDrafts.has(b.id))bookQuickDrafts.set(b.id,{
   ingredients:JSON.parse(JSON.stringify(Array.isArray(b.ingredients)?b.ingredients:[])),
@@ -943,7 +947,7 @@ function quickRowHtml(i,index,b){
   (perUnit?'<div class="quick-qty-note" data-quick-total="'+index+'">'+fmt(q??0)+' g por receita</div>':'');
  return '<tr data-quick-row="'+index+'"><td class="quick-name">'+esc(i.name||'Ingrediente')+
   (i.brand?'<small>'+esc(i.brand)+'</small>':'')+
-  (i.__quickNew?'<button type="button" class="quick-remove" data-quick-remove="'+index+'">Retirar recheio adicionado</button>':'')+
+  (i.__quickNew?'<button type="button" class="quick-remove" data-quick-remove="'+index+'">Retirar ingrediente adicionado</button>':'')+
   '</td><td>'+control+'</td><td class="quick-cost" data-quick-cost="'+index+'">'+
   (inactive?'Não incluído':num(i.cost)===null?'Pendente':money(i.cost))+
   (perUnit&&num(i.cost)!==null?'<small>'+money(num(i.cost)/num(b.yield_units))+'/un.</small>':'')+
@@ -965,6 +969,14 @@ function quickTableHtml(b,ingredients,type){
     '</select></label><label>g/geladinho<input data-quick-grams type="number" min="0.1" step="1" value="30"></label>'+
     '<button type="button" data-quick-add>+ Adicionar</button></div>'+
     '<p class="quick-explanation">Exemplo: 30 g de chocolate branco <b>por geladinho</b> × rendimento da receita. O custo é calculado usando o preço por grama cadastrado. Nenhum recheio é incluído sem clicar em Adicionar.</p>';
+ }else{
+  const materials=quickBaseMaterials();
+  add='<div class="quick-add"><label>Adicionar ingrediente da base<select data-quick-base-material>'+
+   '<option value="">Escolha o ingrediente cadastrado...</option>'+
+   materials.map(m=>'<option value="'+esc(m.id)+'">'+esc(m.name+(m.brand?' — '+m.brand:'')+' · '+money(m.pack_cost)+' / '+fmt(m.pack_quantity)+' '+m.unit)+'</option>').join('')+
+   '</select></label><label>Qtd. por receita<input type="number" data-quick-base-qty min="0.0001" step="any" inputmode="decimal" placeholder="Ex.: 30"></label>'+
+   '<button type="button" data-quick-add-base>+ Adicionar</button></div>'+
+   '<p class="quick-explanation">Adicione quantos ingredientes precisar. A quantidade usa a unidade cadastrada no material (g, ml, caixa, pacote ou unidade). O custo é calculado pelo preço da embalagem e quantidade comprada. Nenhuma alteração é salva até confirmar.</p>';
  }
  return '<div class="quick-section"><h5>'+title+'</h5>'+table+add+'</div>';
 }
@@ -1277,6 +1289,23 @@ $('bookCards').addEventListener('click',e=>{
   const {b,d}=context,idx=Number(remove.dataset.quickRemove);
   if(!d.ingredients[idx]?.__quickNew)return;
   d.ingredients.splice(idx,1);d.dirty=true;openedBookRecipes.add(String(b.id));renderBook();return;
+ }
+ const addBase=e.target.closest('[data-quick-add-base]');
+ if(addBase){
+  const context=quickCardData(addBase);if(!context)return;
+  const {b,d}=context,materialId=context.card.querySelector('[data-quick-base-material]')?.value;
+  const m=quickBaseMaterials().find(x=>x.id===materialId),qty=num(context.card.querySelector('[data-quick-base-qty]')?.value);
+  if(!m)return alert('Selecione um ingrediente da base cadastrado com quantidade e preço em Produtos e Materiais.');
+  if(!(qty>0))return alert('Informe uma quantidade por receita maior que zero.');
+  if(d.ingredients.some(i=>i.active!==false&&i.type!=='complemento'&&i.material_id===m.id))
+   return alert('Este ingrediente já está na base. Use as setinhas na linha existente para aumentar a quantidade.');
+  d.ingredients.push({position:d.ingredients.length+1,name:m.name,classification:'Ingrediente',
+   type:'base',active:true,material_id:m.id,brand:m.brand||null,unit:m.unit,quantity_used:quickRound(qty,6),
+   pack_quantity:num(m.pack_quantity),pack_cost:num(m.pack_cost),
+   unit_cost:quickRound(num(m.pack_cost)/num(m.pack_quantity),6),
+   cost:quickRound(qty*num(m.pack_cost)/num(m.pack_quantity)),
+   display_quantity:fmt(qty)+' '+m.unit,__quickNew:true});
+  d.dirty=true;openedBookRecipes.add(String(b.id));renderBook();return;
  }
  const add=e.target.closest('[data-quick-add]');
  if(add){
