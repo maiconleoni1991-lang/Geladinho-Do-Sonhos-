@@ -106,6 +106,52 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #bookCards .book-production-title{display:flex;flex-wrap:wrap;justify-content:space-between;gap:7px;color:var(--dark);font-weight:800}
 #bookCards .book-production-info{margin-top:6px;color:#765768;line-height:1.6}
 @media(max-width:620px){#bookCards .book-accordion>.book-summary{padding:11px;gap:8px;align-items:flex-start}#bookCards .book-summary-right{flex-direction:column;align-items:flex-end}#bookCards .book-summary-main strong{font-size:14px}}
+
+/* Livro de Receitas — leitura editorial inspirada no e-book; preserva custos administrativos */
+#bookCards .book-detail-body{display:block;padding:0;border-top:1px solid #efdae0;background:#fffaf8}
+#bookCards .reader-hero{display:grid;grid-template-columns:minmax(225px,36%) minmax(0,1fr);background:#fcf0e9;min-height:260px}
+#bookCards .reader-photo{min-height:260px;background:linear-gradient(145deg,#90113f,#e46a91);display:grid;place-items:center;overflow:hidden;position:relative}
+#bookCards .reader-photo img{width:100%;height:100%;max-height:350px;object-fit:cover;display:block}
+#bookCards .reader-photo .reader-placeholder{padding:30px;text-align:center;color:#fff;font:italic 700 27px Georgia,serif}
+#bookCards .reader-intro{padding:27px 29px;align-self:center}
+#bookCards .reader-kicker{font:700 11px system-ui;letter-spacing:.15em;color:#9a1c47;text-transform:uppercase}
+#bookCards .reader-intro h3{font:italic 500 clamp(31px,4vw,52px)/1.08 Georgia,serif;color:#a40e46;margin:14px 0 10px;overflow-wrap:anywhere}
+#bookCards .reader-intro p{font:15px/1.65 Georgia,serif;color:#71424f;margin:0}
+#bookCards .reader-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+#bookCards .reader-chips span{display:inline-flex;align-items:center;border:1px solid #efd4d8;border-radius:9px;padding:8px 10px;background:#fff;font-size:12px;color:#6c3147;font-weight:700}
+#bookCards .reader-columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px}
+#bookCards .reader-panel{background:#fff;border:1px solid #f0e1e4;border-radius:14px;padding:14px 16px;min-width:0}
+#bookCards .reader-panel h4,#bookCards .reader-financial h4,#bookCards .reader-lots h4{background:linear-gradient(110deg,#9b1040,#ea477b);color:#fff;font:700 19px/1.3 Georgia,serif;border-radius:25px;margin:0 0 13px;padding:10px 15px}
+#bookCards .reader-ingredients{font:13px/1.5 Georgia,serif}
+#bookCards .reader-ingredient-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:9px 3px;border-bottom:1px solid #f0e1e4;align-items:start}
+#bookCards .reader-ingredient-row:last-child{border-bottom:0}
+#bookCards .reader-ingredient-row strong{color:#5b2840;text-align:right}
+#bookCards .reader-step-list{padding-left:22px;margin:2px 0 12px;font:14px/1.55 Georgia,serif;color:#522d39}
+#bookCards .reader-step-list li{padding:5px 0}
+#bookCards .reader-note{padding:12px;border:1px dashed #dfabb8;border-radius:10px;background:#fff8fa;color:#82455a;font-size:12px;line-height:1.55}
+#bookCards .reader-yield{margin:16px 0 0;padding:13px;background:#fff4f7;border-radius:11px;font-size:13px;color:#663647}
+#bookCards .reader-yield strong{font-size:17px;color:#991340}
+#bookCards .reader-financial{margin:0 20px 20px;padding:17px;border:1px solid #eed8df;border-radius:14px;background:#fff}
+#bookCards .reader-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+#bookCards .reader-stat{min-width:0;background:#fff3f7;border:1px solid #f5e1e8;border-radius:11px;padding:12px}
+#bookCards .reader-stat small{display:block;color:#845568;font-size:11px;font-weight:750;line-height:1.35}
+#bookCards .reader-stat strong{display:block;color:#671c3d;font-size:19px;margin-top:6px;overflow-wrap:anywhere}
+#bookCards .reader-profit{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0 0;background:#eaf8ee;color:#146b3e;padding:13px;border-radius:10px;font-weight:850}
+#bookCards .reader-advanced{margin:14px 0 0;border:1px solid #efdae3;border-radius:11px;background:#fffafb;padding:0!important}
+#bookCards .reader-advanced>summary{padding:12px;font-size:13px;font-weight:850;cursor:pointer;color:#832b4e}
+#bookCards .reader-advanced-inner{padding:3px 12px 12px}
+#bookCards .reader-fine-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#bookCards .reader-fine-grid .reader-fine{background:#fff2f6;border-radius:8px;padding:9px;font-size:12px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+#bookCards .reader-fine b{text-align:right;color:#74324b;white-space:nowrap}
+#bookCards .reader-lots{margin:0 20px 20px;padding:16px;border:1px solid #eed8df;border-radius:14px;background:#fff}
+#bookCards .reader-lots .book-production-history{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px}
+#bookCards .reader-lots .book-production-entry{background:#fff9fb}
+#bookCards .reader-footer{padding:15px 20px 20px;border-top:1px solid #eedce1;background:#fff}
+#bookCards .reader-footer .actions{margin:0}
+#bookCards .reader-footer .actions button{min-width:185px}
+@media(max-width:780px){#bookCards .reader-hero{grid-template-columns:1fr}#bookCards .reader-photo{height:240px;min-height:240px}#bookCards .reader-photo img{max-height:none}#bookCards .reader-intro{padding:18px}#bookCards .reader-columns{grid-template-columns:1fr;padding:12px;gap:11px}#bookCards .reader-financial,#bookCards .reader-lots{margin:0 12px 12px}#bookCards .reader-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#bookCards .reader-fine-grid{grid-template-columns:1fr}#bookCards .reader-footer{padding:12px}}
+@media(max-width:390px){#bookCards .reader-stat strong{font-size:16px}#bookCards .reader-intro h3{font-size:31px}#bookCards .reader-panel h4,#bookCards .reader-financial h4,#bookCards .reader-lots h4{font-size:17px}}
+
 </style></head><body>
 <script src="admin-common-v48.js?v=141"></script>
 <main>
@@ -283,7 +329,7 @@ function splitNetProfit(value){
 const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
 const openedBookRecipes=new Set();
- const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','powders','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null};
+ const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','powders','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null,productPhotos:[]};
 const isNewRecipe=()=>state.active==='new_recipe';
 const currentBase=()=>state.bases.find(x=>x.code===(isNewRecipe()?(state.newRecipeDraft?.base_code||'gourmet_nova'):state.active));
 const currentItems=()=>isNewRecipe()?(state.newRecipeDraft?.items||[]):state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
@@ -306,9 +352,9 @@ const unitLabel=u=>({g:'g',ml:'ml',un:'un',cx:'caixa',pct:'pacote'})[u]||u;
 const note=(s,bad=false)=>{const x=$('status');x.textContent=s;x.className='msg '+(bad?'err':'ok')};
 const pending=()=>note('✏️ Alterações na receita ainda não salvas. Clique em Salvar receita e valores.');
 async function load(){
-const [b,i,m,p,k,l]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*'),sb.from('gds_recipe_book').select('*').order('updated_at',{ascending:false}),sb.from('gds_recipe_production_logs').select('*').order('production_date',{ascending:false}).order('created_at',{ascending:false}).limit(1000)]);
+const [b,i,m,p,k,l,photos]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*'),sb.from('gds_recipe_book').select('*').order('updated_at',{ascending:false}),sb.from('gds_recipe_production_logs').select('*').order('production_date',{ascending:false}).order('created_at',{ascending:false}).limit(1000),sb.from('products').select('name,image_url').limit(500)]);
 if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;if(p.error)throw p.error;if(k.error)throw k.error;if(l.error)throw l.error;
-state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];state.production=l.data||[];
+state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];state.production=l.data||[];state.productPhotos=photos.error?[]:(photos.data||[]);
 if(!codes.every(code=>state.bases.some(b=>b.code===code)))throw Error('As três bases não foram encontradas.');
 if(isNewRecipe()&&!state.newRecipeDraft)state.newRecipeDraft=makeNewRecipe();
 render();
@@ -785,62 +831,103 @@ async function saveBookEdit(){
  finally{btn.disabled=false}
 }
 
+// Busca as fotos já cadastradas na loja, como o livro ilustrado; não cria imagens novas.
+function recipePicture(b){
+ const k=String(b.recipe_name||'').toLocaleLowerCase('pt-BR').replace(/gourmet|geladinho|com creme de pistache|\./g,'').trim();
+ const products=state.productPhotos||[];
+ const p=products.find(x=>String(x.name||'').toLocaleLowerCase('pt-BR')===k)
+   ||products.find(x=>k.length>4&&String(x.name||'').toLocaleLowerCase('pt-BR').includes(k));
+ const url=String(p?.image_url||'');
+ return /^(https?:\/\/|\/(?!\/))/.test(url)?url:'';
+}
 function renderBook(){
  const search=field('bookSearch').trim().toLocaleLowerCase('pt-BR'),filter=field('bookFilter');
- const list=state.book.filter(b=>(!filter||b.category===filter)&&(!search||(b.recipe_name+' '+(b.category||'')).toLocaleLowerCase('pt-BR').includes(search))).sort((a,b)=>String(a.recipe_name||'').localeCompare(String(b.recipe_name||''),'pt-BR',{sensitivity:'base'}));
+ const list=state.book.filter(b=>(!filter||b.category===filter)&&(!search||(b.recipe_name+' '+(b.category||'')).toLocaleLowerCase('pt-BR').includes(search)))
+  .sort((a,b)=>String(a.recipe_name||'').localeCompare(String(b.recipe_name||''),'pt-BR',{sensitivity:'base'}));
  $('bookCount').textContent=state.book.length+' receitas';
  $('bookCards').innerHTML=list.map(b=>{
   const ready=num(b.cost_total)!==null&&num(b.cost_base)!==null&&num(b.cost_complements)!==null&&num(b.yield_units)>0;
-  const relevant=state.production.filter(p=>p.recipe_id===b.id),finished=relevant.reduce((n,p)=>n+Number(p.finished_units||0),0),
-   totalSpent=relevant.reduce((n,p)=>n+Number(p.production_cost_total||0),0),
-   totalPotential=relevant.reduce((n,p)=>n+Number(p.potential_revenue||0),0);
-  const date=b.updated_at?new Date(b.updated_at).toLocaleDateString('pt-BR'):'—',
-   ingredients=Array.isArray(b.ingredients)?b.ingredients:[],
-   used=ingredients.filter(i=>i.active!==false),
-   pending=used.filter(i=>num(i.cost)===null),
-   partialCost=used.reduce((total,i)=>total+(num(i.cost)??0),0);
+  const relevant=state.production.filter(p=>p.recipe_id===b.id);
+  const finished=relevant.reduce((n,p)=>n+Number(p.finished_units||0),0);
+  const totalSpent=relevant.reduce((n,p)=>n+Number(p.production_cost_total||0),0);
+  const totalPotential=relevant.reduce((n,p)=>n+Number(p.potential_revenue||0),0);
+  const date=b.updated_at?new Date(b.updated_at).toLocaleDateString('pt-BR'):'—';
+  const ingredients=Array.isArray(b.ingredients)?b.ingredients:[];
+  const used=ingredients.filter(i=>i.active!==false),optional=ingredients.filter(i=>i.active===false);
+  const pending=used.filter(i=>num(i.cost)===null);
+  const partialCost=used.reduce((n,i)=>n+(num(i.cost)??0),0);
+  const perUnit=ready?(num(b.cost_unit)??(num(b.cost_total)/num(b.yield_units))):null;
+  const projectedPerUnit=ready&&num(b.estimated_profit)!==null?num(b.estimated_profit)/num(b.yield_units):null;
+  const margin=ready&&num(b.sale_price)>0&&num(b.estimated_profit)!==null?100*num(b.estimated_profit)/(num(b.sale_price)*num(b.yield_units)):null;
   const split=ready&&num(b.estimated_profit)!==null?splitNetProfit(b.estimated_profit):null;
-  const lines=ingredients.map(i=>{
-   const quantity=i.display_quantity||((i.quantity_used===null||i.quantity_used===undefined)?'Quantidade pendente':fmt(i.quantity_used)+' '+(i.unit||''));
-   if(i.active===false)return '<div class="book-item" style="opacity:.65"><strong>'+esc(i.name)+'</strong> — '+esc(quantity)+' • Opcional/inativo</div>';
-   return '<div class="book-item"><strong>'+esc(i.name)+'</strong> ('+esc(i.classification||i.type||'Ingrediente')+') — '+esc(quantity)+' • '+(num(i.cost)===null?'<span class="book-pending">Preço pendente</span>':money(i.cost))+'</div>';
-  }).join('');
+  const photo=recipePicture(b);
+  const ingredientsHtml=used.map(i=>{
+   const amount=i.display_quantity||((i.quantity_used===null||i.quantity_used===undefined)?'Quantidade pendente':fmt(i.quantity_used)+' '+(i.unit||''));
+   return '<div class="reader-ingredient-row"><span>'+esc(i.name)+(i.brand?' — '+esc(i.brand):'')+'</span><strong>'+esc(amount)+'</strong></div>';
+  }).join('')||'<p class="small">Ingredientes ainda não cadastrados.</p>';
+  const optionalHtml=optional.map(i=>esc(i.name)).join(', ');
   const comps=Array.isArray(b.complement_options)?b.complement_options:[];
-  const addons=comps.map(c=>'<div class="book-item">'+esc(c.name||'Complemento')+' — '+(c.selected?'Selecionado na ficha':'Opcional (não incluído no custo)')+'</div>').join('');
-  const extra=[b.recipe_type?'Tipo: '+b.recipe_type:null,b.recipe_status?'Status: '+b.recipe_status:null,b.volume_declared_ml?'Volume declarado: '+fmt(b.volume_declared_ml/1000)+' L (estimativa)':''].filter(Boolean);
-  const yields=(b.expected_yield_min_130&&b.expected_yield_max_130?b.expected_yield_min_130+'–'+b.expected_yield_max_130+' geladinhos de 130 ml':'')+(b.expected_yield_120?' • '+b.expected_yield_120+' de 120 ml':'');
-  const productionEntries=relevant.slice().sort((a,b)=>String(b.production_date||'').localeCompare(String(a.production_date||''))).map(p=>{
+  const addons=comps.map(i=>'<div class="reader-ingredient-row"><span>'+esc(i.name||'Complemento')+'</span><strong>'+(i.selected?'Selecionado':'Opcional')+'</strong></div>').join('');
+  const prep=String(b.preparation||'').split(/\n+/).map(t=>t.trim()).filter(Boolean);
+  const steps=prep.length?'<ol class="reader-step-list">'+prep.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ol>':
+   '<div class="reader-note"><b>Preparo ainda não cadastrado.</b><p>Preencha e valide o modo de preparo na edição da receita antes de usar esta ficha como referência definitiva.</p></div>';
+  const productionEntries=relevant.slice().sort((a,z)=>String(z.production_date||'').localeCompare(String(a.production_date||''))).map(p=>{
    const when=p.production_date?new Date(p.production_date+'T12:00:00').toLocaleDateString('pt-BR'):'Data não informada';
    return '<div class="book-production-entry"><div class="book-production-title"><span>🏭 '+esc(when)+'</span><span>'+Number(p.finished_units||0)+' geladinhos · '+Number(p.batch_count||0)+' receita(s)</span></div>'+
-    '<div class="book-production-info">Custo total do lote: '+money(p.production_cost_total)+' · Custo/un.: '+money(p.production_cost_unit)+' · Faturamento potencial: '+money(p.potential_revenue)+' · Lucro potencial: '+money(p.potential_profit)+(p.production_notes?' · Observações: '+esc(p.production_notes):'')+'</div></div>';
+    '<div class="book-production-info">Custo do lote: '+money(p.production_cost_total)+' · Custo/un.: '+money(p.production_cost_unit)+' · Faturamento potencial: '+money(p.potential_revenue)+' · Lucro potencial: '+money(p.potential_profit)+
+    (p.production_notes?' · Observações: '+esc(p.production_notes):'')+'</div></div>';
   }).join('');
+  const stat=(label,value)=>'<div class="reader-stat"><small>'+esc(label)+'</small><strong>'+value+'</strong></div>';
+  const fine=(label,value)=>'<div class="reader-fine"><span>'+esc(label)+'</span><b>'+value+'</b></div>';
+  const financialBreakdown=[
+   fine('Ingredientes da receita',pending.length?'Parcial: '+money(partialCost):money(partialCost)),
+   fine('Custo de complementos',num(b.cost_complements)===null?'Pendente':money(b.cost_complements)),
+   fine('Custo da base',num(b.cost_base)===null?'Pendente':money(b.cost_base)),
+   fine('Embalagem por unidade',num(b.packaging_unit_cost)===null?'Pendente':money(b.packaging_unit_cost)),
+   fine('Energia e despesas por receita',num(b.overhead_cost)===null?'Pendente':money(b.overhead_cost)),
+   fine('Comissão',num(b.commission_percent)===null?'Pendente':fmt(b.commission_percent)+'%'),
+   fine('Rendimento estimado',num(b.yield_units)>0?fmt(b.yield_units)+' un.':'Pendente'),
+   fine('Faturamento potencial',num(b.sale_price)!==null&&num(b.yield_units)>0?money(num(b.sale_price)*num(b.yield_units)):'Pendente'),
+   fine('Lucro potencial por unidade',projectedPerUnit===null?'Pendente':money(projectedPerUnit)),
+   fine('Margem estimada',margin===null?'Pendente':fmt(margin)+'%'),
+   ...(split?[fine('Reinvestimento previsto (50%)',money(split.reinvest)),fine('Pró-labore previsto (50%)',money(split.prolabore))]:[]),
+   ...(relevant.length?[fine('Custo de todos os lotes registrados',money(totalSpent)),fine('Custo médio real por geladinho',finished?money(totalSpent/finished):'Pendente'),fine('Faturamento potencial dos lotes',money(totalPotential))]:[])
+  ].join('');
   return '<details class="book-card book-accordion" data-recipe-id="'+esc(b.id)+'"'+(openedBookRecipes.has(String(b.id))?' open':'')+'>'+
-    '<summary class="book-summary"><span class="book-chevron" aria-hidden="true">▶</span><span class="book-summary-main"><strong>'+esc(b.recipe_name)+'</strong><small>Base: '+esc(state.bases.find(x=>x.id===b.base_id)?.name||'Base')+' · '+(ready?'Custo/un.: '+money(num(b.cost_unit)??(num(b.cost_total)/num(b.yield_units))):'Custos pendentes')+'</small></span><span class="book-summary-right"><span class="badge">'+esc(b.category||'Gourmet')+'</span><small>'+relevant.length+' produção(ões) · '+finished+' unidades</small></span></summary><div class="book-detail-body">'+
-   '<div class="book-meta">Base vinculada: '+esc(state.bases.find(x=>x.id===b.base_id)?.name||'Base')+' • Atualizada em '+esc(date)+'</div>'+
-   (extra.length?'<div class="book-pills">'+extra.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div>':'')+
-   (yields?'<div class="small"><strong>Rendimento estimado:</strong> '+esc(yields)+'</div>':'')+
-   '<div class="book-pills"><span>Previsão usada na calculadora: '+(b.yield_units?b.yield_units+' un.':'pendente')+'</span><span>'+relevant.length+' produção(ões)</span><span>'+finished+' geladinhos produzidos</span></div>'+
-   '<div class="book-pills"><span>Investimento em ingredientes: '+(pending.length?'parcial — ':'')+money(partialCost)+'</span><span>Rendimento: '+(num(b.yield_units)>0?fmt(b.yield_units)+' unidades':'pendente')+'</span><span>Custo de ingredientes/un.: '+(num(b.yield_units)>0&&!pending.length?money(partialCost/num(b.yield_units)):'pendente')+'</span></div>'+
-   '<div class="book-pills"><span>Custo total com despesas: '+(num(b.cost_total)!==null?money(b.cost_total):'pendente')+'</span><span>Preço de venda/un.: '+(num(b.sale_price)!==null?money(b.sale_price):'não informado')+'</span><span>Faturamento previsto: '+(num(b.sale_price)!==null&&num(b.yield_units)>0?money(num(b.sale_price)*num(b.yield_units)):'pendente')+'</span></div>'+
-   '<div class="book-pills"><span>Lucro potencial/un.: '+(ready&&num(b.estimated_profit)!==null?money(num(b.estimated_profit)/num(b.yield_units)):'pendente')+'</span><span>Margem estimada: '+(ready&&num(b.sale_price)>0&&num(b.estimated_profit)!==null?(100*num(b.estimated_profit)/(num(b.sale_price)*num(b.yield_units))).toFixed(1).replace('.',',')+'%':'pendente')+'</span></div>'+
-   (split?'<div class="book-pills"><span>🏭 Reinvestimento (50% do lucro): '+money(split.reinvest)+'</span><span>👩‍💼 Pró-labore (50% do lucro): '+money(split.prolabore)+'</span></div>':'')+
-    (relevant.length?'<div class="book-pills"><span>Custos das produções: '+money(totalSpent)+'</span><span>Custo médio real/un.: '+money(finished?totalSpent/finished:0)+'</span><span>Vendas potenciais: '+money(totalPotential)+'</span></div>':'')+
-   '<div class="'+(ready?'book-total':'book-pending')+'">'+(ready&&num(b.estimated_profit)!==null?'Lucro potencial por receita: '+money(b.estimated_profit):'⚠️ Lucro projetado pendente: confira preço de venda, embalagens, despesas e comissão. O custo dos ingredientes aparece acima.')+'</div>'+
-   (!ready&&partialCost>0?'<div class="small">Soma parcial de ingredientes com preço: '+money(partialCost)+' (não representa custo total).</div>':'')+
-   (pending.length?'<div class="small book-pending">Aguardando preço de: '+esc(pending.map(i=>i.name).join(', '))+'.</div>':'')+
-   '<section class="book-detail-section"><h4>🧾 Ingredientes, complementos e preparo</h4>'+lines+
-   (comps.length?'<h3 style="margin:13px 0 5px;font-size:14px">Complementos opcionais</h3>'+addons:'')+
-   (b.preparation?'<h3 style="margin:13px 0 5px;font-size:14px">Modo de preparo</h3><p class="small">'+esc(b.preparation)+'</p>':'')+
-   (b.notes?'<p class="small"><strong>Observações:</strong> '+esc(b.notes)+'</p>':'')+
-   '<div class="book-meta">Esta ficha registra as informações salvas; não movimenta o estoque.</div></section>'+
-   '<section class="book-detail-section"><h4>📋 Histórico de produções ('+relevant.length+')</h4><div class="book-production-history">'+(productionEntries||'<p class="small">Nenhuma produção registrada para este sabor.</p>')+'</div></section>'+'<div class="actions"><button type="button" class="secondary" data-edit-book="'+esc(b.id)+'">✏️ Editar receita / adicionar ingredientes</button><button type="button" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção</button></div></div></details>';
+   '<summary class="book-summary"><span class="book-chevron" aria-hidden="true">▶</span><span class="book-summary-main"><strong>'+esc(b.recipe_name)+'</strong><small>Base: '+esc(state.bases.find(x=>x.id===b.base_id)?.name||'Base')+' · '+(perUnit!==null?'Custo/un.: '+money(perUnit):'Custos pendentes')+'</small></span>'+
+   '<span class="book-summary-right"><span class="badge">'+esc(b.category||'Gourmet')+'</span><small>'+relevant.length+' produção(ões) · '+finished+' unidades</small></span></summary>'+
+   '<div class="book-detail-body">'+
+   '<div class="reader-hero"><div class="reader-photo">'+(photo?'<img loading="lazy" src="'+esc(photo)+'" alt="Geladinho '+esc(b.recipe_name)+'">':'<div class="reader-placeholder">Geladinho<br>dos Sonhos<br>🍦</div>')+'</div>'+
+   '<div class="reader-intro"><div class="reader-kicker">Geladinho dos Sonhos · Ficha de receita e custos</div><h3>'+esc(b.recipe_name)+'</h3><p>Ingredientes, modo de preparo e resultados financeiros organizados em uma única ficha.</p>'+
+   '<div class="reader-chips"><span>Categoria: '+esc(b.category||'Gourmet')+'</span><span>Rendimento previsto: '+(num(b.yield_units)>0?fmt(b.yield_units)+' unidades':'a confirmar')+'</span><span>Atualizada: '+esc(date)+'</span></div></div></div>'+
+   '<div class="reader-columns"><section class="reader-panel"><h4>🥣 Ingredientes</h4><div class="reader-ingredients">'+ingredientsHtml+'</div>'+
+   (optionalHtml?'<div class="reader-note" style="margin-top:10px"><b>Opcionais/inativos:</b> '+optionalHtml+'</div>':'')+
+   (addons?'<h5 style="margin:14px 0 7px;color:#80274b">Recheios e complementos</h5><div class="reader-ingredients">'+addons+'</div>':'')+'</section>'+
+   '<section class="reader-panel"><h4>👩‍🍳 Modo de preparo</h4>'+steps+
+   (b.notes?'<div class="reader-note"><b>Observações:</b> '+esc(b.notes)+'</div>':'')+
+   '<div class="reader-yield"><b>📦 Rendimento por receita</b><p><strong>'+(num(b.yield_units)>0?fmt(b.yield_units)+' geladinhos':'A confirmar')+'</strong></p><span>Rendimento estimado. Confira a quantidade real ao registrar cada produção.</span></div></section></div>'+
+   '<section class="reader-financial"><h4>💰 Custos e rentabilidade previstos</h4>'+
+   '<div class="reader-stat-grid">'+stat('Ingredientes',pending.length?'Parcial: '+money(partialCost):money(partialCost))+
+   stat('Custo total por receita',num(b.cost_total)!==null?money(b.cost_total):'Pendente')+
+   stat('Custo por geladinho',perUnit!==null?money(perUnit):'Pendente')+
+   stat('Preço de venda/un.',num(b.sale_price)!==null?money(b.sale_price):'Não informado')+'</div>'+
+   '<div class="reader-profit"><span>Lucro potencial por receita</span><strong>'+(ready&&num(b.estimated_profit)!==null?money(b.estimated_profit):'⚠️ Cálculo pendente')+'</strong></div>'+
+   '<details class="reader-advanced"><summary>▸ Ver composição detalhada dos custos, margens e projeções</summary><div class="reader-advanced-inner"><div class="reader-fine-grid">'+financialBreakdown+'</div>'+
+   '<div class="book-meta">Custos e lucros são projeções. Não registram despesas realizadas, vendas ou baixas de estoque.</div></div></details></section>'+
+   '<section class="reader-lots"><h4>📋 Histórico de produções ('+relevant.length+')</h4><div class="book-production-history">'+
+   (productionEntries||'<p class="small">Nenhuma produção registrada para este sabor.</p>')+'</div></section>'+
+   '<div class="reader-footer"><div class="actions"><button type="button" class="secondary" data-edit-book="'+esc(b.id)+'">✏️ Editar receita / ingredientes</button>'+
+   '<button type="button" data-produce-book="'+esc(b.id)+'" '+(!ready?'disabled title="Preencha os custos antes de registrar a produção"':'')+'>🏭 Registrar produção</button></div></div></div></details>';
  }).join('')||'<p class="small">Nenhuma receita encontrada. Preencha uma base, informe o nome do sabor e clique em Salvar receita no Livro.</p>';
  $('bookCards').querySelectorAll('details.book-accordion').forEach(card=>{
   card.addEventListener('toggle',()=>{const id=card.dataset.recipeId;if(card.open)openedBookRecipes.add(id);else openedBookRecipes.delete(id)});
  });
  renderProductionHistory();
- if(state.selectedBookId){const selected=state.book.find(x=>x.id===state.selectedBookId);if(selected){$('productionPanel').hidden=false;$('productionRecipeName').textContent=selected.recipe_name+' — '+(state.bases.find(x=>x.id===selected.base_id)?.name||'Base');renderProductionCalc();}else{$('productionPanel').hidden=true;}}
- else $('productionPanel').hidden=true;
+ if(state.selectedBookId){
+  const selected=state.book.find(x=>x.id===state.selectedBookId);
+  if(selected){$('productionPanel').hidden=false;$('productionRecipeName').textContent=selected.recipe_name+' — '+(state.bases.find(x=>x.id===selected.base_id)?.name||'Base');renderProductionCalc()}
+  else $('productionPanel').hidden=true;
+ }else $('productionPanel').hidden=true;
 }
 function renderProductionHistory(){
  const previous=field('productionFilter');
