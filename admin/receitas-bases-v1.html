@@ -284,6 +284,30 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #catalog .stock-correction-audit{font-size:12px;margin-top:8px;border-top:1px solid #e5dfe4;padding-top:8px}
 #catalog .stock-correction-audit>summary{cursor:pointer;color:#804060;font-weight:750}
 #catalog .stock-audit-item{padding:8px 10px;background:#fff5fa;border-radius:9px;margin-top:6px;color:#58404f;line-height:1.5}
+
+/* Recheios e complementos: lista alfabética recolhível, como Produtos e Materiais */
+#compCatalog.catalog-list{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+#compCatalog .complement-entry{display:block;overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#fff}
+#compCatalog .complement-entry[open]{border-color:#e9b7ca}
+#compCatalog .complement-summary{display:flex;align-items:center;gap:12px;min-height:68px;padding:13px 15px;cursor:pointer;list-style:none}
+#compCatalog .complement-summary::-webkit-details-marker{display:none}
+#compCatalog .complement-summary:hover{background:#fff6fa}
+#compCatalog .complement-summary:focus-visible{outline:3px solid #f99bbd;outline-offset:-3px}
+#compCatalog .complement-chevron{font-size:15px;color:#b3245a;font-weight:900;transition:transform .15s ease;flex:0 0 auto}
+#compCatalog .complement-entry[open] .complement-chevron{transform:rotate(90deg)}
+#compCatalog .complement-summary-name{flex:1;min-width:0;display:grid;gap:4px}
+#compCatalog .complement-summary-name strong{font-size:15px;color:var(--dark);overflow-wrap:anywhere}
+#compCatalog .complement-summary-name small{font-size:12px;color:var(--muted)}
+#compCatalog .complement-summary-price{text-align:right;color:var(--green);font-weight:800;font-size:13px;overflow-wrap:anywhere;min-width:118px}
+#compCatalog .complement-details{padding:15px 16px 16px;background:#fffafd;border-top:1px solid var(--line)}
+#compCatalog .complement-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:13px}
+#compCatalog .complement-detail{border:1px solid #f0dce5;background:#fff;border-radius:10px;padding:11px 12px;min-width:0}
+#compCatalog .complement-detail small{display:block;font-size:11px;color:#826577;margin-bottom:5px}
+#compCatalog .complement-detail strong{font-size:14px;overflow-wrap:anywhere;display:block;color:#552840}
+#compCatalog .complement-detail strong.price{font-size:16px;color:var(--green)}
+#compCatalog .complement-details button{min-height:40px}
+@media(max-width:700px){#compCatalog .complement-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#compCatalog .complement-summary{padding:12px 10px;gap:8px}#compCatalog .complement-summary-price{min-width:82px;font-size:12px}}
+@media(max-width:390px){#compCatalog .complement-detail-grid{grid-template-columns:1fr}#compCatalog .complement-summary-name strong{font-size:13px}}
 </style></head><body>
 <script src="admin-common-v48.js?v=141"></script>
 <main>
@@ -462,6 +486,7 @@ const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
 const openedBookRecipes=new Set();
 const openedMaterialCards=new Set();
+const openedComplementCards=new Set();
 const stockMoveSaving=new Set();
 const stockEditSaving=new Set();
 const openedStockHistories=new Set();
@@ -692,19 +717,37 @@ updateComplementForm();
 $('compFormTitle').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function renderComplementCatalog(){
-const search=field('compSearch').trim().toLocaleLowerCase('pt-BR');
-const all=state.materials.filter(m=>m.material_type==='Complemento');
-const list=all.filter(m=>(m.name+' '+(m.brand||'')).toLocaleLowerCase('pt-BR').includes(search));
-$('compCount').textContent=all.length+' itens';
-$('compCatalog').innerHTML=list.map(m=>{
-const q=num(m.pack_quantity),price=num(m.pack_cost),format=m.purchase_format||(m.unit==='cx'?'caixa':m.unit==='pct'?'pacote':'peso');
-const formLabel={peso:'Por peso',caixa:'Caixa',pacote:'Pacote'}[format]||format;
-const available=q>0&&price!==null;
-return '<article class="product-card"><strong>'+esc(m.name)+'</strong><span class="small">Marca: '+esc(m.brand||'Não informada')+'</span><span class="small">Compra: '+esc(formLabel)+(m.purchase_units!==null?' • '+fmt(m.purchase_units)+' '+(format==='peso'?'g':format==='caixa'?'caixa(s)':'pacote(s)'):'')+'</span>'+
-(m.unit_weight_g?'<span class="small">Peso por embalagem: '+fmt(m.unit_weight_g)+' g</span>':'')+
-'<span>Quantidade para cálculo: '+(q>0?fmt(q)+' '+esc(m.unit):'Pendente')+'</span><span>Valor pago: '+(price!==null?money(price):'Pendente')+'</span>'+
-'<span class="price">'+(available?precise(price/q)+' / '+esc(m.unit):'Custo unitário pendente')+'</span><button type="button" class="secondary" data-edit-complement="'+esc(m.id)+'">✏️ Editar complemento</button></article>';
-}).join('')||'<p class="small">Nenhum complemento encontrado. Cadastre um novo produto acima.</p>';
+ const search=field('compSearch').trim().toLocaleLowerCase('pt-BR');
+ const all=state.materials.filter(m=>m.material_type==='Complemento');
+ const list=all.filter(m=>(m.name+' '+(m.brand||'')).toLocaleLowerCase('pt-BR').includes(search))
+  .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR',{sensitivity:'base'})||
+                  String(a.brand||'').localeCompare(String(b.brand||''),'pt-BR',{sensitivity:'base'}));
+ $('compCount').textContent=all.length+' itens';
+ $('compCatalog').innerHTML=list.map(m=>{
+  const q=num(m.pack_quantity),price=num(m.pack_cost),
+   format=m.purchase_format||(m.unit==='cx'?'caixa':m.unit==='pct'?'pacote':'peso'),
+   formLabel={peso:'Por peso',caixa:'Caixa',pacote:'Pacote'}[format]||format,
+   available=q>0&&price!==null;
+  const cost=available?precise(price/q)+' / '+esc(m.unit):'Custo unitário pendente';
+  const purchaseQty=m.purchase_units!==null&&m.purchase_units!==undefined?
+   fmt(m.purchase_units)+' '+(format==='peso'?'g':format==='caixa'?'caixa(s)':'pacote(s)'):'Não informado';
+  const detail=(label,value,extra='')=>'<div class="complement-detail"><small>'+label+'</small><strong'+extra+'>'+value+'</strong></div>';
+  return '<details class="product-card complement-entry" data-complement-id="'+esc(m.id)+'"'+
+   (openedComplementCards.has(String(m.id))?' open':'')+'>'+
+   '<summary class="complement-summary"><span class="complement-chevron" aria-hidden="true">▶</span>'+
+   '<span class="complement-summary-name"><strong>'+esc(m.name)+'</strong><small>'+esc(m.brand||'Sem marca')+' • Complemento</small></span>'+
+   '<span class="complement-summary-price">'+cost+'</span></summary>'+
+   '<div class="complement-details"><div class="complement-detail-grid">'+
+   detail('Produto / recheio',esc(m.name))+
+   detail('Marca',esc(m.brand||'Não informada'))+
+   detail('Forma de compra',esc(formLabel))+
+   detail('Quantidade comprada',esc(purchaseQty))+
+   (m.unit_weight_g?detail('Peso por embalagem',fmt(m.unit_weight_g)+' g'):'')+
+   detail('Quantidade para cálculo',q>0?fmt(q)+' '+esc(m.unit):'Pendente')+
+   detail('Valor pago',price!==null?money(price):'Pendente')+
+   detail('Custo unitário',cost,' class="price"')+
+   '</div><button type="button" class="secondary" data-edit-complement="'+esc(m.id)+'">✏️ Editar complemento</button></div></details>';
+ }).join('')||'<p class="small">Nenhum complemento encontrado. Cadastre um novo produto acima.</p>';
 }
 async function saveComplement(){
 const btn=$('compSave'),name=field('compName').trim(),brand=field('compBrand').trim(),c=compComputed();
@@ -1795,6 +1838,12 @@ $('compUsageQty').addEventListener('input',updateComplementUsage);
 $('compSave').onclick=saveComplement;$('compClear').onclick=clearComplement;
 $('compSearch').addEventListener('input',renderComplementCatalog);
 $('compCatalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit-complement]');if(btn)editComplement(btn.dataset.editComplement)});
+$('compCatalog').addEventListener('toggle',e=>{
+ const card=e.target;
+ if(!card.matches?.('details.complement-entry')||!card.isConnected)return;
+ const id=card.dataset.complementId;
+ if(card.open)openedComplementCards.add(id);else openedComplementCards.delete(id);
+},true);
 $('bookNewRecipe').onclick=startNewRecipe;
 $('bookSearch').addEventListener('input',renderBook);$('bookFilter').addEventListener('change',renderBook);
 $('productionFilter').addEventListener('change',renderProductionHistory);
