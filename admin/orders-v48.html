@@ -98,6 +98,26 @@ function creditHtml(o){
 function list(){if(filter==='open')return orders.filter(o=>!['Finalizado','Cancelado','Entregue'].includes(o.status));if(filter==='done')return orders.filter(o=>['Finalizado','Entregue'].includes(o.status));if(filter==='cancel')return orders.filter(o=>o.status==='Cancelado');return orders}function addr(o){const a=o.address||{};return o.fulfillment==='entrega'?[a.street,a.number,a.district].filter(Boolean).join(', '):'Retirada no local'}function render(){$('grid').innerHTML=list().length?list().map(o=>{const canClose=['Entregue','Finalizado','Cancelado'].includes(o.status);const x=o.status==='Cancelado'?'<button class="orderX delete" title="Excluir pedido" aria-label="Excluir pedido" onclick="deleteCancelledO(\''+o.id+'\')">×</button>':(['Entregue','Finalizado'].includes(o.status)?'<button class="orderX archive" title="Fechar ordem" aria-label="Fechar ordem" onclick="archiveO(\''+o.id+'\')">×</button>':'');return `<article class="order ${canClose?'orderClosable':''}">${x}<div class="top"><span class="code">${GDS48.esc(o.public_code)}</span><span>${GDS48.esc(o.customer_name||'')}</span>${o.sales_channel==='local'?'<span style="font-size:11px;font-weight:900;padding:4px 7px;border-radius:99px;background:#eefaf3;color:#14753e">🏠 VENDA LOCAL</span>':''}<span class="price">${GDS48.money(o.total)}</span></div><div class="meta">${new Date(o.created_at).toLocaleString('pt-BR')} · ${o.fulfillment==='entrega'?'🛵 Entrega':'🏠 Retirada'}<br>${GDS48.esc(addr(o))}<br>💳 Pagamento: <b>${GDS48.esc(o.payment_method||'Não informado')}</b>${o.payment_status?` · ${GDS48.esc(o.payment_status)}`:''}${Number(o.paid_amount||0)>0?`<br>💰 Recebido: <b>${GDS48.money(o.paid_amount)}</b>${Number(o.paid_amount||0)<Number(o.total||0)?` · Falta <b>${GDS48.money(Number(o.total||0)-Number(o.paid_amount||0))}</b>`:''}`:''}</div>${isNewPixOrder(o)&&o.status!=='Cancelado'?(pixFullyPaid(o)?'<div class="pixGate paid">✅ Pix confirmado · pedido liberado para preparação.</div>':`<div class="pixGate">🔒 Aguardando confirmação do Pix no Banco do Brasil. Não iniciar a preparação antes de confirmar o crédito.<button onclick="confirmPixO('${o.id}')">✅ Confirmar Pix recebido — ${GDS48.money(o.total)}</button></div>`):''}${creditHtml(o)}<div class="items">${(o.order_items||[]).map(i=>`<div class="item"><span>${i.quantity}× ${GDS48.esc(i.product_name)}</span><b>${GDS48.money(Number(i.unit_price)*Number(i.quantity))}</b></div>`).join('')||'<div class="item">Itens não disponíveis</div>'}</div>${o.status==='Pedido recebido'?`<div class="decision"><button class="acceptBtn" onclick="acceptO(\'${o.id}\')">✓ Aceitar pedido</button><button class="rejectBtn" onclick="rejectO(\'${o.id}\')">✕ Recusar pedido</button></div>`:''}${o.status==='Cancelado'&&o.cancel_reason?`<div class="rejectReason">Motivo: ${GDS48.esc(o.cancel_reason)}</div>`:''}<div class="statusRow"><select onchange="setStatus('${o.id}',this.value)">${statuses.map(s=>`<option ${s===o.status?'selected':''} ${pixLocked(o)&&['Em preparação','Saiu para entrega','Entregue','Finalizado'].includes(s)?'disabled':''}>${s}</option>`).join('')}</select><button class="btn" onclick="editO('${o.id}')">✏️ Editar</button></div><div class="actions"><button class="wa" onclick="waO('${o.id}',false)">💬 WhatsApp cliente</button>${['Entregue','Finalizado'].includes(o.status)?`<button class="review" onclick="waO('${o.id}',true)">⭐ Pedir avaliação</button>`:''}</div></article>`}).join(''):'<div class="empty">Nenhum pedido nesta visualização.</div>'}
 let rejecting=null;
 window.acceptO=async id=>{const o=orders.find(x=>x.id===id);if(!o)return;if(!confirm('Aceitar '+o.public_code+' e iniciar o atendimento?'))return;setMsg('Aceitando pedido…');const {error}=await GDS48.sb.rpc('decide_store_order_v73',{p_order_id:id,p_accept:true,p_reason:null});if(error){setMsg('Erro: '+error.message,'err');return}await load();toast('✅ Pedido aceito.')};
+function normalizeCreditName(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase()}
+function normalizeCreditPhone(v){let n=String(v||'').replace(/\D/g,'');if(n.length>=12&&n.startsWith('55'))n=n.slice(2);return n}
+async function ensureCreditCustomer(o){
+ if(o.trusted_customer_id)return o.trusted_customer_id;
+ const name=String(o.customer_name||'').trim(),phone=String(o.customer_phone||'').trim();
+ if(name.length<2)throw new Error('Informe o nome do cliente antes de marcar fiado.');
+ const normalized=normalizeCreditPhone(phone);
+ if(/^[0-9]{10,11}$/.test(normalized)){
+   const {data,error}=await GDS48.sb.from('trusted_customers').select('id,name,phone,active')
+     .is('deleted_at',null);
+   if(error)throw error;
+   const matches=(data||[]).filter(c=>normalizeCreditName(c.name)===normalizeCreditName(name)&&normalizeCreditPhone(c.phone)===normalized);
+   if(matches.length){matches.sort((a,b)=>Number(b.active)-Number(a.active));return matches[0].id}
+ }
+ const {data,error}=await GDS48.sb.from('trusted_customers')
+   .insert({name,phone:phone||null,active:true})
+   .select('id').single();
+ if(error)throw error;
+ return data.id;
+}
 let pixConfirming=false,markingFiado=false;
 window.markFiadoO=async id=>{
  if(markingFiado)return;
@@ -107,7 +127,8 @@ window.markFiadoO=async id=>{
  markingFiado=true;
  setMsg('Marcando pedido como fiado…');
  try{
-   const {data,error}=await GDS48.sb.from('orders').update({payment_method:'Fiado'})
+   const customerId=await ensureCreditCustomer(o);
+    const {data,error}=await GDS48.sb.from('orders').update({payment_method:'Fiado',trusted_customer_id:customerId})
       .eq('id',id).eq('payment_status','Pendente').eq('paid_amount',0)
       .neq('status','Cancelado').is('deleted_at',null).select('id');
    if(error)throw error;
