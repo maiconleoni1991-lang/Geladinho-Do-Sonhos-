@@ -789,6 +789,7 @@ function stockEditFormHtml(r,m){
   '<option value="'+kind+'"'+(r.movement_type===kind?' selected':'')+'>'+title+'</option>').join('');
  const kinds=['fardo','caixa','pacote','unidade','saco','pote','outro'].map(value=>
   '<option value="'+value+'"'+(r.package_kind===value?' selected':'')+'>'+value+'</option>').join('');
+ const isPurchase=r.movement_type==='purchase';
  const displayQty=num(r.display_quantity_per_unit)??1;
  const quantity=Number(r.quantity)||0;
  const startUnit=quantity%1000===0&&['ml','g'].includes(m.unit)?m.unit==='ml'?'L':'kg':m.unit;
@@ -798,14 +799,14 @@ function stockEditFormHtml(r,m){
   '<div class="stock-edit-warning">Uma correção substitui o valor deste lançamento, recalcula o saldo e registra os dados anteriores no histórico de auditoria. Não altera receitas nem vendas.</div>'+
   '<div class="stock-entry-grid">'+
   '<label class="field stock-wide">Tipo de lançamento<select data-stock-kind>'+kindOptions+'</select></label>'+
-  '<label class="field" data-stock-purchase>Embalagem<select data-stock-package-kind>'+kinds+'</select></label>'+
-  '<label class="field" data-stock-purchase>Embalagens compradas<input data-stock-packs type="number" min="1" step="1" value="'+fmtInput(r.package_count??1)+'"></label>'+
-  '<label class="field" data-stock-purchase>Unidades por embalagem<input data-stock-units-per-package type="number" min="1" step="1" value="'+fmtInput(r.units_per_package??1)+'"></label>'+
-  '<label class="field" data-stock-purchase>Conteúdo por unidade<input data-stock-amount-per-unit type="number" min="0.0001" step="any" value="'+fmtInput(displayQty)+'"></label>'+
-  '<label class="field" data-stock-purchase>Unidade do conteúdo<select data-stock-display-unit>'+opts+'</select></label>'+
-  '<label class="field" data-stock-purchase>Preço por embalagem (R$)<input data-stock-package-price type="number" min="0" step="0.01" value="'+fmtInput(r.package_price??'')+'"></label>'+
-  '<label class="field" data-stock-simple hidden>Quantidade movimentada<input data-stock-simple-qty type="number" min="0.0001" step="any" value="'+fmtInput(startValue)+'"></label>'+
-  '<label class="field" data-stock-simple hidden>Unidade da quantidade<select data-stock-simple-unit>'+
+  '<label class="field" data-stock-purchase'+(isPurchase?'':' hidden')+'>Embalagem<select data-stock-package-kind>'+kinds+'</select></label>'+
+  '<label class="field" data-stock-purchase'+(isPurchase?'':' hidden')+'>Embalagens compradas<input data-stock-packs type="number" min="1" step="1" value="'+fmtInput(r.package_count??1)+'"></label>'+
+  '<label class="field" data-stock-purchase'+(isPurchase?'':' hidden')+'>Unidades por embalagem<input data-stock-units-per-package type="number" min="1" step="1" value="'+fmtInput(r.units_per_package??1)+'"></label>'+
+  '<label class="field" data-stock-purchase'+(isPurchase?'':' hidden')+'>Conteúdo por unidade<input data-stock-amount-per-unit type="number" min="0.0001" step="any" value="'+fmtInput(displayQty)+'"></label>'+
+  '<label class="field" data-stock-purchase'+(isPurchase?'':' hidden')+'>Unidade do conteúdo<select data-stock-display-unit>'+opts+'</select></label>'+
+  '<label class="field" data-stock-purchase'+(isPurchase?'':' hidden')+'>Preço por embalagem (R$)<input data-stock-package-price type="number" min="0" step="0.01" value="'+fmtInput(r.package_price??'')+'"></label>'+
+  '<label class="field" data-stock-simple'+(isPurchase?' hidden':'')+'>Quantidade movimentada<input data-stock-simple-qty type="number" min="0.0001" step="any" value="'+fmtInput(startValue)+'"></label>'+
+  '<label class="field" data-stock-simple'+(isPurchase?' hidden':'')+'>Unidade da quantidade<select data-stock-simple-unit>'+
    units.map(([u,label])=>'<option value="'+esc(u)+'"'+(u===startUnit?' selected':'')+'>'+esc(label)+'</option>').join('')+
   '</select></label>'+
   '<label class="field">Data<input data-stock-date type="date" value="'+esc(r.occurred_on||todayLocal())+'"></label>'+
