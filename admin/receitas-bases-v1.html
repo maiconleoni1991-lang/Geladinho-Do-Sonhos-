@@ -872,13 +872,14 @@ async function saveStockCorrection(panel,m){
 
 function stockHistoryEntry(r,m){
  const sign=stockInTypes.has(r.movement_type)?'+':'−';
+ const corrected=Number(r.revision||1)>1?' · ✏️ Corrigido '+(Number(r.revision)-1)+' vez(es)':'';
  const price=r.movement_type==='purchase'?'<strong>'+money(r.total_cost)+'</strong>':'';
  const purchase=r.movement_type==='purchase'?'<div class="stock-ledger-info">'+
   fmt(r.package_count)+' '+esc(r.package_kind)+(Number(r.package_count)!==1?'s':'')+
   ' × '+fmt(r.units_per_package)+' unidade(s)/embalagem × '+fmt(r.display_quantity_per_unit)+' '+esc(r.display_unit||m.unit)+
   ' · '+money(r.package_price)+'/embalagem · custo '+precise(r.total_cost/Number(r.quantity))+'/'+esc(m.unit)+'</div>':'';
  const date=r.occurred_on?new Date(r.occurred_on+'T12:00:00').toLocaleDateString('pt-BR'):'—';
- return '<div class="stock-ledger-item"><div><span>'+esc(stockMovementName(r.movement_type))+' · '+date+
+ return '<div class="stock-ledger-item"><div><span>'+esc(stockMovementName(r.movement_type))+' · '+date+corrected+
   '</span><span>'+sign+stockUnitDisplay(r.quantity,m.unit)+' '+price+'</span></div>'+purchase+
   (r.note?'<div class="stock-ledger-info">'+esc(r.note)+'</div>':'')+stockCorrectionAuditHtml(r,m)+stockEditFormHtml(r,m)+'</div>';
 }
@@ -958,7 +959,10 @@ function stockMovementFromForm(panel,m){
  const oldEntry=editingId?totals.rows.find(r=>r.id===editingId):null;
  const available=totals.balance-(oldEntry?(stockInTypes.has(oldEntry.movement_type)?1:-1)*Number(oldEntry.quantity):0);
  if(['consumption','loss','correction_out'].includes(kind)&&quantity>available)return{error:'Saída maior que o saldo do novo controle. Registre primeiro um saldo inicial conferido ou uma entrada de compra.'};
- if(kind==='opening'&&totals.rows.some(r=>r.id!==editingId))return{error:'O saldo inicial só pode existir uma vez para cada material.'};
+ if(kind==='opening'&&(
+  (editingId&&oldEntry?.movement_type==='opening'&&totals.rows.some(r=>r.id!==editingId&&r.movement_type==='opening'))||
+  ((!editingId||oldEntry?.movement_type!=='opening')&&totals.rows.some(r=>r.id!==editingId))
+ ))return{error:'O saldo inicial só pode existir uma vez e deve ser a primeira movimentação do material.'};
  return {payload:{...base,quantity},
   preview:stockMovementName(kind)+' · '+fmt(qty)+' '+unit+' = '+stockUnitDisplay(quantity,m.unit)+
    ' · Saldo previsto do novo controle: '+stockUnitDisplay(available+(stockInTypes.has(kind)?quantity:-quantity),m.unit)};
