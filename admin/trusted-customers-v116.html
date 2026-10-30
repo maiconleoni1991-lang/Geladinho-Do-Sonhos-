@@ -45,11 +45,24 @@ function resetForm(){
  editingId=null;$('name').value='';$('phone').value='';$('due').value='';$('notes').value='';
  $('formTitle').textContent='Cadastrar pessoa de confiança';$('save').textContent='+ Cadastrar';$('cancelEdit').hidden=true;
 }
+async function loadOrderHistory(){
+ const all=[],size=500;
+ for(let offset=0;offset<50000;offset+=size){
+  const {data,error}=await sb.from('orders')
+   .select('id,public_code,customer_name,customer_phone,total,paid_amount,created_at,payment_method,payment_status,trusted_customer_id,deleted_at,status,sales_channel,order_items(product_name,quantity,unit_price)')
+   .is('deleted_at',null).order('created_at',{ascending:false}).order('id',{ascending:false})
+   .range(offset,offset+size-1);
+  if(error)return {data:null,error};
+  all.push(...(data||[]));
+  if((data||[]).length<size)return {data:all,error:null};
+ }
+ return {data:null,error:new Error('Histórico muito grande para esta consulta. É necessário ampliar a paginação.')};
+}
 async function load(){
  setMsg('Carregando clientes e fiados…');
  const [c,o,s,i]=await Promise.all([
   sb.from('trusted_customers').select('*').is('deleted_at',null).order('active',{ascending:false}).order('name'),
-  sb.from('orders').select('id,public_code,customer_name,customer_phone,total,paid_amount,created_at,payment_method,payment_status,trusted_customer_id,deleted_at,status,sales_channel,order_items(product_name,quantity,unit_price)').is('deleted_at',null).order('created_at',{ascending:false}).limit(1000),
+  loadOrderHistory(),
   sb.from('orders').select('id,customer_name,customer_phone,created_at,sales_channel,deleted_at').eq('sales_channel','online').is('deleted_at',null).order('created_at',{ascending:false}).limit(1000),
   sb.from('site_app_installations').select('id,customer_name,customer_phone,install_signal,consent_at').order('consent_at',{ascending:false}).limit(1000)
  ]);
@@ -190,15 +203,36 @@ window.toggleCustomer=async(id,active)=>{
  if(error||!data?.length)return alert('Não foi possível atualizar: '+(error?.message||'registro não encontrado'));
  await load()
 };
+async function linkCreditForSettlement(o){
+ if(o.trusted_customer_id)return;
+ const g=creditGroups.find(gr=>gr.purchases.some(p=>p.id===o.id));
+ const rec=g?.records.find(c=>c.active)||g?.records[0];
+ let id=rec?.id;
+ if(!id){
+  const name=String(o.customer_name||'').trim();
+  if(name.length<2)throw new Error('Este pedido não tem nome suficiente para criar a ficha.');
+  const {data,error}=await sb.from('trusted_customers')
+   .insert({name,phone:o.customer_phone||null,active:true})
+   .select('id').single();
+  if(error)throw error;
+  id=data.id;
+ }
+ const {data,error}=await sb.from('orders').update({trusted_customer_id:id})
+  .eq('id',o.id).eq('payment_method','Fiado').is('trusted_customer_id',null)
+  .is('deleted_at',null).select('id');
+ if(error||!data?.length)throw new Error(error?.message||'Não foi possível vincular o fiado ao cadastro. Atualize a página.');
+ o.trusted_customer_id=id;
+}
 window.settle=async(id,method)=>{
  const o=orders.find(item=>item.id===id);
  if(!o||o.status==='Cancelado'||balance(o)<=0)return alert('Pedido sem saldo a receber. Atualize a página.');
  if(!confirm('Confirmar o recebimento de '+money(balance(o))+' em '+method+' no pedido '+o.public_code+'?\n\nSomente confirme se o dinheiro realmente foi recebido.'))return;
- const {error}=o.trusted_customer_id
-  ?await sb.rpc('settle_trusted_credit_v116',{p_order_id:id,p_payment_method:method})
-  :await sb.rpc('set_order_payment_v117',{p_order_id:id,p_paid_amount:Number(o.total),p_payment_method:method});
- if(error)return alert('Não foi possível registrar pagamento: '+error.message);
- await load();
+ try{
+  if(!o.trusted_customer_id)await linkCreditForSettlement(o);
+  const {error}=await sb.rpc('settle_trusted_credit_v116',{p_order_id:id,p_payment_method:method});
+  if(error)throw error;
+  await load();
+ }catch(e){alert('Não foi possível registrar pagamento: '+e.message);await load()}
 };
 window.sendReminder=id=>{
  const c=customers.find(x=>x.id===id);if(!c)return;
