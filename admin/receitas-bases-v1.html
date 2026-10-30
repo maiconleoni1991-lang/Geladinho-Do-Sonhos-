@@ -227,12 +227,25 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #materialNewTop{white-space:nowrap}
 @media(max-width:700px){#catalog .material-details-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#catalog .material-summary-price{min-width:82px;font-size:12px}#catalog .material-summary{padding:12px 10px;gap:8px}}
 @media(max-width:390px){#catalog .material-details-grid{grid-template-columns:1fr}#catalog .material-summary-name strong{font-size:13px}#catalog .material-summary-name small{font-size:11px}}
+
+/* Estoque de pós junto às fichas de materiais, mantendo dados e controle manual. */
+#catalog .material-stock-summary{display:block;font-size:11px;font-weight:750;color:#24724d;margin-top:5px;text-align:right}
+#catalog .material-stock-panel{margin:13px 0;border:1px solid #d3e7dc;background:#f8fffb;border-radius:12px;padding:14px}
+#catalog .material-stock-panel h3{color:#195e41;margin:0 0 6px;font-size:16px}
+#catalog .material-stock-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+#catalog .material-stock-fields input{width:100%;background:#fff;border:1px solid #b9d7c7;border-radius:9px;min-height:43px;padding:9px;color:#31483c}
+#catalog .material-stock-balance{padding:12px;border-radius:10px;background:#e5f6ed;color:#166442;font-weight:850}
+#catalog .material-stock-balance.pending{background:#fff1df;color:#966123}
+#catalog .material-stock-note{font-size:12px;color:#614a56;margin:12px 0;line-height:1.6;overflow-wrap:anywhere}
+#catalog .material-stock-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+#catalog .material-stock-actions button{background:#14784b;min-height:43px}
+@media(max-width:550px){#catalog .material-stock-fields{grid-template-columns:1fr}}
 </style></head><body>
 <script src="admin-common-v48.js?v=141"></script>
 <main>
 <section class="hero"><img src="../assets/logo-oficial-hq-v65.webp" alt="Geladinho dos Sonhos" onerror="this.onerror=null;this.src='../assets/icon-512.png'"><div><h1>Receitas e custos de produção</h1><p>Cadastro de matérias-primas, bases e cálculo de lucro por receita e por geladinho.</p></div></section>
 <div class="tabbar" id="tabs" role="tablist" aria-label="Receitas-base e materiais">
-<button type="button" data-tab="new_recipe">➕ Nova receita</button><button type="button" data-tab="premium_1">Base Premium 1</button><button type="button" data-tab="premium_2">Base Premium 2</button><button type="button" data-tab="gourmet_nova">Base Gourmet</button><button type="button" data-tab="materials">📦 Produtos e materiais</button><button type="button" data-tab="powders">🎨 Estoque de pós</button><button type="button" data-tab="complements">🍫 Recheios e complementos</button><button type="button" data-tab="book">📖 Livro de Receitas</button><a href="livro-receitas-ilustrado.html" style="display:inline-flex;align-items:center;text-decoration:none;background:#fff0f6;color:#81234c;padding:10px 13px;border-radius:11px;font-weight:750">📕 Ver fichas ilustradas / e-book</a>
+<button type="button" data-tab="new_recipe">➕ Nova receita</button><button type="button" data-tab="premium_1">Base Premium 1</button><button type="button" data-tab="premium_2">Base Premium 2</button><button type="button" data-tab="gourmet_nova">Base Gourmet</button><button type="button" data-tab="materials">📦 Produtos, materiais e estoque de pós</button><button type="button" data-tab="complements">🍫 Recheios e complementos</button><button type="button" data-tab="book">📖 Livro de Receitas</button><a href="livro-receitas-ilustrado.html" style="display:inline-flex;align-items:center;text-decoration:none;background:#fff0f6;color:#81234c;padding:10px 13px;border-radius:11px;font-weight:750">📕 Ver fichas ilustradas / e-book</a>
 </div>
 <div id="status" class="msg">Conectando com segurança ao Supabase...</div>
 <section id="recipePanel" hidden>
@@ -297,7 +310,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="actions"><button type="button" id="saveMaterial">💾 Salvar produto</button><button type="button" id="clearMaterial" class="secondary">Limpar / novo produto</button></div>
 </div>
 <div class="panel"><div class="flex"><h2>Materiais cadastrados</h2><div class="flex"><span id="materialCount" class="badge">—</span><button type="button" id="materialNewTop" class="secondary">➕ Novo material</button></div></div>
-<label class="field">Buscar um produto<input id="materialSearch" type="search" placeholder="Buscar pelo nome ou marca"></label>
+<div class="note" style="margin:10px 0">🎨 <strong>Estoque de pós integrado:</strong> abra a ficha de um material com controle ativo para consultar e atualizar manualmente o estoque. <strong>Editar preços, cadastrar materiais ou planejar receitas não movimenta os saldos.</strong></div><label class="field">Buscar um produto<input id="materialSearch" type="search" placeholder="Buscar por nome, marca ou sabor"></label>
 <div id="catalog" class="catalog-list"></div>
 </div>
 </section>
@@ -406,7 +419,7 @@ const fmtInput=n=>n===null||n===undefined?'':String(n);
 const openedBookRecipes=new Set();
 const openedMaterialCards=new Set();
  const bookQuickDrafts=new Map();let bookQuickSaving=false;
- const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','powders','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null,productPhotos:[]};
+ const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1)==='powders'?'materials':location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null,productPhotos:[]};
 const isNewRecipe=()=>state.active==='new_recipe';
 const currentBase=()=>state.bases.find(x=>x.code===(isNewRecipe()?(state.newRecipeDraft?.base_code||'gourmet_nova'):state.active));
 const currentItems=()=>isNewRecipe()?(state.newRecipeDraft?.items||[]):state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
@@ -551,19 +564,33 @@ return '<article class="powder-card" data-powder="'+esc(m.id)+'"><div><h3>'+esc(
 }).join('')||'<p class="small">Nenhum pó encontrado.</p>';
 }
 async function savePowder(id){
-const row=[...document.querySelectorAll('#powderCards [data-powder]')].find(el=>el.dataset.powder===id);if(!row)return;
-const purchased=num(row.querySelector('[data-field="purchased_g"]').value),used=num(row.querySelector('[data-field="consumed_g"]').value);
-if(purchased===null||purchased<0)return alert('Informe quanto comprou em gramas.');
-if(used!==null&&(used<0||used>purchased))return alert('A quantidade utilizada deve ser positiva e não pode ultrapassar o comprado. Deixe vazio se não souber.');
-const btn=row.querySelector('[data-save-powder]');btn.disabled=true;
-try{
- const res=await sb.from('gds_powder_inventory').update({purchased_g:purchased,consumed_g:used,updated_at:new Date().toISOString()}).eq('material_id',id).select('material_id,purchased_g,consumed_g').single();
- if(res.error)throw res.error;
- const i=state.powders.findIndex(z=>z.material_id===id);if(i>=0)state.powders[i]={...state.powders[i],...res.data};
- renderPowders();note('✅ Estoque de '+(material(id)?.name||'pó')+' atualizado no Supabase.');
-}catch(e){note('Erro ao salvar estoque: '+e.message,true)}finally{btn.disabled=false}
+ const row=$('catalog').querySelector('[data-stock-material="'+id+'"]')||
+  [...document.querySelectorAll('#powderCards [data-powder]')].find(el=>el.dataset.powder===id);
+ if(!row)return;
+ const existing=powderStock(id);
+ if(!existing)return alert('Controle de estoque indisponível para esse material.');
+ const purchased=num(row.querySelector('[data-field="purchased_g"]').value);
+ const used=num(row.querySelector('[data-field="consumed_g"]').value);
+ if(purchased===null||purchased<0)return alert('Informe o total comprado em gramas.');
+ if(used!==null&&(used<0||used>purchased))return alert('O total utilizado não pode ser negativo ou maior que o comprado. Deixe vazio se o consumo ainda não foi conferido.');
+ if(purchased===num(existing.purchased_g)&&used===num(existing.consumed_g)){
+  const feedback=row.querySelector('[data-stock-message]');if(feedback)feedback.textContent='ℹ️ Nenhuma alteração de estoque detectada.';
+  return;
+ }
+ if(!confirm('Confirmar novos totais de '+(material(id)?.name||'pó')+'?\\nComprado: '+fmt(purchased)+' g\\nUtilizado: '+(used===null?'a conferir':fmt(used)+' g')+'\\n\\nNenhuma receita ou venda será alterada.'))return;
+ const btn=row.querySelector('[data-save-powder]');btn.disabled=true;btn.textContent='⏳ Salvando estoque…';
+ try{
+  const res=await sb.from('gds_powder_inventory')
+   .update({purchased_g:purchased,consumed_g:used,updated_at:new Date().toISOString()})
+   .eq('material_id',id).select('material_id,purchased_g,consumed_g,updated_at').single();
+  if(res.error)throw res.error;
+  const idx=state.powders.findIndex(z=>z.material_id===id);
+  if(idx>=0)state.powders[idx]={...state.powders[idx],...res.data};
+  openedMaterialCards.add(String(id));renderCatalog();
+  note('✅ Estoque de '+(material(id)?.name||'pó')+' atualizado. Registros existentes preservados.');
+ }catch(e){note('Erro ao salvar estoque: '+e.message,true)}
+ finally{btn.disabled=false;btn.textContent='💾 Salvar estoque do pó'}
 }
-
 
 function compFormat(){return field('compFormat')}
 function compComputed(){
@@ -655,18 +682,30 @@ finally{btn.disabled=false}
 }
 function renderCatalog(){
  const basics=state.materials.filter(m=>m.material_type!=='Complemento');
- $('materialCount').textContent=basics.length+' produtos';
- const search=$('materialSearch').value.toLowerCase().trim();
- const list=basics.filter(m=>(m.name+' '+(m.brand||'')).toLowerCase().includes(search))
+ $('materialCount').textContent=basics.length+' produtos · '+basics.filter(m=>isPowder(m.id)).length+' com estoque';
+ const search=$('materialSearch').value.toLocaleLowerCase('pt-BR').trim();
+ const list=basics.filter(m=>(m.name+' '+(m.brand||'')).toLocaleLowerCase('pt-BR').includes(search))
   .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR',{sensitivity:'base'}));
  $('catalog').innerHTML=list.map(m=>{
-  const pack=num(m.pack_quantity),price=num(m.pack_cost),known=pack>0&&price!==null;
-  const perUnit=known?money(price/pack)+' / '+esc(m.unit):'Custo unitário pendente';
+  const pack=num(m.pack_quantity),price=num(m.pack_cost),known=pack>0&&price!==null,
+   perUnit=known?money(price/pack)+' / '+esc(m.unit):'Custo unitário pendente';
+  const powder=isPowder(m.id)?powderStock(m.id):null;
+  const purchased=powder?num(powder.purchased_g):null,consumed=powder?num(powder.consumed_g):null;
+  const balance=powder&&purchased!==null&&consumed!==null?purchased-consumed:null;
+  const shortStock=powder?'<small class="material-stock-summary">'+(balance===null?'🎨 Saldo do pó a conferir':'🎨 Saldo estimado: '+fmt(balance)+' g')+'</small>':'';
   const detail=(label,value,extra='')=>'<div class="material-detail"><small>'+label+'</small><strong'+extra+'>'+value+'</strong></div>';
+  const stockSection=powder?'<section class="material-stock-panel" data-stock-material="'+esc(m.id)+'">'+
+   '<h3>🎨 Controle de estoque do pó</h3><p class="small">Totais acumulados já cadastrados. Ajuste manualmente e clique em Salvar estoque. Receitas não dão baixa automática.</p>'+
+   '<div class="material-stock-fields"><label class="field">Total comprado (g)<input data-field="purchased_g" type="number" min="0" step="0.1" inputmode="decimal" value="'+fmtInput(purchased)+'"></label>'+
+   '<label class="field">Total já utilizado (g)<input data-field="consumed_g" type="number" min="0" step="0.1" inputmode="decimal" value="'+fmtInput(consumed)+'" placeholder="Não informado"></label></div>'+
+   '<div class="material-stock-balance '+(balance===null?'pending':'')+'" data-stock-balance>'+(balance===null?'Saldo a conferir: consumo não informado':'Saldo estimado: '+fmt(balance)+' g')+'</div>'+
+   (powder.note?'<div class="material-stock-note"><strong>Observação já registrada:</strong> '+esc(powder.note)+'</div>':'')+
+   '<div class="material-stock-actions"><button type="button" data-save-powder="'+esc(m.id)+'">💾 Salvar estoque do pó</button><span class="small" data-stock-message>Valores alterados só são gravados quando você clicar em Salvar estoque.</span></div>'+
+   '</section>':'';
   return '<details class="product-card material-entry" data-material-id="'+esc(m.id)+'"'+(openedMaterialCards.has(String(m.id))?' open':'')+'>'+
    '<summary class="material-summary"><span class="material-chevron" aria-hidden="true">▶</span>'+
    '<span class="material-summary-name"><strong>'+esc(m.name)+'</strong><small>'+esc(m.brand||'Sem marca')+' • '+esc(m.material_type)+'</small></span>'+
-   '<span class="material-summary-price">'+perUnit+'</span></summary>'+
+   '<span class="material-summary-price">'+perUnit+shortStock+'</span></summary>'+
    '<div class="material-details"><div class="material-details-grid">'+
    detail('Produto / ingrediente',esc(m.name))+
    detail('Marca',esc(m.brand||'Sem marca'))+
@@ -675,8 +714,8 @@ function renderCatalog(){
    detail('Preço do pacote',price===null?'Pendente':money(price))+
    detail('Custo unitário',perUnit,' class="price"')+
    detail('Unidade de cálculo',esc(m.unit))+
-   detail('Estoque de pó',isPowder(m.id)?'Acompanha estoque':'Sem controle de pó')+
-   '</div><button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button></div></details>';
+   detail('Estoque de pó',powder?'Acompanha estoque':'Sem controle de pó')+
+   '</div>'+stockSection+'<button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button></div></details>';
  }).join('')||'<p class="small">Nenhum material encontrado.</p>';
 }
 
@@ -705,11 +744,11 @@ btn.disabled=true;try{
 let res=state.materialEditing?await sb.from('gds_materials').update(obj).eq('id',state.materialEditing).select('id').single():await sb.from('gds_materials').insert(obj).select('id').single();
 if(res.error)throw res.error;
 if($('matPowder').checked&&!isPowder(res.data.id)){
- const added=await sb.from('gds_powder_inventory').insert({material_id:res.data.id,purchased_g:0,consumed_g:null,note:'Novo pó cadastrado. Atualize compras e consumo na aba Estoque de pós.'});
+ const added=await sb.from('gds_powder_inventory').insert({material_id:res.data.id,purchased_g:0,consumed_g:null,note:'Novo pó cadastrado. Atualize compras e consumo na ficha de Produtos e materiais.'});
  if(added.error)throw added.error;
 }
 const [loaded,pow]=await Promise.all([sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*')]);if(loaded.error)throw loaded.error;if(pow.error)throw pow.error;
-state.materials=loaded.data||[];state.powders=pow.data||[];clearMaterial();renderCatalog();note('✅ Produto salvo. Pós saborizantes podem ter o estoque conferido na aba Estoque de pós.');
+state.materials=loaded.data||[];state.powders=pow.data||[];clearMaterial();renderCatalog();note('✅ Produto salvo. Estoque de pós disponível na própria ficha do material.');
 }catch(e){note('Erro ao salvar produto: '+e.message,true)}finally{btn.disabled=false;}
 }
 function onRowInput(e){
@@ -1398,7 +1437,13 @@ const m=material(e.target.value);
 line.material_id=m?.id||null;line.ingredient_name=m?.name||'Pó saborizante';line.measure_unit=m?.unit||'g';
 renderRows();calc();renderPowderRecipeInfo();pending();
 });
-$('openPowderStock').onclick=()=>{state.active='powders';location.hash='powders';render();window.scrollTo({top:0,behavior:'smooth'})};
+$('openPowderStock').onclick=()=>{
+ const line=currentItems().find(i=>i.item_key==='saborizante'),m=material(line?.material_id);
+ if(m&&isPowder(m.id)){$('materialSearch').value=m.name;openedMaterialCards.add(String(m.id))}
+ else $('materialSearch').value='';
+ state.active='materials';location.hash='materials';render();
+ $('materialSearch').scrollIntoView({behavior:'smooth',block:'center'});
+};
 $('powderBrand').addEventListener('change',renderPowders);$('powderSearch').addEventListener('input',renderPowders);
 $('powderRefresh').onclick=async()=>{try{const r=await sb.from('gds_powder_inventory').select('*');if(r.error)throw r.error;state.powders=r.data||[];renderPowders();note('✅ Estoque de pós atualizado.')}catch(e){note('Erro ao carregar estoque: '+e.message,true)}};
 $('powderCards').addEventListener('click',e=>{const btn=e.target.closest('[data-save-powder]');if(btn)savePowder(btn.dataset.savePowder)});
@@ -1588,7 +1633,27 @@ $('catalog').addEventListener('toggle',e=>{
  const id=card.dataset.materialId;
  if(card.open)openedMaterialCards.add(id);else openedMaterialCards.delete(id);
 },true);
-$('catalog').addEventListener('click',e=>{const btn=e.target.closest('[data-edit]');if(btn)editMaterial(btn.dataset.edit)});
+$('catalog').addEventListener('click',e=>{
+ const stock=e.target.closest('[data-save-powder]');
+ if(stock){savePowder(stock.dataset.savePowder);return}
+ const edit=e.target.closest('[data-edit]');
+ if(edit)editMaterial(edit.dataset.edit);
+});
+$('catalog').addEventListener('input',e=>{
+ if(!e.target.matches('[data-stock-material] [data-field]'))return;
+ const row=e.target.closest('[data-stock-material]');if(!row)return;
+ const purchased=num(row.querySelector('[data-field="purchased_g"]').value);
+ const used=num(row.querySelector('[data-field="consumed_g"]').value);
+ const badge=row.querySelector('[data-stock-balance]');
+ if(badge){
+  const valid=purchased!==null&&purchased>=0&&(used===null||(used>=0&&used<=purchased));
+  badge.classList.toggle('pending',!valid||used===null);
+  badge.textContent=!valid?'⚠️ Confira os totais antes de salvar.':used===null?
+   'Prévia não salva — saldo a conferir':'Prévia não salva — saldo estimado: '+fmt(purchased-used)+' g';
+ }
+ const message=row.querySelector('[data-stock-message]');
+ if(message)message.textContent='⚠️ Alterações não salvas. Confirme para atualizar o estoque.';
+});
 (async()=>{try{await GDS48.ensure(location.hash==='#book'?'book':'bases');await load();note('✅ Acesso administrativo confirmado • três bases e catálogo conectados ao Supabase.');}catch(e){note('Não foi possível abrir a gestão de receitas: '+e.message,true)}})();
 })();
 </script></body></html>
