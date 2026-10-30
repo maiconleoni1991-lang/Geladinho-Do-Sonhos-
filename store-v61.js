@@ -237,7 +237,7 @@ async function checkout(){
     renderStatus();
   }
 }
-function showSuccess(o,whatsUrl){$('cartForm').hidden=true;$('success').hidden=false;$('successCode').textContent='#'+o.public_code;$('trackLink').href='./acompanhar/?t='+encodeURIComponent(o.tracking_token);const wa=$('whatsOrderLink');if(wa)wa.href=whatsUrl}
+function showSuccess(o,whatsUrl){$('cartForm').hidden=true;$('success').hidden=false;$('successCode').textContent='#'+o.public_code;const pix=paymentMethod()==='Pix';const hint=$('successPaymentHint');if(hint)hint.hidden=!pix;const link=$('trackLink');link.href='./acompanhar/?t='+encodeURIComponent(o.tracking_token);link.textContent=pix?'💠 Ver Pix após aceite da loja':'📍 Acompanhar pedido';const wa=$('whatsOrderLink');if(wa)wa.href=whatsUrl}
 function resetCartModal(){$('cartForm').hidden=false;$('success').hidden=true;closeCart()}
 function renderTestimonials(rows){if(!rows.length){$('testGrid').innerHTML='<div class="emptyBox" style="grid-column:1/-1">Ainda não há depoimentos publicados. Depois que os clientes avaliarem pedidos concluídos, eles aparecerão aqui.</div>';return}$('testGrid').innerHTML=rows.map(r=>`<article class="testCard"><div class="stars">${'★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5)))}</div><p>“${esc(r.comment||'')}”</p><small>Cliente verificado · ${new Date(r.created_at).toLocaleDateString('pt-BR')}</small></article>`).join('')}
 function restoreLastOrder(){try{const o=JSON.parse(localStorage.getItem('gds_last_order')||'null');if(!o?.token)return;const a=$('lastOrder');a.hidden=false;a.href='./acompanhar/?t='+encodeURIComponent(o.token);a.textContent='📍 Acompanhar '+(o.code||'pedido')}catch(_){}}
