@@ -1240,15 +1240,18 @@ function renderBookEditMaterialChoices(){
 function renderBookEditItems(){
  const b=state.bookEditing;if(!b)return;
  $('bookEditItems').innerHTML=(Array.isArray(b.ingredients)?b.ingredients:[]).map((i,index)=>{
- const m=material(i.material_id),unit=i.unit||'g';
+ const m=material(i.material_id),unit=i.unit||'g',filling=isFillingGram(i),grams=filling?fillingPerUnit(i,num($('bookEditYield').value)):null;
  const opts=[['g','Gramas (g)'],['ml','Mililitros (ml)'],['cx','Caixa (cx)'],['pct','Pacote (pct)'],['un','Unidade (un)']].map(([v,label])=>'<option value="'+v+'" '+(v===unit?'selected':'')+'>'+label+'</option>').join('');
  return '<div class="line '+(i.active===false?'inactive':'')+'" data-edit-item="'+index+'"><div class="line-top"><strong>'+(index+1)+'. '+esc(i.name||'Novo ingrediente')+'</strong><label class="ingredient-switch"><input type="checkbox" data-edit-active="1" '+(i.active===false?'':'checked')+'> Usar na receita</label><button type="button" class="secondary" data-remove-edit-item="'+index+'">🗑️ Remover</button></div>'+
  '<div class="line-grid">'+
  '<label class="field">Ingrediente / insumo<input data-edit-prop="name" maxlength="140" placeholder="Ex.: leite em pó" value="'+esc(i.name||'')+'"></label>'+
  '<label class="field">Classificação<select data-edit-prop="type"><option value="base" '+(i.type!=='complemento'?'selected':'')+'>Ingrediente da base</option><option value="complemento" '+(i.type==='complemento'?'selected':'')+'>Recheio / complemento</option></select></label>'+
- '<label class="field">Quantidade usada<input type="number" data-edit-prop="quantity_used" value="'+fmtInput(i.quantity_used)+'" min="0.00001" step="any" inputmode="decimal" placeholder="Quanto usou"></label>'+
+ '<label class="field">'+(filling?'Recheio por saquinho (g)':'Quantidade usada na receita')+
+ '<input type="number" data-edit-prop="quantity_used" value="'+fmtInput(filling?grams:i.quantity_used)+'" min="0.00001" step="any" inputmode="decimal" placeholder="'+(filling?'Ex.: 20 por geladinho':'Quanto usou')+'">'+
+ (filling?'<small data-edit-filling-total>Total automático: '+(num(i.quantity_used)===null?'pendente':fmt(i.quantity_used)+' g')+
+  ' para '+(num($('bookEditYield').value)??'—')+' geladinhos</small>':'')+'</label>'+
  '<label class="field">Unidade<select data-edit-prop="unit">'+opts+'</select></label>'+
- '<label class="field">Quantidade comprada ('+esc(unit)+')<input type="number" data-edit-prop="pack_quantity" value="'+fmtInput(i.pack_quantity)+'" min="0.00001" step="any" inputmode="decimal" placeholder="Peso / unidades"></label>'+
+ '<label class="field">Quantidade total comprada ('+esc(unit)+')<input type="number" data-edit-prop="pack_quantity" value="'+fmtInput(i.pack_quantity)+'" min="0.00001" step="any" inputmode="decimal" placeholder="Peso / unidades"></label>'+
  '<label class="field">Preço pago pela compra (R$)<input type="number" data-edit-prop="pack_cost" value="'+fmtInput(i.pack_cost)+'" min="0" step="any" inputmode="decimal" placeholder="R$"></label>'+
  '</div><div class="line-result"><span>'+esc(i.classification||i.type||'Ingrediente')+'</span><span data-edit-cost>Custo: '+(num(i.cost)===null?'pendente':money(i.cost))+'</span></div>'+
  (m?'<button type="button" class="secondary" style="margin-top:9px" data-edit-load-catalog="'+index+'">↺ Usar último preço do cadastro de materiais</button>':'')+'</div>';
@@ -1316,7 +1319,12 @@ function updateBookEditCalculation(){
  $('bookEditItems').querySelectorAll('[data-edit-item]').forEach(row=>{
   const i=state.bookEditing?.ingredients?.[Number(row.dataset.editItem)];
   const cost=row.querySelector('[data-edit-cost]');if(!i||!cost)return;
-  cost.textContent=i.active===false?'Não incluído no custo':num(i.cost)===null?'Custo pendente':'Custo na receita: '+money(i.cost);
+  cost.textContent=i.active===false?'Não incluído no custo':num(i.cost)===null?'Custo pendente':
+    'Custo na receita: '+money(i.cost)+(isFillingGram(i)&&num($('bookEditYield').value)>0?
+      ' · '+money(i.cost/num($('bookEditYield').value))+' por geladinho':'');
+   const total=row.querySelector('[data-edit-filling-total]');
+   if(total)total.textContent='Total automático: '+(num(i.quantity_used)===null?'pendente':fmt(i.quantity_used)+' g')+
+    ' para '+(num($('bookEditYield').value)??'—')+' geladinhos';
  });
  if(!x.valid){msg.textContent='⚠️ Ficha financeira incompleta: '+x.missing.join('; ')+'. O cálculo de lucro só fica disponível quando todos os valores estiverem preenchidos.';return;}
  const split=splitNetProfit(x.profit);msg.textContent='Custo da base: '+money(x.base)+' • Recheios: '+money(x.comps)+' • Custo total: '+money(x.total)+' • Custo por geladinho: '+money(x.costUnit)+' • Lucro potencial por receita: '+money(x.profit)+' • Reinvestimento (50%): '+money(split.reinvest)+' • Pró-labore (50%): '+money(split.prolabore)+'.';
@@ -1333,14 +1341,18 @@ function updateBookEditItem(e){
  }else if(prop==='unit'){
   if(i.unit!==e.target.value){
    i.material_id=null;i.brand=null;i.pack_quantity=null;i.pack_cost=null;i.cost=null;i.unit_cost=null;
-   i.unit=e.target.value;i.display_quantity=null;
+   i.unit=e.target.value;i.display_quantity=null;delete i.grams_per_unit;
    renderBookEditItems();
    note('Unidade alterada: confirme o peso/quantidade comprada e o preço na nova unidade, para evitar cálculo incorreto.');
   }
  }else if(prop==='type'){
   i.type=e.target.value;i.classification=i.type==='complemento'?'Complemento':'Ingrediente';
+  if(isFillingGram(i))i.grams_per_unit=fillingPerUnit(i,val('bookEditYield'));
+  else delete i.grams_per_unit;
+  renderBookEditItems();
  }else{
-  i[prop]=num(e.target.value);
+  if(prop==='quantity_used'&&isFillingGram(i))fillingSetPerUnit(i,num(e.target.value),val('bookEditYield'));
+  else i[prop]=num(e.target.value);
   if(prop==='quantity_used')i.display_quantity=i.quantity_used===null?null:fmt(i.quantity_used)+' '+(i.unit||'');
  }
  updateBookEditCalculation();
@@ -1440,7 +1452,7 @@ function quickMaterials(){
 }
 function quickRowHtml(i,index,b){
  const unit=String(i.unit||'g'),perUnit=i.type==='complemento'&&unit==='g'&&num(b.yield_units)>0;
- const q=num(i.quantity_used),shown=q===null?'':String(perUnit?quickRound(q/num(b.yield_units),4):q);
+ const q=num(i.quantity_used),shown=q===null?'':String(perUnit?quickRound(fillingPerUnit(i,b.yield_units),4):q);
  const inactive=i.active===false,step=unit==='cx'?'0.1':'1';
  const control=inactive?'<span class="quick-unit">Inativo</span>':
   '<div class="quick-qty-control"><button type="button" data-quick-step="-1" data-index="'+index+'" aria-label="Diminuir quantidade de '+esc(i.name)+'">−</button>'+
@@ -1529,7 +1541,8 @@ function quickSetQuantity(target){
  const context=quickCardData(target);if(!context)return;
  const {card,b,d}=context,idx=Number(target.dataset.quickQuantity),item=d.ingredients[idx],v=num(target.value);
  if(!item)return;
- item.quantity_used=v===null?null:quickRound(v*(item.type==='complemento'&&item.unit==='g'&&num(b.yield_units)>0?num(b.yield_units):1),6);
+ if(isFillingGram(item))fillingSetPerUnit(item,v,b.yield_units);
+ else item.quantity_used=v===null?null:quickRound(v,6);
  item.display_quantity=v===null?null:fmt(item.quantity_used)+' '+(item.unit||'g');
  d.dirty=true;quickUpdatePreview(card,b);
 }
@@ -1669,7 +1682,9 @@ function renderBook(){
    partialCost=used.reduce((total,i)=>total+(num(i.cost)??0),0);
   const split=ready&&num(b.estimated_profit)!==null?splitNetProfit(b.estimated_profit):null;
   const lines=ingredients.map(i=>{
-   const quantity=i.display_quantity||((i.quantity_used===null||i.quantity_used===undefined)?'Quantidade pendente':fmt(i.quantity_used)+' '+(i.unit||''));
+   const quantity=isFillingGram(i)&&num(b.yield_units)>0&&num(i.quantity_used)!==null?
+    fmt(fillingPerUnit(i,b.yield_units))+' g/saquinho × '+fmt(b.yield_units)+' = '+fmt(i.quantity_used)+' g por receita':
+    (i.display_quantity||((i.quantity_used===null||i.quantity_used===undefined)?'Quantidade pendente':fmt(i.quantity_used)+' '+(i.unit||'')));
    if(i.active===false)return '<div class="book-item" style="opacity:.65"><strong>'+esc(i.name)+'</strong> — '+esc(quantity)+' • Opcional/inativo</div>';
    return '<div class="book-item"><strong>'+esc(i.name)+'</strong> ('+esc(i.classification||i.type||'Ingrediente')+') — '+esc(quantity)+' • '+(num(i.cost)===null?'<span class="book-pending">Preço pendente</span>':money(i.cost))+'</div>';
   }).join('');
@@ -1927,7 +1942,7 @@ $('bookCards').addEventListener('click',e=>{
   const total=quickRound(grams*num(b.yield_units),6);
   if(d.ingredients.some(i=>i.active!==false&&i.type==='complemento'&&i.material_id===m.id))return alert('Este recheio já existe. Ajuste a quantidade na linha correspondente.');
   d.ingredients.push({position:d.ingredients.length+1,name:m.name,classification:'Complemento',type:'complemento',active:true,
-   material_id:m.id,brand:m.brand||null,unit:'g',quantity_used:total,
+   material_id:m.id,brand:m.brand||null,unit:'g',quantity_used:total,grams_per_unit:grams,
    pack_quantity:num(m.pack_quantity),pack_cost:num(m.pack_cost),unit_cost:quickRound(num(m.pack_cost)/num(m.pack_quantity),6),
    cost:quickRound(total*num(m.pack_cost)/num(m.pack_quantity)),display_quantity:fmt(total)+' g',__quickNew:true});
   d.dirty=true;openedBookRecipes.add(String(b.id));renderBook();return;
@@ -1963,7 +1978,16 @@ $('bookEditAddMaterial').onclick=()=>{
  addIngredientToBookEdit(id);
 };
 $('bookEditAddManual').onclick=()=>addIngredientToBookEdit(null);
-['bookEditYield','bookEditSale','bookEditPackaging','bookEditOverhead','bookEditCommission'].forEach(id=>$(id).addEventListener('input',updateBookEditCalculation));
+['bookEditSale','bookEditPackaging','bookEditOverhead','bookEditCommission'].forEach(id=>$(id).addEventListener('input',updateBookEditCalculation));
+$('bookEditYield').addEventListener('input',()=>{
+ const b=state.bookEditing,next=val('bookEditYield');
+ if(b&&next>0){
+  fillingSyncYield(b.ingredients,b.yield_units,next);
+  b.yield_units=next;
+  renderBookEditItems();
+ }
+ updateBookEditCalculation();
+});
 $('bookEditItems').addEventListener('input',updateBookEditItem);
 $('bookEditItems').addEventListener('change',e=>{
  const row=e.target.closest('[data-edit-item]');
