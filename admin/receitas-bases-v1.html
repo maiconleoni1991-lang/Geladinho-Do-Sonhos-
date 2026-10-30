@@ -240,6 +240,36 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #catalog .material-stock-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
 #catalog .material-stock-actions button{background:#14784b;min-height:43px}
 @media(max-width:550px){#catalog .material-stock-fields{grid-template-columns:1fr}}
+
+/* Controle de compras e estoque por material, convertido para unidade das receitas */
+#catalog .material-new-stock{border:1px solid #d5e8de;background:#f8fffb;border-radius:13px;margin:12px 0;padding:13px}
+#catalog .material-new-stock h3{font-size:16px;color:#216845;margin:0 0 8px}
+#catalog .stock-head-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}
+#catalog .stock-head-stat{padding:11px 9px;border-radius:9px;background:white;border:1px solid #d7e9df}
+#catalog .stock-head-stat small{font-size:11px;color:#697c72;display:block;margin-bottom:6px}
+#catalog .stock-head-stat strong{color:#206a47;display:block;font-size:15px;overflow-wrap:anywhere}
+#catalog .stock-start-warning{background:#fff2dc;color:#875c1d;border-radius:9px;padding:11px;font-size:12px;line-height:1.5}
+#catalog .stock-management-form,#catalog .stock-history{margin:12px 0 0;border:1px solid #d8e5dc;border-radius:10px;padding:0;background:white}
+#catalog .stock-management-form>summary,#catalog .stock-history>summary{cursor:pointer;font-weight:800;color:#246e4b;padding:13px;list-style:none}
+#catalog .stock-management-form>summary::-webkit-details-marker,#catalog .stock-history>summary::-webkit-details-marker{display:none}
+#catalog .stock-management-form>summary:before,#catalog .stock-history>summary:before{content:"▶";font-size:12px;margin-right:8px}
+#catalog .stock-management-form[open]>summary:before,#catalog .stock-history[open]>summary:before{content:"▼"}
+#catalog .stock-management-body{padding:0 12px 15px}
+#catalog .stock-entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#catalog .stock-entry-grid .field{min-width:0}
+#catalog .stock-entry-grid .field input,#catalog .stock-entry-grid .field select{border:1px solid #c4dbcb;border-radius:9px;min-height:42px;padding:9px;background:white;width:100%;font-size:13px}
+#catalog .stock-entry-grid [data-stock-purchase][hidden],#catalog .stock-entry-grid [data-stock-simple][hidden]{display:none!important}
+#catalog .stock-entry-grid .stock-wide{grid-column:1/-1}
+#catalog .stock-preview{background:#f0faf3;color:#245e3d;padding:12px;border-radius:10px;font-size:13px;line-height:1.65;margin:11px 0;font-weight:750}
+#catalog .stock-preview.warning{background:#fff3e3;color:#9d5916}
+#catalog .stock-action-submit{background:#167a4b;color:white;width:100%;min-height:45px}
+#catalog .stock-action-submit:disabled{opacity:.6;cursor:progress}
+#catalog .stock-legacy-note{margin-top:10px;color:#80566a;font-size:11px}
+#catalog .stock-ledger-list{display:grid;gap:6px;padding:0 12px 12px}
+#catalog .stock-ledger-item{border:1px solid #e3ece6;border-radius:10px;padding:10px;background:#fbfefa}
+#catalog .stock-ledger-item>div:first-child{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;font-weight:750;color:#315c43}
+#catalog .stock-ledger-item .stock-ledger-info{font-size:12px;color:#715969;margin-top:5px;overflow-wrap:anywhere}
+@media(max-width:720px){#catalog .stock-head-summary{grid-template-columns:1fr 1fr}#catalog .stock-entry-grid{grid-template-columns:1fr}}
 </style></head><body>
 <script src="admin-common-v48.js?v=141"></script>
 <main>
@@ -418,8 +448,9 @@ const val=id=>num($(id).value),field=id=>$(id).value;
 const fmtInput=n=>n===null||n===undefined?'':String(n);
 const openedBookRecipes=new Set();
 const openedMaterialCards=new Set();
+const stockMoveSaving=new Set();
  const bookQuickDrafts=new Map();let bookQuickSaving=false;
- const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1)==='powders'?'materials':location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null,productPhotos:[]};
+ const codes=['premium_1','premium_2','gourmet_nova'];const initialTab=location.hash.slice(1)==='powders'?'materials':location.hash.slice(1);let state={active:[...codes,'new_recipe','materials','complements','book'].includes(initialTab)?initialTab:'new_recipe',bases:[],items:[],materials:[],powders:[],book:[],deletions:[],production:[],selectedBookId:null,bookEditing:null,materialEditing:null,complementEditing:null,newRecipeDraft:null,productPhotos:[],stockMovements:[]};
 const isNewRecipe=()=>state.active==='new_recipe';
 const currentBase=()=>state.bases.find(x=>x.code===(isNewRecipe()?(state.newRecipeDraft?.base_code||'gourmet_nova'):state.active));
 const currentItems=()=>isNewRecipe()?(state.newRecipeDraft?.items||[]):state.items.filter(x=>x.recipe_id===currentBase()?.id).sort((a,b)=>a.sort_order-b.sort_order);
@@ -442,9 +473,9 @@ const unitLabel=u=>({g:'g',ml:'ml',un:'un',cx:'caixa',pct:'pacote'})[u]||u;
 const note=(s,bad=false)=>{const x=$('status');x.textContent=s;x.className='msg '+(bad?'err':'ok')};
 const pending=()=>note('✏️ Alterações na receita ainda não salvas. Clique em Salvar receita e valores.');
 async function load(){
-const [b,i,m,p,k,l,photos]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*'),sb.from('gds_recipe_book').select('*').order('updated_at',{ascending:false}),sb.from('gds_recipe_production_logs').select('*').order('production_date',{ascending:false}).order('created_at',{ascending:false}).limit(1000),sb.from('products').select('name,image_url').limit(500)]);
-if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;if(p.error)throw p.error;if(k.error)throw k.error;if(l.error)throw l.error;
-state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];state.production=l.data||[];state.productPhotos=photos.error?[]:(photos.data||[]);bookQuickDrafts.clear();
+const [b,i,m,p,k,l,photos,moves]=await Promise.all([sb.from('gds_recipe_bases').select('*').order('created_at'),sb.from('gds_recipe_base_items').select('*').order('sort_order'),sb.from('gds_materials').select('*').order('name'),sb.from('gds_powder_inventory').select('*'),sb.from('gds_recipe_book').select('*').order('updated_at',{ascending:false}),sb.from('gds_recipe_production_logs').select('*').order('production_date',{ascending:false}).order('created_at',{ascending:false}).limit(1000),sb.from('products').select('name,image_url').limit(500),sb.from('gds_material_stock_movements').select('*').order('created_at',{ascending:false}).limit(5000)]);
+if(b.error)throw b.error;if(i.error)throw i.error;if(m.error)throw m.error;if(p.error)throw p.error;if(k.error)throw k.error;if(l.error)throw l.error;if(moves.error)throw moves.error;
+state.bases=b.data||[];state.items=i.data||[];state.materials=m.data||[];state.powders=p.data||[];state.book=k.data||[];state.production=l.data||[];state.productPhotos=photos.error?[]:(photos.data||[]);state.stockMovements=moves.data||[];bookQuickDrafts.clear();
 if(!codes.every(code=>state.bases.some(b=>b.code===code)))throw Error('As três bases não foram encontradas.');
 if(isNewRecipe()&&!state.newRecipeDraft)state.newRecipeDraft=makeNewRecipe();
 render();
@@ -680,6 +711,179 @@ note('✅ Recheio/complemento salvo no Supabase. Seu custo estará disponível n
 }catch(e){note('Não foi possível salvar complemento: '+e.message,true)}
 finally{btn.disabled=false}
 }
+
+const stockInTypes=new Set(['purchase','opening','correction_in']);
+const stockMovementsOf=id=>(state.stockMovements||[]).filter(x=>x.material_id===id);
+function stockFigure(id){
+ const rows=stockMovementsOf(id);
+ let balance=0,received=0,paid=0,open=false;
+ for(const r of rows){
+  const qty=num(r.quantity)||0;
+  balance+=(stockInTypes.has(r.movement_type)?1:-1)*qty;
+  if(r.movement_type==='purchase'){received+=qty;paid+=num(r.total_cost)||0}
+  if(r.movement_type==='opening')open=true;
+ }
+ return {rows,balance:Math.round(balance*10000)/10000,received,paid,open,
+  average:received>0?paid/received:null};
+}
+function stockUnitDisplay(q,unit){
+ if(q===null||q===undefined)return 'a conferir';
+ const amount=fmt(q);
+ if(unit==='ml'&&q>=1000)return fmt(q/1000)+' L ('+amount+' ml)';
+ if(unit==='g'&&q>=1000)return fmt(q/1000)+' kg ('+amount+' g)';
+ return amount+' '+unit;
+}
+function stockDisplayOptions(m){
+ return m.unit==='ml'?[['L','Litro (L)'],['ml','Mililitro (ml)']]:
+  m.unit==='g'?[['g','Grama (g)'],['kg','Quilograma (kg)']]:
+  [[m.unit,unitLabel(m.unit)]];
+}
+function stockDisplayFactor(unit){return unit==='L'||unit==='kg'?1000:1}
+function stockMovementName(kind){
+ return {purchase:'Compra',opening:'Saldo inicial confirmado',consumption:'Consumo confirmado',
+  loss:'Perda registrada',correction_in:'Ajuste de entrada',correction_out:'Ajuste de saída'}[kind]||kind;
+}
+function stockHistoryEntry(r,m){
+ const sign=stockInTypes.has(r.movement_type)?'+':'−';
+ const price=r.movement_type==='purchase'?'<strong>'+money(r.total_cost)+'</strong>':'';
+ const purchase=r.movement_type==='purchase'?'<div class="stock-ledger-info">'+
+  fmt(r.package_count)+' '+esc(r.package_kind)+(Number(r.package_count)!==1?'s':'')+
+  ' × '+fmt(r.units_per_package)+' unidade(s)/embalagem × '+fmt(r.display_quantity_per_unit)+' '+esc(r.display_unit||m.unit)+
+  ' · '+money(r.package_price)+'/embalagem · custo '+money(r.total_cost/Number(r.quantity))+'/'+esc(m.unit)+'</div>':'';
+ const date=r.occurred_on?new Date(r.occurred_on+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+ return '<div class="stock-ledger-item"><div><span>'+esc(stockMovementName(r.movement_type))+' · '+date+
+  '</span><span>'+sign+stockUnitDisplay(r.quantity,m.unit)+' '+price+'</span></div>'+purchase+
+  (r.note?'<div class="stock-ledger-info">'+esc(r.note)+'</div>':'')+'</div>';
+}
+function stockManagerHtml(m){
+ const totals=stockFigure(m.id),rows=totals.rows;
+ const opt=stockDisplayOptions(m),units=opt.map(([v,label])=>'<option value="'+esc(v)+'">'+esc(label)+'</option>').join('');
+ const types=[
+  ['purchase','🛒 Registrar compra'],...(rows.length?[]:[['opening','📋 Informar saldo inicial conferido']]),
+  ['consumption','🏭 Consumo confirmado'],['loss','⚠️ Perda real'],['correction_in','➕ Ajuste de entrada'],['correction_out','➖ Ajuste de saída']
+ ].map(([id,label])=>'<option value="'+id+'">'+label+'</option>').join('');
+ return '<section class="material-new-stock" data-ledger-material="'+esc(m.id)+'">'+
+  '<h3>📦 Compras e estoque do material</h3>'+
+  '<div class="stock-head-summary">'+
+  '<div class="stock-head-stat"><small>Saldo do novo controle</small><strong>'+stockUnitDisplay(totals.balance,m.unit)+'</strong></div>'+
+  '<div class="stock-head-stat"><small>Compras registradas</small><strong>'+rows.filter(r=>r.movement_type==='purchase').length+' compra(s)</strong></div>'+
+  '<div class="stock-head-stat"><small>Custo médio das compras</small><strong>'+(totals.average===null?'Não calculado':money(totals.average)+' / '+esc(m.unit))+'</strong></div>'+
+  '</div>'+
+  (rows.length===0?'<div class="stock-start-warning">📋 O estoque anterior não foi lançado automaticamente. Se já existe material guardado, registre primeiro o <b>saldo inicial conferido</b> para evitar duplicidade.</div>':'')+
+  '<details class="stock-management-form" data-stock-editor><summary>➕ Registrar compra, consumo, perda ou ajuste</summary><div class="stock-management-body">'+
+  '<div class="stock-entry-grid">'+
+  '<label class="field stock-wide">Tipo de movimentação<select data-stock-kind>'+types+'</select></label>'+
+  '<label class="field" data-stock-purchase>Como comprou?<select data-stock-package-kind><option value="fardo">Fardo</option><option value="caixa">Caixa</option><option value="pacote">Pacote</option><option value="unidade">Unidade</option><option value="saco">Saco</option><option value="pote">Pote</option><option value="outro">Outro</option></select></label>'+
+  '<label class="field" data-stock-purchase>Quantas embalagens?<input type="number" data-stock-packs min="1" step="1" value="2"></label>'+
+  '<label class="field" data-stock-purchase>Unidades por embalagem<input type="number" data-stock-units-per-package min="1" step="1" value="12"></label>'+
+  '<label class="field" data-stock-purchase>Conteúdo por unidade<input type="number" data-stock-amount-per-unit min="0.0001" step="any" value="1"></label>'+
+  '<label class="field" data-stock-purchase>Unidade do conteúdo<select data-stock-display-unit>'+units+'</select></label>'+
+  '<label class="field" data-stock-purchase>Preço por embalagem (R$)<input type="number" data-stock-package-price min="0" step="0.01" placeholder="Ex.: 60,00"></label>'+
+  '<label class="field" data-stock-simple hidden>Quantidade movimentada<input type="number" data-stock-simple-qty min="0.0001" step="any" placeholder="Ex.: 2"></label>'+
+  '<label class="field" data-stock-simple hidden>Unidade da quantidade<select data-stock-simple-unit>'+units+'</select></label>'+
+  '<label class="field">Data<input type="date" data-stock-date value="'+esc(todayLocal())+'"></label>'+
+  '<label class="field stock-wide">Observação opcional<input data-stock-note maxlength="500" placeholder="Ex.: Fornecedor, número da compra ou motivo do ajuste"></label>'+
+  '</div><div class="stock-preview" data-stock-preview>Informe os dados e confira a conversão antes de salvar.</div>'+
+  '<button type="button" class="stock-action-submit" data-stock-submit>💾 Confirmar e registrar movimentação</button>'+
+  '<p class="hint">O registro é manual e fica no histórico. O custo da compra não substitui automaticamente o preço cadastrado nas receitas.</p>'+
+  '</div></details>'+
+  '<details class="stock-history"><summary>📋 Histórico de movimentações ('+rows.length+')</summary>'+
+  '<div class="stock-ledger-list">'+(rows.length?rows.map(r=>stockHistoryEntry(r,m)).join(''):'<p class="small">Nenhuma movimentação neste controle.</p>')+'</div></details>'+
+  (isPowder(m.id)?'<div class="stock-legacy-note">🎨 O controle anterior de pós aparece separadamente nesta ficha e não é somado automaticamente ao novo histórico. Confira o saldo físico antes de informar o saldo inicial.</div>':'')+
+  '</section>';
+}
+function stockMovementFromForm(panel,m){
+ const kind=panel.querySelector('[data-stock-kind]').value;
+ const note=panel.querySelector('[data-stock-note]').value.trim();
+ const date=panel.querySelector('[data-stock-date]').value;
+ if(!date||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date))return {error:'Informe uma data válida.'};
+ const base={material_id:m.id,movement_type:kind,unit:m.unit,note:note||null,occurred_on:date};
+ if(kind==='purchase'){
+  const package_kind=panel.querySelector('[data-stock-package-kind]').value;
+  const package_count=num(panel.querySelector('[data-stock-packs]').value);
+  const units_per_package=num(panel.querySelector('[data-stock-units-per-package]').value);
+  const display_quantity_per_unit=num(panel.querySelector('[data-stock-amount-per-unit]').value);
+  const display_unit=panel.querySelector('[data-stock-display-unit]').value;
+  const package_price=num(panel.querySelector('[data-stock-package-price]').value);
+  if(!Number.isInteger(package_count)||package_count<=0)return{error:'Informe uma quantidade inteira de embalagens.'};
+  if(!Number.isInteger(units_per_package)||units_per_package<=0)return{error:'Informe quantas unidades inteiras vêm em cada embalagem.'};
+  if(!(display_quantity_per_unit>0))return{error:'Informe o conteúdo de cada unidade.'};
+  if(package_price===null||package_price<0||Math.round(package_price*100)!==package_price*100&&Math.abs(package_price*100-Math.round(package_price*100))>0.00001)return{error:'Informe o preço por embalagem com até duas casas decimais.'};
+  if(!stockDisplayOptions(m).some(([u])=>u===display_unit))return{error:'Unidade de conteúdo incompatível com o material.'};
+  const quantity_per_unit=Number((display_quantity_per_unit*stockDisplayFactor(display_unit)).toFixed(4));
+  const quantity=Number((package_count*units_per_package*quantity_per_unit).toFixed(4));
+  const total_cost=Number((package_count*package_price).toFixed(2));
+  if(!(quantity>0)||!Number.isFinite(quantity)||quantity>1e13)return{error:'Quantidade total inválida ou muito alta.'};
+  return{payload:{...base,quantity,package_kind,package_count,units_per_package,quantity_per_unit,
+   display_quantity_per_unit,display_unit,package_price,total_cost},
+   preview:'Entrada de '+fmt(quantity)+' '+m.unit+' ('+stockUnitDisplay(quantity,m.unit)+') · '+fmt(package_count)+' '+package_kind+
+    (package_count===1?'':'s')+' × '+fmt(units_per_package)+' unidade(s) × '+fmt(display_quantity_per_unit)+' '+display_unit+
+    ' · Total: '+money(total_cost)+' · '+money(total_cost/quantity)+'/'+m.unit};
+ }
+ const qty=num(panel.querySelector('[data-stock-simple-qty]').value);
+ const unit=panel.querySelector('[data-stock-simple-unit]').value;
+ if(!(qty>0))return{error:'Informe a quantidade que será movimentada.'};
+ if(!stockDisplayOptions(m).some(([u])=>u===unit))return{error:'Unidade incompatível com o material.'};
+ const quantity=Number((qty*stockDisplayFactor(unit)).toFixed(4));
+ if(!(quantity>0)||quantity>1e13)return{error:'Quantidade inválida.'};
+ const totals=stockFigure(m.id);
+ if(['consumption','loss','correction_out'].includes(kind)&&quantity>totals.balance)return{error:'Saída maior que o saldo do novo controle. Registre primeiro um saldo inicial conferido ou uma entrada de compra.'};
+ if(kind==='opening'&&totals.rows.length)return{error:'O saldo inicial só pode ser registrado antes da primeira movimentação.'};
+ return {payload:{...base,quantity},
+  preview:stockMovementName(kind)+' · '+fmt(qty)+' '+unit+' = '+stockUnitDisplay(quantity,m.unit)+
+   ' · Saldo previsto do novo controle: '+stockUnitDisplay(totals.balance+(stockInTypes.has(kind)?quantity:-quantity),m.unit)};
+}
+function stockPreviewPanel(panel,m){
+ const kind=panel.querySelector('[data-stock-kind]').value,purchase=kind==='purchase';
+ panel.querySelectorAll('[data-stock-purchase]').forEach(x=>x.hidden=!purchase);
+ panel.querySelectorAll('[data-stock-simple]').forEach(x=>x.hidden=purchase);
+ const outcome=stockMovementFromForm(panel,m),node=panel.querySelector('[data-stock-preview]');
+ node.classList.toggle('warning',!!outcome.error);
+ node.textContent=outcome.error||'🧮 '+outcome.preview+'. Nenhuma movimentação é feita antes de confirmar.';
+ return outcome;
+}
+async function saveStockMovement(panel,m){
+ if(stockMoveSaving.has(m.id))return;
+ const calc=stockMovementFromForm(panel,m);
+ if(calc.error)return alert(calc.error);
+ const d=calc.payload;
+ if(!confirm('Confirmar movimentação de '+m.name+'?\\n\\n'+calc.preview+'\\n\\nO estoque será atualizado somente após esta confirmação.'))return;
+ const button=panel.querySelector('[data-stock-submit]');
+ stockMoveSaving.add(m.id);button.disabled=true;button.textContent='⏳ Registrando…';
+ const transactionId=panel.dataset.stockTxnId||(panel.dataset.stockTxnId=crypto.randomUUID());
+ let inserted=null;
+ try{
+  const ctrl=new AbortController();
+  let query=sb.from('gds_material_stock_movements').insert({...d,id:transactionId}).select('*').single();
+  if(typeof query.abortSignal==='function')query=query.abortSignal(ctrl.signal);
+  try{
+   const response=await quickApiDeadline(query,15000,ctrl);
+   if(response.error)throw response.error;
+   inserted=response.data;
+  }catch(e){
+   if(e.code==='23505'||e.code==='QUICK_TIMEOUT'||e.name==='AbortError'||e.name==='TypeError'){
+    try{
+     const ctrlRead=new AbortController();
+     let lookup=sb.from('gds_material_stock_movements').select('*').eq('id',transactionId).maybeSingle();
+     if(typeof lookup.abortSignal==='function')lookup=lookup.abortSignal(ctrlRead.signal);
+     const verify=await quickApiDeadline(lookup,7000,ctrlRead);
+     if(!verify.error&&verify.data)inserted=verify.data;
+    }catch(_){}
+    if(!inserted)throw Error('O banco não confirmou esta operação. Confira o histórico e o saldo antes de tentar novamente.');
+   }else throw e;
+  }
+  if(!inserted)throw Error('Não foi possível confirmar o lançamento.');
+  if(!state.stockMovements.some(row=>row.id===inserted.id))state.stockMovements.unshift(inserted);
+  openedMaterialCards.add(String(m.id));
+  renderCatalog();
+  note('✅ '+stockMovementName(inserted.movement_type)+' registrada para '+m.name+'. Histórico e saldo atualizados.');
+ }catch(e){
+  const feedback=panel.querySelector('[data-stock-preview]');
+  if(feedback){feedback.classList.add('warning');feedback.textContent='⚠️ '+(e.message||'Falha ao registrar movimentação.')}
+  note('Não foi possível registrar o estoque: '+(e.message||'Falha inesperada'),true);
+ }finally{stockMoveSaving.delete(m.id);button.disabled=false;button.textContent='💾 Confirmar e registrar movimentação'}
+}
+
 function renderCatalog(){
  const basics=state.materials.filter(m=>m.material_type!=='Complemento');
  $('materialCount').textContent=basics.length+' produtos · '+basics.filter(m=>isPowder(m.id)).length+' com estoque';
@@ -715,7 +919,7 @@ function renderCatalog(){
    detail('Custo unitário',perUnit,' class="price"')+
    detail('Unidade de cálculo',esc(m.unit))+
    detail('Estoque de pó',powder?'Acompanha estoque':'Sem controle de pó')+
-   '</div>'+stockSection+'<button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button></div></details>';
+   '</div>'+stockManagerHtml(m)+stockSection+'<button type="button" class="secondary" data-edit="'+esc(m.id)+'">✏️ Editar produto</button></div></details>';
  }).join('')||'<p class="small">Nenhum material encontrado.</p>';
 }
 
@@ -1627,6 +1831,13 @@ $('saveRecipe').onclick=saveRecipe;
 ['matQty','matPrice','matUnit'].forEach(id=>$(id).addEventListener('input',updatePricePreview));
 $('saveMaterial').onclick=saveMaterial;$('clearMaterial').onclick=clearMaterial;$('materialSearch').addEventListener('input',renderCatalog);
 $('materialNewTop').onclick=()=>{clearMaterial();$('materialFormTitle').scrollIntoView({behavior:'smooth',block:'center'});$('matName').focus({preventScroll:true});};
+$('catalog').addEventListener('change',e=>{
+ const section=e.target.closest('[data-ledger-material]');
+ if(section&&e.target.matches('select,input')){
+  const m=material(section.dataset.ledgerMaterial);
+  if(m)stockPreviewPanel(section,m);
+ }
+});
 $('catalog').addEventListener('toggle',e=>{
  const card=e.target;
  if(!card.matches?.('details.material-entry')||!card.isConnected)return;
@@ -1634,12 +1845,25 @@ $('catalog').addEventListener('toggle',e=>{
  if(card.open)openedMaterialCards.add(id);else openedMaterialCards.delete(id);
 },true);
 $('catalog').addEventListener('click',e=>{
+ const movement=e.target.closest('[data-stock-submit]');
+ if(movement){
+  const section=movement.closest('[data-ledger-material]');
+  const m=material(section?.dataset.ledgerMaterial);
+  if(m)saveStockMovement(section,m);
+  return;
+ }
  const stock=e.target.closest('[data-save-powder]');
  if(stock){savePowder(stock.dataset.savePowder);return}
  const edit=e.target.closest('[data-edit]');
  if(edit)editMaterial(edit.dataset.edit);
 });
 $('catalog').addEventListener('input',e=>{
+ const section=e.target.closest('[data-ledger-material]');
+ if(section&&e.target.matches('input,select')){
+  const m=material(section.dataset.ledgerMaterial);
+  if(m)stockPreviewPanel(section,m);
+  return;
+ }
  if(!e.target.matches('[data-stock-material] [data-field]'))return;
  const row=e.target.closest('[data-stock-material]');if(!row)return;
  const purchased=num(row.querySelector('[data-field="purchased_g"]').value);
