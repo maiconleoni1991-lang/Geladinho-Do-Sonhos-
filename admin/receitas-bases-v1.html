@@ -815,7 +815,7 @@ function renderBook(){
     '<div class="book-production-info">Custo total do lote: '+money(p.production_cost_total)+' · Custo/un.: '+money(p.production_cost_unit)+' · Faturamento potencial: '+money(p.potential_revenue)+' · Lucro potencial: '+money(p.potential_profit)+(p.production_notes?' · Observações: '+esc(p.production_notes):'')+'</div></div>';
   }).join('');
   return '<details class="book-card book-accordion" data-recipe-id="'+esc(b.id)+'"'+(openedBookRecipes.has(String(b.id))?' open':'')+'>'+
-    '<summary class="book-summary"><span class="book-chevron" aria-hidden="true">▶</span><span class="book-summary-main"><strong>'+esc(b.recipe_name)+'</strong><small>Base: '+esc(state.bases.find(x=>x.id===b.base_id)?.name||'Base')+' · '+(ready?'Custo/un.: '+money(b.cost_unit):'Custos pendentes')+'</small></span><span class="book-summary-right"><span class="badge">'+esc(b.category||'Gourmet')+'</span><small>'+relevant.length+' produção(ões) · '+finished+' unidades</small></span></summary><div class="book-detail-body">'+
+    '<summary class="book-summary"><span class="book-chevron" aria-hidden="true">▶</span><span class="book-summary-main"><strong>'+esc(b.recipe_name)+'</strong><small>Base: '+esc(state.bases.find(x=>x.id===b.base_id)?.name||'Base')+' · '+(ready?'Custo/un.: '+money(num(b.cost_unit)??(num(b.cost_total)/num(b.yield_units))):'Custos pendentes')+'</small></span><span class="book-summary-right"><span class="badge">'+esc(b.category||'Gourmet')+'</span><small>'+relevant.length+' produção(ões) · '+finished+' unidades</small></span></summary><div class="book-detail-body">'+
    '<div class="book-meta">Base vinculada: '+esc(state.bases.find(x=>x.id===b.base_id)?.name||'Base')+' • Atualizada em '+esc(date)+'</div>'+
    (extra.length?'<div class="book-pills">'+extra.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div>':'')+
    (yields?'<div class="small"><strong>Rendimento estimado:</strong> '+esc(yields)+'</div>':'')+
@@ -844,7 +844,7 @@ function renderBook(){
 }
 function renderProductionHistory(){
  const previous=field('productionFilter');
- $('productionFilter').innerHTML='<option value="">Todas as receitas</option>'+state.book.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.recipe_name)+'</option>').join('');
+ $('productionFilter').innerHTML='<option value="">Todas as receitas</option>'+state.book.slice().sort((a,b)=>String(a.recipe_name||'').localeCompare(String(b.recipe_name||''),'pt-BR',{sensitivity:'base'})).map(b=>'<option value="'+esc(b.id)+'">'+esc(b.recipe_name)+'</option>').join('');
  $('productionFilter').value=previous;
  const logs=state.production.filter(p=>!previous||p.recipe_id===previous);
  $('productionCount').textContent=logs.length+' lotes';
