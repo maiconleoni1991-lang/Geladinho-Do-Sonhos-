@@ -39,11 +39,49 @@ dialog{width:min(780px,calc(100% - 20px));max-height:94vh;overflow:auto;border:0
 @media(max-width:620px){.orderSummary{padding:11px 9px;gap:7px}.orderChevron{flex-basis:28px}.orderSummary .top{gap:5px}.orderSummary .top>span:nth-child(3){flex:1 1 125px}.orderStatus{order:4}.orderSummary .price{margin-left:auto}.orderViewTools .orderViewHint{flex-basis:100%;order:3}.orderViewTools label{flex:1}.orderViewTools select{flex:1;min-width:0}.orderViewTools .btn{font-size:12px;padding:9px}}
 
 .archivedFiado{border-left:4px solid #cf9636}.archivedFiado .orderBody{background:#fffdf9}.archivedFiado .actions a{display:inline-flex;align-items:center;text-decoration:none;min-height:40px;padding:9px 12px}
-</style></head><body><script>window.__gdsAdminStoreOpsV50=true;</script><script src="admin-common-v48.js?v=141"></script><main class="wrap"><div class="head"><div><h1>Pedidos</h1><div style="font-size:12px;color:#78616a">Vendas online, edição de pedidos, WhatsApp e atualização de status</div></div><div class="sp"></div><button id="refresh" class="btn">↻ Atualizar</button></div><section id="gdsOps50" class="ops"><div class="opsTop"><div><div class="state"><span class="dot"></span><span id="gdsOpsState50">Verificando vendas online…</span></div><p id="gdsOpsText50">O site só aceita novos pedidos quando a loja estiver aberta.</p></div><div class="opsBtns"><button id="gdsOpsToggle50" class="toggle">Abrir vendas online</button><button id="gdsOpsNotify50" class="notify">🔔 Ativar notificações</button><button id="gdsOpsTest50">🔊 Testar aviso</button></div></div><div class="note">🔒 Somente pedidos online novos, feitos a partir desta atualização, exigem confirmação de Pix antes da preparação. Pedidos antigos continuam sem bloqueios retroativos. Confira o crédito no Banco do Brasil antes de clicar em <b>Confirmar Pix recebido</b>. Ao receber um pedido, a campainha repete continuamente até o pedido ser atendido. Use <b>WhatsApp cliente</b> para enviar a mensagem pronta de confirmação/status e <b>Pedir avaliação</b> quando o pedido estiver entregue ou finalizado.</div></section><div id="msg" class="msg">Carregando pedidos…</div><div id="syncOrders" class="msg" role="status" aria-live="polite" style="margin-top:-3px;font-size:12px;background:#eaf8ef;color:#12633e">🔄 Sincronização automática a cada 5 segundos · conectando tempo real…</div><div class="filters"><button data-f="open" class="on">Em aberto</button><button data-f="all">Todos</button><button data-f="fiado">📒 Fiados a receber <span id="fiadoCount"></span></button><button data-f="done">Finalizados</button><button data-f="cancel">Cancelados</button><a href="archived-orders-v87.html?v=130" class="btn" style="border-radius:99px;padding:8px 11px;min-height:auto">🗄️ Arquivados</a></div><div class="orderViewTools"><span class="orderViewHint" id="orderViewHint">🔔 Pedidos aguardando aceite ficam no topo.</span><label for="orderSort">Organizar <select id="orderSort"><option value="az">Clientes A–Z</option><option value="newest">Mais recentes</option></select></label><button type="button" id="toggleOrderDetails" class="btn">↧ Expandir todos</button></div><div id="grid" class="grid"></div></main>
+
+/* Ficha única por cliente: os pedidos continuam independentes e com histórico de pagamentos próprio. */
+.customerPanel{border:1px solid #eddbe3;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 25px #4a101e0b}
+.customerPanel.customerPending{border-left:4px solid #efa63b}
+.customerAccordion>summary{list-style:none;cursor:pointer}
+.customerAccordion>summary::-webkit-details-marker{display:none}
+.customerSummary{display:flex;align-items:center;gap:11px;padding:13px;min-height:69px}
+.customerSummary:hover{background:#fff7fa}
+.customerPending .customerSummary:hover{background:#fff9ed}
+.customerSummary:focus-visible{outline:3px solid #ff9fc5;outline-offset:-3px}
+.customerChevron{display:grid;place-items:center;background:#fff0f5;color:#9f2955;flex:0 0 32px;width:32px;height:32px;border-radius:9px;font-size:21px;font-weight:900;transform:rotate(-90deg);transition:transform .15s}
+.customerAccordion[open] .customerChevron{transform:rotate(0)}
+.customerIdentity{display:flex;flex-direction:column;gap:4px;flex:1;min-width:145px}
+.customerIdentity strong{font-size:15px;color:#4a101e;overflow-wrap:anywhere}
+.customerIdentity small{font-size:11px;color:#78616a}
+.customerBadges{display:flex;flex-wrap:wrap;gap:5px;align-items:center;justify-content:flex-end}
+.customerBadges span{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:900;white-space:nowrap}
+.customerPendingBadge{background:#fff1ca;color:#805000}
+.customerDebtBadge{background:#fff4db;color:#815300}
+.customerCountBadge{background:#fff0f5;color:#933c5b}
+.customerRecent{font-size:10px;color:#887782;text-align:right;min-width:85px;line-height:1.45}
+.customerRecent b{color:#4a101e;font-size:12px}
+.customerOrders{padding:10px 13px 13px;border-top:1px solid #f0e3e9;background:#fffafd;display:flex;flex-direction:column;gap:8px}
+.customerOrderHead{padding:7px 3px 3px;color:#805c6a;font-size:12px;font-weight:900}
+.customerHistoryHead{border-top:1px dashed #edcfda;margin-top:5px;padding-top:12px}
+.customerPanel .order{box-shadow:none}
+.customerPastOrder{background:#fff;border:1px solid #efdde4;border-radius:12px;overflow:hidden}
+.pastAccordion>summary{list-style:none;padding:11px;display:flex;align-items:center;gap:9px;cursor:pointer;flex-wrap:wrap}
+.pastAccordion>summary::-webkit-details-marker{display:none}
+.pastAccordion>summary strong{font-size:12px;color:#4a101e;flex:1}
+.pastAccordion>summary b{color:#b92b62;font-size:12px;white-space:nowrap}
+.pastStatus{font-size:10px;font-weight:850;border-radius:99px;padding:4px 7px;background:#f5f0f3;color:#76515e}
+.pastChevron{color:#c02560;font-weight:950;font-size:20px;transform:rotate(-90deg)}
+.pastAccordion[open] .pastChevron{transform:rotate(0)}
+.pastBody{padding:10px;border-top:1px solid #f5eaf0;background:#fff}
+.customerPastNote{font-size:11px;color:#806b74}
+@media(max-width:720px){.customerSummary{flex-wrap:wrap}.customerBadges{order:4;justify-content:flex-start;width:100%;padding-left:42px}.customerRecent{min-width:75px}.customerIdentity{flex:1}.customerOrders{padding:8px}}
+
+</style></head><body><script>window.__gdsAdminStoreOpsV50=true;</script><script src="admin-common-v48.js?v=141"></script><main class="wrap"><div class="head"><div><h1>Pedidos</h1><div style="font-size:12px;color:#78616a">Clientes agrupados por nome e WhatsApp, com histórico, pagamentos e atendimento dos pedidos</div></div><div class="sp"></div><button id="refresh" class="btn">↻ Atualizar</button></div><section id="gdsOps50" class="ops"><div class="opsTop"><div><div class="state"><span class="dot"></span><span id="gdsOpsState50">Verificando vendas online…</span></div><p id="gdsOpsText50">O site só aceita novos pedidos quando a loja estiver aberta.</p></div><div class="opsBtns"><button id="gdsOpsToggle50" class="toggle">Abrir vendas online</button><button id="gdsOpsNotify50" class="notify">🔔 Ativar notificações</button><button id="gdsOpsTest50">🔊 Testar aviso</button></div></div><div class="note">🔒 Somente pedidos online novos, feitos a partir desta atualização, exigem confirmação de Pix antes da preparação. Pedidos antigos continuam sem bloqueios retroativos. Confira o crédito no Banco do Brasil antes de clicar em <b>Confirmar Pix recebido</b>. Ao receber um pedido, a campainha repete continuamente até o pedido ser atendido. Use <b>WhatsApp cliente</b> para enviar a mensagem pronta de confirmação/status e <b>Pedir avaliação</b> quando o pedido estiver entregue ou finalizado.</div></section><div id="msg" class="msg">Carregando pedidos…</div><div id="syncOrders" class="msg" role="status" aria-live="polite" style="margin-top:-3px;font-size:12px;background:#eaf8ef;color:#12633e">🔄 Sincronização automática a cada 5 segundos · conectando tempo real…</div><div class="filters"><button data-f="open" class="on">Em aberto</button><button data-f="all">Todos</button><button data-f="fiado">📒 Fiados a receber <span id="fiadoCount"></span></button><button data-f="done">Finalizados</button><button data-f="cancel">Cancelados</button><a href="archived-orders-v87.html?v=130" class="btn" style="border-radius:99px;padding:8px 11px;min-height:auto">🗄️ Arquivados</a></div><div class="orderViewTools"><span class="orderViewHint" id="orderViewHint">🔔 Pedidos aguardando aceite ficam no topo. Clique na setinha de um cliente para ver suas compras.</span><label for="orderSort">Organizar <select id="orderSort"><option value="az">Clientes A–Z</option><option value="newest">Mais recentes</option></select></label><button type="button" id="toggleOrderDetails" class="btn">↧ Expandir todos</button></div><div id="grid" class="grid"></div></main>
 <dialog id="rejectDlg"><div class="modal"><h2>Recusar pedido</h2><p style="color:#78616a">Selecione o motivo da recusa.</p><div class="field"><label>Motivo<select id="rejectReason"><option>Falta de estoque</option><option>Loja sem atendimento no momento</option><option>Problema com a entrega</option><option>Dados do pedido incompletos</option><option>Outro problema</option></select></label></div><div class="field" id="rejectOtherWrap" style="display:none;margin-top:9px"><label>Descreva o problema<textarea id="rejectOther" rows="3" maxlength="200"></textarea></label></div><div id="rejectMsg" class="msg"></div><div class="modalBtns"><button id="cancelReject" class="btn">Voltar</button><button id="confirmReject" class="btn" style="background:#c9374f;color:#fff;border-color:#c9374f">Confirmar recusa</button></div></div></dialog><dialog id="dlg"><div class="modal"><h2 id="editTitle">Editar pedido</h2><div class="form"><div class="field"><label>Cliente<input id="customer"></label></div><div class="field"><label>WhatsApp<input id="phone" inputmode="tel"></label></div><div class="field"><label>Status<select id="editStatus"></select></label></div><div class="field"><label>Recebimento<select id="fulfillment"><option value="retirada">Retirada</option><option value="entrega">Entrega</option></select></label></div><div class="field"><label>Taxa de entrega (R$)<input id="deliveryFee" type="number" min="0" step="0.01"></label></div><div class="field full"><label>Observações<textarea id="notes" rows="3"></textarea></label></div><div id="addressGroup" class="group"><div class="groupTitle">Endereço da entrega</div><div class="addressGrid"><div class="field"><label>CEP<input id="cep" inputmode="numeric"></label></div><div class="field"><label>Rua<input id="street"></label></div><div class="field"><label>Número<input id="number"></label></div><div class="field"><label>Bairro<input id="district"></label></div><div class="field"><label>Complemento<input id="complement"></label></div><div class="field"><label>Referência<input id="reference"></label></div></div></div><div class="lines"><b>Produtos / sabores</b><div id="editLines"></div><button id="addLine" class="btn" type="button" style="margin-top:8px">+ Adicionar sabor</button><div id="editTotal" class="sum"></div></div></div><div id="saveMsg" class="msg"></div><div class="modalBtns"><button id="cancelEdit" class="btn">Cancelar</button><button id="saveEdit" class="btn primary">Salvar alterações</button></div></div></dialog>
 <script>
 (async()=>{const $=x=>document.getElementById(x),LS='gds_admin_order_notifications_v63';let orders=[],products=[],filter='open',storeOpen=false,audioCtx=null,session=null,channel=null,editing=null,adminReg=null,alarmTimer=null;
-let loadedOnce=false,loadBusy=false,loadAgain=false,knownOrderIds=new Set(),realtimeState='Conectando',archivedFiados=[];
+let loadedOnce=false,loadBusy=false,loadAgain=false,knownOrderIds=new Set(),realtimeState='Conectando',archivedFiados=[],orderHistory=[];
 try{if(localStorage.getItem(LS)===null&&localStorage.getItem('gds_admin_order_notifications_v50')==='1')localStorage.setItem(LS,'1')}catch(_){}
 function alertsOn(){return localStorage.getItem(LS)!=='0'}
 function syncConnection(){
@@ -107,8 +145,11 @@ async function load({silent=false}={}){
   loadedOnce=true;
   const fresh=all.filter(x=>!x.archived_at&&!x.deleted_at);
   const pendingArchive=all.filter(x=>x.archived_at&&!x.deleted_at&&x.payment_method==='Fiado'&&Number(x.paid_amount||0)<Number(x.total||0));
-  const changed=JSON.stringify(fresh)!==JSON.stringify(orders)||JSON.stringify(pendingArchive)!==JSON.stringify(archivedFiados)||JSON.stringify(p.data||[])!==JSON.stringify(products);
-  orders=fresh;archivedFiados=pendingArchive;products=p.data||[];
+  const history=all.filter(x=>!x.deleted_at);
+  // Novos pedidos de clientes antigos também reabrem a ficha correspondente.
+  for(const entry of newOnline){customerOpenState.set(customerKey(entry),true);orderOpenState.set(entry.id,true)}
+  const changed=JSON.stringify(fresh)!==JSON.stringify(orders)||JSON.stringify(pendingArchive)!==JSON.stringify(archivedFiados)||JSON.stringify(history)!==JSON.stringify(orderHistory)||JSON.stringify(p.data||[])!==JSON.stringify(products);
+  orders=fresh;archivedFiados=pendingArchive;orderHistory=history;products=p.data||[];
   if(changed||!silent)render();
   syncPersistentAlarm();
   if(newOnline.length)for(const order of newOnline)void notifyOrder(order);
@@ -126,7 +167,7 @@ function creditHtml(o){
  if(Number(o.paid_amount||0)!==0)return '';
  return '<div class="fiadoBox"><button type="button" onclick="markFiadoO(\''+o.id+'\')">📒 Marcar como FIADO — '+GDS48.money(remaining)+'</button><div class="fiadoInfo">Uso exclusivo do administrador. Não confirma Pix nem registra dinheiro no caixa.</div></div>';
 }
-const orderOpenState=new Map();
+const orderOpenState=new Map(),customerOpenState=new Map();
 let orderSort='az';
 function awaitingDecision(o){return o.status==='Pedido recebido'&&o.sales_channel!=='local'}
 function list(){
@@ -142,11 +183,56 @@ function list(){
  });
 }
 function keepOrderOpen(o){return orderOpenState.has(o.id)?orderOpenState.get(o.id):awaitingDecision(o)}
+function customerNameKey(name){
+ return String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').trim().replace(/\s+/g,' ');
+}
+function customerPhoneKey(raw){
+ let n=String(raw||'').replace(/\D/g,'');
+ if(n.startsWith('55')&&(n.length===12||n.length===13))n=n.slice(2);
+ return /^[0-9]{10,11}$/.test(n)?n:'';
+}
+function customerKey(o){
+ const name=customerNameKey(o.customer_name),phone=customerPhoneKey(o.customer_phone);
+ // Apenas pedidos online com ambos os identificadores são agrupados automaticamente.
+ // Assim, nomes iguais sem contato ou pessoas diferentes que compartilham telefone não se misturam.
+ return o.sales_channel==='online'&&name&&phone?'online|'+name+'|'+phone:'pedido|'+o.id;
+}
+function phoneLabel(o){
+ const p=customerPhoneKey(o.customer_phone);
+ if(!p)return 'WhatsApp não informado';
+ return p.length===11?'('+p.slice(0,2)+') '+p.slice(2,7)+'-'+p.slice(7):'('+p.slice(0,2)+') '+p.slice(2,6)+'-'+p.slice(6);
+}
+function groupsForDisplay(rows){
+ const map=new Map();
+ for(const o of rows){
+   const key=customerKey(o);
+   if(!map.has(key))map.set(key,{key,rows:[],pending:false,name:o.customer_name||'Cliente'});
+   const g=map.get(key);
+   g.rows.push(o);
+   if(awaitingDecision(o))g.pending=true;
+ }
+ const groups=[...map.values()];
+ for(const g of groups)g.rows.sort((a,b)=>{
+   if(awaitingDecision(a)!==awaitingDecision(b))return awaitingDecision(a)?-1:1;
+   return (Date.parse(b.created_at)||0)-(Date.parse(a.created_at)||0);
+ });
+ groups.sort((a,b)=>{
+   if(a.pending!==b.pending)return a.pending?-1:1;
+   if(orderSort==='newest'){
+     const ad=Math.max(...a.rows.map(o=>Date.parse(o.created_at)||0)),bd=Math.max(...b.rows.map(o=>Date.parse(o.created_at)||0));
+     if(ad!==bd)return bd-ad;
+   }
+   return String(a.name).localeCompare(String(b.name),'pt-BR',{sensitivity:'base',numeric:true});
+ });
+ return groups;
+}
+function keepCustomerOpen(g){return customerOpenState.has(g.key)?customerOpenState.get(g.key):g.pending}
 function updateAccordionControl(){
  const btn=$('toggleOrderDetails');if(!btn)return;
- const shown=list();const all=shown.length>0&&shown.every(o=>keepOrderOpen(o));
+ const groups=groupsForDisplay(list());
+ const all=groups.length>0&&groups.every(g=>keepCustomerOpen(g)&&g.rows.every(keepOrderOpen));
  btn.textContent=all?'↥ Recolher todos':'↧ Expandir todos';
- btn.disabled=!shown.length;
+ btn.disabled=!groups.length;
 }
 function addr(o){const a=o.address||{};return o.fulfillment==='entrega'?[a.street,a.number,a.district].filter(Boolean).join(', '):'Retirada no local'}function archivedFiadoCard(o){
  const remaining=Math.max(0,Number(o.total||0)-Number(o.paid_amount||0));
@@ -157,7 +243,32 @@ function updateFiadoSummary(){
  const badge=$('fiadoCount');if(badge)badge.textContent=count?'('+count+')':'';
  const hint=$('orderViewHint');if(hint)hint.textContent=filter==='fiado'?'📒 Fiados pendentes, inclusive pedidos já arquivados. Registre o pagamento apenas quando recebido.':archivedFiados.length?'🔔 Novos pedidos no topo · 📒 Há '+archivedFiados.length+' fiado(s) arquivado(s) a receber na aba Fiados.':'🔔 Pedidos aguardando aceite ficam no topo.';
 }
-function render(){const shown=list();updateFiadoSummary();$('grid').innerHTML=shown.length?shown.map(o=>{if(o.archived_at)return archivedFiadoCard(o);const canClose=['Entregue','Finalizado','Cancelado'].includes(o.status);const x=o.status==='Cancelado'?'<button class="orderX delete" title="Excluir pedido" aria-label="Excluir pedido" onclick="deleteCancelledO(\''+o.id+'\')">×</button>':(['Entregue','Finalizado'].includes(o.status)?'<button class="orderX archive" title="Fechar ordem" aria-label="Fechar ordem" onclick="archiveO(\''+o.id+'\')">×</button>':'');return `<article class="order ${canClose?'orderClosable':''} ${awaitingDecision(o)?'orderAwaiting':''}"><details class="orderAccordion" data-order-id="${o.id}" ${keepOrderOpen(o)?'open':''}><summary class="orderSummary"><span class="orderChevron" aria-hidden="true">⌄</span><div class="top"><span class="code">${GDS48.esc(o.public_code)}</span><span>${GDS48.esc(o.customer_name||'')}</span>${o.sales_channel==='local'?'<span style="font-size:11px;font-weight:900;padding:4px 7px;border-radius:99px;background:#eefaf3;color:#14753e">🏠 VENDA LOCAL</span>':''}<span class="orderStatus ${awaitingDecision(o)?'waiting':''}">${awaitingDecision(o)?'🔔 Novo · aceitar':GDS48.esc(o.status)}</span><span class="price">${GDS48.money(o.total)}</span></div></summary><div class="orderBody">${x}<div class="meta">${new Date(o.created_at).toLocaleString('pt-BR')} · ${o.fulfillment==='entrega'?'🛵 Entrega':'🏠 Retirada'}<br>${GDS48.esc(addr(o))}<br>💳 Pagamento: <b>${GDS48.esc(o.payment_method||'Não informado')}</b>${o.payment_status?` · ${GDS48.esc(o.payment_status)}`:''}${Number(o.paid_amount||0)>0?`<br>💰 Recebido: <b>${GDS48.money(o.paid_amount)}</b>${Number(o.paid_amount||0)<Number(o.total||0)?` · Falta <b>${GDS48.money(Number(o.total||0)-Number(o.paid_amount||0))}</b>`:''}`:''}</div>${isNewPixOrder(o)&&o.status!=='Cancelado'?(pixFullyPaid(o)?'<div class="pixGate paid">✅ Pix confirmado · pedido liberado para preparação.</div>':`<div class="pixGate">🔒 Aguardando confirmação do Pix no Banco do Brasil. Não iniciar a preparação antes de confirmar o crédito.<button onclick="confirmPixO('${o.id}')">✅ Confirmar Pix recebido — ${GDS48.money(o.total)}</button></div>`):''}${creditHtml(o)}<div class="items">${(o.order_items||[]).map(i=>`<div class="item"><span>${i.quantity}× ${GDS48.esc(i.product_name)}</span><b>${GDS48.money(Number(i.unit_price)*Number(i.quantity))}</b></div>`).join('')||'<div class="item">Itens não disponíveis</div>'}</div>${o.status==='Pedido recebido'?`<div class="decision"><button class="acceptBtn" onclick="acceptO(\'${o.id}\')">✓ Aceitar pedido</button><button class="rejectBtn" onclick="rejectO(\'${o.id}\')">✕ Recusar pedido</button></div>`:''}${o.status==='Cancelado'&&o.cancel_reason?`<div class="rejectReason">Motivo: ${GDS48.esc(o.cancel_reason)}</div>`:''}<div class="statusRow"><select onchange="setStatus('${o.id}',this.value)">${statuses.map(s=>`<option ${s===o.status?'selected':''} ${pixLocked(o)&&['Em preparação','Saiu para entrega','Entregue','Finalizado'].includes(s)?'disabled':''}>${s}</option>`).join('')}</select><button class="btn" onclick="editO('${o.id}')">✏️ Editar</button></div><div class="actions"><button class="wa" onclick="waO('${o.id}',false)">💬 WhatsApp cliente</button>${['Entregue','Finalizado'].includes(o.status)?`<button class="review" onclick="waO('${o.id}',true)">⭐ Pedir avaliação</button>`:''}</div></div></details></article>`}).join(''):'<div class="empty">Nenhum pedido nesta visualização.</div>';updateAccordionControl()}
+function renderOrderCard(o){if(o.archived_at)return archivedFiadoCard(o);const canClose=['Entregue','Finalizado','Cancelado'].includes(o.status);const x=o.status==='Cancelado'?'<button class="orderX delete" title="Excluir pedido" aria-label="Excluir pedido" onclick="deleteCancelledO(\''+o.id+'\')">×</button>':(['Entregue','Finalizado'].includes(o.status)?'<button class="orderX archive" title="Fechar ordem" aria-label="Fechar ordem" onclick="archiveO(\''+o.id+'\')">×</button>':'');return `<article class="order ${canClose?'orderClosable':''} ${awaitingDecision(o)?'orderAwaiting':''}"><details class="orderAccordion" data-order-id="${o.id}" ${keepOrderOpen(o)?'open':''}><summary class="orderSummary"><span class="orderChevron" aria-hidden="true">⌄</span><div class="top"><span class="code">${GDS48.esc(o.public_code)}</span><span>${GDS48.esc(o.customer_name||'')}</span>${o.sales_channel==='local'?'<span style="font-size:11px;font-weight:900;padding:4px 7px;border-radius:99px;background:#eefaf3;color:#14753e">🏠 VENDA LOCAL</span>':''}<span class="orderStatus ${awaitingDecision(o)?'waiting':''}">${awaitingDecision(o)?'🔔 Novo · aceitar':GDS48.esc(o.status)}</span><span class="price">${GDS48.money(o.total)}</span></div></summary><div class="orderBody">${x}<div class="meta">${new Date(o.created_at).toLocaleString('pt-BR')} · ${o.fulfillment==='entrega'?'🛵 Entrega':'🏠 Retirada'}<br>${GDS48.esc(addr(o))}<br>💳 Pagamento: <b>${GDS48.esc(o.payment_method||'Não informado')}</b>${o.payment_status?` · ${GDS48.esc(o.payment_status)}`:''}${Number(o.paid_amount||0)>0?`<br>💰 Recebido: <b>${GDS48.money(o.paid_amount)}</b>${Number(o.paid_amount||0)<Number(o.total||0)?` · Falta <b>${GDS48.money(Number(o.total||0)-Number(o.paid_amount||0))}</b>`:''}`:''}</div>${isNewPixOrder(o)&&o.status!=='Cancelado'?(pixFullyPaid(o)?'<div class="pixGate paid">✅ Pix confirmado · pedido liberado para preparação.</div>':`<div class="pixGate">🔒 Aguardando confirmação do Pix no Banco do Brasil. Não iniciar a preparação antes de confirmar o crédito.<button onclick="confirmPixO('${o.id}')">✅ Confirmar Pix recebido — ${GDS48.money(o.total)}</button></div>`):''}${creditHtml(o)}<div class="items">${(o.order_items||[]).map(i=>`<div class="item"><span>${i.quantity}× ${GDS48.esc(i.product_name)}</span><b>${GDS48.money(Number(i.unit_price)*Number(i.quantity))}</b></div>`).join('')||'<div class="item">Itens não disponíveis</div>'}</div>${o.status==='Pedido recebido'?`<div class="decision"><button class="acceptBtn" onclick="acceptO(\'${o.id}\')">✓ Aceitar pedido</button><button class="rejectBtn" onclick="rejectO(\'${o.id}\')">✕ Recusar pedido</button></div>`:''}${o.status==='Cancelado'&&o.cancel_reason?`<div class="rejectReason">Motivo: ${GDS48.esc(o.cancel_reason)}</div>`:''}<div class="statusRow"><select onchange="setStatus('${o.id}',this.value)">${statuses.map(s=>`<option ${s===o.status?'selected':''} ${pixLocked(o)&&['Em preparação','Saiu para entrega','Entregue','Finalizado'].includes(s)?'disabled':''}>${s}</option>`).join('')}</select><button class="btn" onclick="editO('${o.id}')">✏️ Editar</button></div><div class="actions"><button class="wa" onclick="waO('${o.id}',false)">💬 WhatsApp cliente</button>${['Entregue','Finalizado'].includes(o.status)?`<button class="review" onclick="waO('${o.id}',true)">⭐ Pedir avaliação</button>`:''}</div></div></details></article>`}
+function historyOrderCard(o){
+ const remaining=Math.max(0,Number(o.total||0)-Number(o.paid_amount||0));
+ const info=GDS48.esc(o.public_code)+' · '+new Date(o.created_at).toLocaleString('pt-BR');
+ const archived=o.archived_at?' · 🗄️ Arquivado':'';
+ return `<article class="customerPastOrder"><details class="pastAccordion"><summary><span class="pastChevron">⌄</span><strong>${info}</strong><span class="pastStatus">${GDS48.esc(o.status||'')}</span><b>${GDS48.money(o.total)}</b></summary><div class="pastBody"><div class="meta">Pagamento: ${GDS48.esc(o.payment_method||'Não informado')} · ${GDS48.esc(o.payment_status||'Pendente')}${archived}<br>Valor recebido: ${GDS48.money(o.paid_amount)} · Saldo: ${GDS48.money(remaining)}</div><div class="items">${(o.order_items||[]).map(i=>`<div class="item"><span>${i.quantity}× ${GDS48.esc(i.product_name)}</span><b>${GDS48.money(Number(i.unit_price)*Number(i.quantity))}</b></div>`).join('')||'<div class="item">Itens não disponíveis</div>'}</div><div class="customerPastNote">Histórico para consulta. Nenhum pagamento ou pedido foi alterado.</div></div></details></article>`;
+}
+function customerGroupHtml(g){
+ const visibleIds=new Set(g.rows.map(o=>o.id));
+ const history=orderHistory.filter(o=>customerKey(o)===g.key);
+ const other=history.filter(o=>!visibleIds.has(o.id)).sort((a,b)=>(Date.parse(b.created_at)||0)-(Date.parse(a.created_at)||0));
+ const count=history.length||g.rows.length;
+ const recent=history.length?history[0]:g.rows[0];
+ const pending=g.rows.filter(awaitingDecision).length;
+ const debt=history.reduce((sum,o)=>o.payment_method==='Fiado'&&o.status!=='Cancelado'?sum+Math.max(0,Number(o.total||0)-Number(o.paid_amount||0)):sum,0);
+ const main=g.rows[0],name=GDS48.esc(main.customer_name||'Cliente');
+ const latest=recent?.created_at?new Date(recent.created_at).toLocaleDateString('pt-BR'):'—';
+ const key=GDS48.esc(encodeURIComponent(g.key));
+ return `<section class="customerPanel ${pending?'customerPending':''}"><details class="customerAccordion" data-customer-key="${key}" ${keepCustomerOpen(g)?'open':''}><summary class="customerSummary"><span class="customerChevron" aria-hidden="true">⌄</span><span class="customerIdentity"><strong>${name}</strong><small>${GDS48.esc(phoneLabel(main))} · ${count} pedido${count===1?'':'s'} no histórico</small></span><span class="customerBadges">${pending?'<span class="customerPendingBadge">🔔 '+pending+' aguardando aceite</span>':''}${debt>0?'<span class="customerDebtBadge">📒 A receber: '+GDS48.money(debt)+'</span>':''}<span class="customerCountBadge">${g.rows.length} nesta aba</span></span><span class="customerRecent">Último pedido<br><b>${latest}</b></span></summary><div class="customerOrders"><div class="customerOrderHead">🛒 Pedidos nesta aba (${g.rows.length})</div>${g.rows.map(renderOrderCard).join('')}${other.length?'<div class="customerOrderHead customerHistoryHead">📚 Outros pedidos registrados ('+other.length+') · somente consulta</div>'+other.map(historyOrderCard).join(''):''}</div></details></section>`;
+}
+function render(){
+ const groups=groupsForDisplay(list());
+ updateFiadoSummary();
+ $('grid').innerHTML=groups.length?groups.map(customerGroupHtml).join(''):'<div class="empty">Nenhum pedido nesta visualização.</div>';
+ updateAccordionControl();
+}
 let rejecting=null;
 window.acceptO=async id=>{const o=orders.find(x=>x.id===id);if(!o)return;if(!confirm('Aceitar '+o.public_code+' e iniciar o atendimento?'))return;setMsg('Aceitando pedido…');const {error}=await GDS48.sb.rpc('decide_store_order_v73',{p_order_id:id,p_accept:true,p_reason:null});if(error){setMsg('Erro: '+error.message,'err');return}await load();toast('✅ Pedido aceito.')};
 function normalizeCreditName(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase()}
@@ -256,11 +367,18 @@ window.setStatus=async(id,status)=>{const o=orders.find(x=>x.id===id);if(!o||o.s
 function productOptions(selected=''){return products.map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${GDS48.esc(p.category+' — '+p.name)} · ${GDS48.money(p.price)} · estoque ${p.stock}${p.active?'':' · PAUSADO'}</option>`).join('')}function addLine(item=null){const d=document.createElement('div');d.className='editLine';d.innerHTML=`<select>${productOptions(item?.product_id||'')}</select><input type="number" min="1" max="100" step="1" value="${item?.quantity||1}"><button type="button">×</button>`;d.querySelector('button').onclick=()=>{d.remove();calcEdit()};d.querySelectorAll('select,input').forEach(x=>x.onchange=calcEdit);$('editLines').appendChild(d);calcEdit()}function calcEdit(){let sub=0,qty=0;[...$('editLines').children].forEach(l=>{const p=products.find(x=>x.id===l.querySelector('select').value),q=Math.max(1,Number(l.querySelector('input').value)||1);qty+=q;sub+=(Number(p?.price)||0)*q});const fee=$('fulfillment').value==='entrega'?Math.max(0,Number($('deliveryFee').value)||0):0;$('editTotal').textContent=`${qty} unidades · Produtos ${GDS48.money(sub)} · Total ${GDS48.money(sub+fee)}`}function syncAddress(){const delivery=$('fulfillment').value==='entrega';$('addressGroup').style.display=delivery?'block':'none';$('deliveryFee').disabled=!delivery;if(!delivery)$('deliveryFee').value='0';calcEdit()}window.editO=id=>{const o=orders.find(x=>x.id===id);if(!o)return;editing=o.id;$('editTitle').textContent='Editar '+o.public_code;$('customer').value=o.customer_name||'';$('phone').value=o.customer_phone||'';$('editStatus').innerHTML=statuses.map(s=>`<option ${s===o.status?'selected':''} ${pixLocked(o)&&['Em preparação','Saiu para entrega','Entregue','Finalizado'].includes(s)?'disabled':''}>${s}</option>`).join('');$('fulfillment').value=o.fulfillment||'retirada';$('deliveryFee').value=Number(o.delivery_fee||0).toFixed(2);$('notes').value=o.notes||'';const a=o.address||{};$('cep').value=a.cep||'';$('street').value=a.street||'';$('number').value=a.number||'';$('district').value=a.district||'';$('complement').value=a.complement||'';$('reference').value=a.reference||'';$('editLines').innerHTML='';(o.order_items?.length?o.order_items:[null]).forEach(addLine);$('saveMsg').textContent='';syncAddress();$('dlg').showModal()};
 $('addLine').onclick=()=>addLine();$('cancelEdit').onclick=()=>$('dlg').close();$('fulfillment').onchange=syncAddress;$('deliveryFee').oninput=calcEdit;$('saveEdit').onclick=async()=>{const o=orders.find(x=>x.id===editing);if(!o)return;const items=[...$('editLines').children].map(l=>({product_id:l.querySelector('select').value,quantity:Math.max(1,Number(l.querySelector('input').value)||1)}));if(!items.length){$('saveMsg').textContent='Inclua ao menos um produto.';return}if(pixLocked(o)&&['Em preparação','Saiu para entrega','Entregue','Finalizado'].includes($('editStatus').value)){$('saveMsg').textContent='🔒 Confirme o Pix recebido antes de iniciar a preparação.';return}const delivery=$('fulfillment').value==='entrega';const address=delivery?{cep:$('cep').value.replace(/\D/g,''),street:$('street').value.trim(),number:$('number').value.trim(),district:$('district').value.trim(),complement:$('complement').value.trim(),reference:$('reference').value.trim(),city:'Monte Alto',state:'SP'}:null;const args={p_order_id:o.id,p_customer_name:$('customer').value.trim(),p_customer_phone:$('phone').value.trim(),p_fulfillment:$('fulfillment').value,p_delivery_fee:delivery?Math.max(0,Number($('deliveryFee').value)||0):0,p_address:address,p_notes:$('notes').value.trim(),p_status:$('editStatus').value,p_items:items};$('saveMsg').textContent='Salvando e recalculando estoque…';const {error}=await saveRpc(args);if(error){$('saveMsg').textContent=error.message;return}$('dlg').close();await load();toast('✅ Pedido editado e estoque recalculado com segurança.')};
 $('orderSort').onchange=e=>{orderSort=e.target.value;render()};
-$('toggleOrderDetails').onclick=()=>{const visible=list(),expand=!visible.every(o=>keepOrderOpen(o));for(const o of visible)orderOpenState.set(o.id,expand);render()};
+$('toggleOrderDetails').onclick=()=>{
+ const groups=groupsForDisplay(list());
+ const expand=!groups.every(g=>keepCustomerOpen(g)&&g.rows.every(keepOrderOpen));
+ for(const g of groups){customerOpenState.set(g.key,expand);for(const o of g.rows)orderOpenState.set(o.id,expand)}
+ render();
+};
 $('grid').addEventListener('toggle',e=>{
  const el=e.target;
- if(!(el instanceof HTMLDetailsElement)||!el.matches('.orderAccordion'))return;
- orderOpenState.set(el.dataset.orderId,el.open);
+ if(!(el instanceof HTMLDetailsElement))return;
+ if(el.matches('.customerAccordion')){try{customerOpenState.set(decodeURIComponent(el.dataset.customerKey||''),el.open)}catch(_){}}
+ else if(el.matches('.orderAccordion'))orderOpenState.set(el.dataset.orderId,el.open);
+ else return;
  updateAccordionControl();
 },true);
 document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.f;render()});$('refresh').onclick=load;$('gdsOpsToggle50').onclick=toggleStore;$('gdsOpsNotify50').onclick=toggleNotif;$('gdsOpsTest50').onclick=testAlert;['pointerdown','touchstart','keydown'].forEach(ev=>addEventListener(ev,unlockAudio,{capture:true,passive:true}));
