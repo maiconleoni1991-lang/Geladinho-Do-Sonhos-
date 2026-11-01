@@ -32,7 +32,14 @@
 .clientSummaryLeft{display:flex;flex-direction:column;gap:5px;min-width:0}.clientSummaryLeft b{font-size:16px;color:#4a101e;text-decoration:underline;text-decoration-color:#e7b8c8;text-underline-offset:3px;overflow-wrap:anywhere}
 .clientSummaryLeft small{font-size:12px;color:#78616a}.clientSummaryRight{display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:110px;margin-left:auto}
 .clientSummaryRight .badge{margin:0}.clientSummaryRight strong{color:#b12655;font-size:15px}.clientSummaryRight small{font-size:11px;color:#78616a}
-.clientBody{padding:2px 14px 14px;border-top:1px solid #f1e3e8}.clientCard[open]{border-color:#e5a8bd}
+.clientBody{padding:2px 14px 14px;border-top:1px solid #f1e3e8}.clientCard[open]{border-color:#a7194e}
+.clientCard[open] > .clientSummary{background:linear-gradient(105deg,#741632 0%,#b62257 78%,#d43970 100%);color:#fff}
+.clientCard[open] > .clientSummary:hover{background:linear-gradient(105deg,#68112c 0%,#a61e50 78%,#c62d65 100%)}
+.clientCard[open] > .clientSummary .clientChevron{color:#ffe5a1}
+.clientCard[open] > .clientSummary .clientSummaryLeft b,.clientCard[open] > .clientSummary .clientSummaryLeft small,.clientCard[open] > .clientSummary .clientSummaryRight strong,.clientCard[open] > .clientSummary .clientSummaryRight small{color:#fff}
+.clientCard[open] > .clientSummary .clientSummaryRight .badge{background:#ffe5ab;color:#5b1733}
+.clientCard[open] > .clientSummary .clientSummaryLeft b{text-decoration-color:#ffdfae}
+.clientCard[open] > .clientSummary:focus-visible{outline:3px solid #ffdc8c;outline-offset:-3px}
 .newCustomerDetails{margin-top:12px}.newCustomerDetails>summary{font-weight:900;color:#4a101e;cursor:pointer}
 @media(max-width:520px){.clientSummary{align-items:flex-start}.clientSummaryRight{min-width:90px}}
 
@@ -337,7 +344,7 @@ window.sendReminder=id=>{
  if(!total||!c.active||!reminder||reminder.daysUntil>0)return alert('O lembrete só é liberado para fiados com vencimento hoje ou em atraso.');
  const when=GDSCreditReminders.dateBR(reminder.dueDate);
  const timing=reminder.state==='atrasado'?'o vencimento combinado em *'+when+'* já passou':'*hoje ('+when+')* é o dia combinado para o acerto';
- const message='Olá, '+(g.name||c.name)+'! 💗🍦\\n\\nTudo bem? Passamos para lembrar que '+timing+' dos seus geladinhos da *Geladinho dos Sonhos*.\\n\\n💰 *Saldo fiado em aberto:* '+money(total)+'\\n\\nQuando puder, nos dê um retorno por aqui. Agradecemos pela confiança! 💕';
+ const message='Olá, '+(g.name||c.name)+'! 💗🍦\n\nTudo bem? Passamos para lembrar que '+timing+' dos seus geladinhos da *Geladinho dos Sonhos*.\n\n💰 *Saldo fiado em aberto:* '+money(total)+'\n\nQuando puder, nos dê um retorno por aqui. Agradecemos pela confiança! 💕';
  const phone=normalizedPhone(g.phone||c.phone);
  if(!/^[0-9]{10,11}$/.test(phone)){
   if(navigator.clipboard?.writeText)navigator.clipboard.writeText(message).then(()=>alert('Mensagem copiada. O cliente não tem WhatsApp válido cadastrado.')).catch(()=>prompt('Copie a mensagem:',message));
