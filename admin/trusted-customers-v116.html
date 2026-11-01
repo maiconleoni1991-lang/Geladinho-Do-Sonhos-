@@ -75,7 +75,7 @@ async function loadOrderHistory(){
  const all=[],size=500;
  for(let offset=0;offset<50000;offset+=size){
   const {data,error}=await sb.from('orders')
-   .select('id,public_code,customer_name,customer_phone,total,paid_amount,created_at,payment_method,payment_status,trusted_customer_id,deleted_at,status,sales_channel,order_items(product_name,quantity,unit_price),customer_history_archived_at')
+   .select('id,public_code,customer_name,customer_phone,total,paid_amount,card_fee_percent,card_fee_amount,created_at,payment_method,payment_status,trusted_customer_id,deleted_at,status,sales_channel,order_items(product_name,quantity,unit_price),customer_history_archived_at')
    .is('deleted_at',null).order('created_at',{ascending:false}).order('id',{ascending:false})
    .range(offset,offset+size-1);
   if(error)return {data:null,error};
@@ -185,12 +185,12 @@ function renderFiado(){
   const dueRecord=reminders.find(item=>item.state==='hoje'||item.state==='atrasado');
   const nearestReminder=reminders[0];
   const due=nearestReminder?'<div class="dueBox">📅 Pagamento combinado: <b>'+dateBR(nearestReminder.dueDate)+'</b>'+(nearestReminder.recurring?' (mensal)':'')+(nearestReminder.state==='hoje'?' · <b>VENCE HOJE</b>':nearestReminder.state==='atrasado'?' · <b>ATRASADO</b>':'')+'</div>':'';
-  const debts=g.debts.length?g.debts.map(o=>'<div class="debt"><div class="debtTop"><b>'+esc(o.public_code||'Pedido')+'</b><span>'+new Date(o.created_at).toLocaleDateString('pt-BR')+'</span><span class="money">'+money(balance(o))+'</span></div><div class="actions"><button class="pix" onclick="settle(\''+o.id+'\',\'Pix\')">💠 Receber Pix</button><button class="cash" onclick="settle(\''+o.id+'\',\'Dinheiro\')">💵 Receber dinheiro</button></div></div>').join(''):'<div class="empty">Nenhum fiado em aberto.</div>';
+  const debts=g.debts.length?g.debts.map(o=>'<div class="debt"><div class="debtTop"><b>'+esc(o.public_code||'Pedido')+'</b><span>'+new Date(o.created_at).toLocaleDateString('pt-BR')+'</span><span class="money">'+money(balance(o))+'</span></div><div class="actions"><button class="pix" onclick="settle(\''+o.id+'\',\'Pix\')">💠 Receber Pix</button><button class="cash" onclick="settle(\''+o.id+'\',\'Dinheiro\')">💵 Receber dinheiro</button><button class="cash" onclick="settleCard(\''+o.id+'\',\'Cartão de débito\')">💳 Receber débito</button><button class="cash" onclick="settleCard(\''+o.id+'\',\'Cartão de crédito\')">💳 Receber crédito 1x</button></div><div class="fiadoTip">A taxa do cartão é mostrada antes da cobrança e não conta como faturamento líquido.</div></div>').join(''):'<div class="empty">Nenhum fiado em aberto.</div>';
   const showOrder=o=>{
    const cancelled=o.status==='Cancelado';
    const items=(o.order_items||[]).map(item=>'<div class="purchaseItem"><span>'+Number(item.quantity||0)+'× '+esc(item.product_name||'Produto')+'</span><b>'+money(Number(item.quantity||0)*Number(item.unit_price||0))+'</b></div>').join('');
    const payLabel=esc(o.payment_method||'Não informado');
-   return '<div class="historyOrder '+(cancelled?'cancelled':'')+'"><div class="historyHead"><b>'+esc(o.public_code||'Pedido')+'</b><span>'+new Date(o.created_at).toLocaleString('pt-BR')+'</span><span class="statusMini">'+esc(o.sales_channel==='local'?'Local':'Online')+'</span><span class="money">'+money(o.total)+'</span></div>'+(items||'<div class="meta">Itens não disponíveis</div>')+'<div class="meta">Pagamento: '+payLabel+' · '+esc(cancelled?'Cancelado':o.payment_status||'Pendente')+' · Recebido: '+money(o.paid_amount)+(cancelled?' (não entra nos totais)':'')+(isCreditOrder(o)?' · Saldo fiado: '+money(balance(o)):'')+'</div></div>';
+   return '<div class="historyOrder '+(cancelled?'cancelled':'')+'"><div class="historyHead"><b>'+esc(o.public_code||'Pedido')+'</b><span>'+new Date(o.created_at).toLocaleString('pt-BR')+'</span><span class="statusMini">'+esc(o.sales_channel==='local'?'Local':'Online')+'</span><span class="money">'+money(o.total)+'</span></div>'+(items||'<div class="meta">Itens não disponíveis</div>')+'<div class="meta">Pagamento: '+payLabel+' · '+esc(cancelled?'Cancelado':o.payment_status||'Pendente')+' · Recebido: '+money(o.paid_amount)+(Number(o.card_fee_amount||0)>0?' · Tarifa Point: '+money(o.card_fee_amount)+' · Líquido: '+money(Math.max(0,Number(o.paid_amount||0)-Number(o.card_fee_amount||0))):'')+(cancelled?' (não entra nos totais)':'')+(isCreditOrder(o)?' · Saldo fiado: '+money(balance(o)):'')+'</div></div>';
   };
   const history=g.visible.map(showOrder).join('');
   const archivedHistory=archivedShown.has(g.key)?g.archived.map(showOrder).join(''):'';
@@ -325,6 +325,30 @@ async function linkCreditForSettlement(o){
  if(error||!data?.length)throw new Error(error?.message||'Não foi possível vincular o fiado ao cadastro. Atualize a página.');
  o.trusted_customer_id=id;
 }
+function pointDateKey(){const ps=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),o={};for(const p of ps)o[p.type]=p.value;return o.year+'-'+o.month+'-'+o.day}
+window.settleCard=async(id,method)=>{
+ const o=orders.find(x=>x.id===id);
+ if(!o||o.status==='Cancelado'||balance(o)<=0)return alert('Este fiado não tem saldo a receber.');
+ const amount=Math.round(balance(o)*100)/100;
+ try{
+  const {data,error}=await sb.from('store_settings').select('card_debit_rate_percent,card_credit_rate_percent,card_debit_normal_rate_percent,card_credit_normal_rate_percent,card_promo_valid_until').eq('id','main').single();
+  if(error)throw error;
+  const promo=data.card_promo_valid_until&&pointDateKey()<=data.card_promo_valid_until;
+  const key=method==='Cartão de débito'?(promo?'card_debit_rate_percent':'card_debit_normal_rate_percent'):(promo?'card_credit_rate_percent':'card_credit_normal_rate_percent');
+  const rate=data[key]==null?NaN:Number(data[key]);
+  if(!Number.isFinite(rate)||rate<0||rate>30)throw new Error('Taxa da maquininha não configurada para esta modalidade.');
+  const fee=Math.ceil(Math.max(0,(amount/(1-rate/100)-amount))*100-0.0000001)/100;
+  const gross=Math.round((amount+fee)*100)/100;
+  const details='Pedido '+o.public_code+'\nSaldo do fiado: '+money(amount)+'\nModalidade: '+method+'\nTaxa: '+rate.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%\nAcréscimo para a maquininha: '+money(fee)+'\nTOTAL A COBRAR: '+money(gross)+'\n\nA tarifa não entra no faturamento líquido dos geladinhos.';
+  if(!confirm(details+'\n\nO cliente aceita esse valor?'))return;
+  if(!confirm('O pagamento de '+money(gross)+' JÁ FOI APROVADO na Point Pro 3?\n\nNÃO confirme antes da aprovação na maquininha.'))return;
+  if(!o.trusted_customer_id)await linkCreditForSettlement(o);
+  const response=await sb.rpc('settle_trusted_credit_card_v161',{p_order_id:id,p_payment_method:method,p_expected_grand_total:gross});
+  if(response.error)throw response.error;
+  await load();
+  alert('✅ Fiado quitado no cartão.\nTotal cobrado: '+money(gross)+'\nTarifa da Point: '+money(fee)+'\nLíquido: '+money(amount)+'.');
+ }catch(e){alert('Não foi possível registrar o cartão: '+e.message);await load()}
+};
 window.settle=async(id,method)=>{
  const o=orders.find(item=>item.id===id);
  if(!o||o.status==='Cancelado'||balance(o)<=0)return alert('Pedido sem saldo a receber. Atualize a página.');
