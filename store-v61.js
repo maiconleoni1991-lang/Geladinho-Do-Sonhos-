@@ -7,7 +7,7 @@ const DELIVERY_FEE=6;
 const VAPID_PUBLIC_KEY='BOJ0jB7oR4VvBDiU0ejprYRayZeWHFEOdb8DliQNXpWf5TzXAo8CJbpy3879L1MioYEF393gc3ri1iauqD3vPmw';
 const $=id=>document.getElementById(id);
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-let products=[],cart=loadCart(),filter='Todos',term='',storeOpen=false,installPrompt=null,stockRefreshBusy=false,checkoutBusy=false;
+let products=[],cart=loadCart(),filter='Todos',term='',storeOpen=false,installPrompt=null,stockRefreshBusy=false,checkoutBusy=false,cardFeeSettings=null;
 
 // Presença ao vivo da loja para o painel administrativo.
 let presenceChannel=null,presenceActivity='navegando';
@@ -66,20 +66,24 @@ function updateCartCount(){const n=cartQty();document.querySelectorAll('[data-ca
 function subtotal(){return Object.entries(cart).reduce((sum,[slug,q])=>{const p=products.find(x=>x.slug===slug);return sum+(p?Number(p.price)*q:0)},0)}
 function fulfillment(){return document.querySelector('input[name="fulfillment"]:checked')?.value||'retirada'}
 function paymentMethod(){return document.querySelector('input[name="paymentMethod"]:checked')?.value||'Pix'}
+function cardPayment(){return ['Cartão de débito','Cartão de crédito'].includes(paymentMethod())}
+function localDateKey(){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),o={};for(const p of parts)o[p.type]=p.value;return o.year+'-'+o.month+'-'+o.day}
+function cardQuote(){const base=Math.round((subtotal()+(fulfillment()==='entrega'?DELIVERY_FEE:0))*100)/100;const settings=cardFeeSettings;const promotional=!!(settings?.card_promo_valid_until&&localDateKey()<=settings.card_promo_valid_until),method=paymentMethod();const field=method==='Cartão de débito'?(promotional?'card_debit_rate_percent':'card_debit_normal_rate_percent'):method==='Cartão de crédito'?(promotional?'card_credit_rate_percent':'card_credit_normal_rate_percent'):null;const raw=field?settings?.[field]:null,rate=raw==null?null:Number(raw),valid=rate!==null&&Number.isFinite(rate)&&rate>=0&&rate<=30,fee=valid?Math.ceil(Math.max(0,(base/(1-rate/100)-base))*100-0.0000001)/100:0;return {base,rate,valid,fee,total:Math.round((base+fee)*100)/100,promotional}}
+
 
 async function loadStore(){
   $('products').innerHTML='<div class="loadingBox" style="grid-column:1/-1">Carregando sabores disponíveis…</div>';
   try{
     const [p,s,t]=await Promise.all([
       api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&stock=gt.0&order=category.asc,name.asc'),
-      api('/rest/v1/store_settings?id=eq.main&select=is_open'),
+      api('/rest/v1/store_settings?id=eq.main&select=is_open,card_debit_rate_percent,card_credit_rate_percent,card_debit_normal_rate_percent,card_credit_normal_rate_percent,card_promo_valid_until'),
       api('/rest/v1/public_testimonials?select=rating,comment,created_at&order=created_at.desc&limit=6')
     ]);
     products=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
     const catOrder={Tradicional:0,Cremoso:1,Gourmet:2,Trufado:3};
     products.sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99)||String(a.name).localeCompare(String(b.name),'pt-BR',{sensitivity:'base'}));
-    storeOpen=!!s?.[0]?.is_open;
-    renderStatus();cleanCart();renderFilters();renderProducts();renderTestimonials(Array.isArray(t)?t:[]);
+    storeOpen=!!s?.[0]?.is_open;cardFeeSettings=s?.[0]||null;
+    renderStatus();cleanCart();updateTotals();renderFilters();renderProducts();renderTestimonials(Array.isArray(t)?t:[]);
   }catch(e){
     console.error(e);storeOpen=false;renderStatus('Não foi possível conectar à loja agora.');
     $('products').innerHTML=`<div class="errorBox" style="grid-column:1/-1"><b>Não conseguimos carregar o cardápio.</b><br>${esc(e.message)}<br><button class="secondary" style="margin-top:12px" onclick="location.reload()">Tentar novamente</button></div>`;
@@ -114,7 +118,7 @@ async function verifyCartStock(){
   if($('cartOverlay')?.classList.contains('show'))renderCart();
   if(problems.length)throw new Error('O estoque mudou enquanto você fazia o pedido. '+problems.join(' · ')+'. Atualizamos seu carrinho.');
 }
-function renderStatus(custom){const b=$('storeStatus');b.className='statusbar '+(custom?'closed':storeOpen?'open':'closed');b.textContent=custom|| (storeOpen?'● Vendas online abertas · Faça seu pedido pelo site.':'● Vendas online fechadas · Cardápio disponível somente para consulta.');const c=$('checkoutBtn');if(c){c.disabled=checkoutBusy||!storeOpen;c.textContent=checkoutBusy?'Registrando pedido…':(storeOpen?'Confirmar pedido':'Loja fechada para pedidos online')}}
+function renderStatus(custom){const b=$('storeStatus');b.className='statusbar '+(custom?'closed':storeOpen?'open':'closed');b.textContent=custom|| (storeOpen?'● Vendas online abertas · Faça seu pedido pelo site.':'● Vendas online fechadas · Cardápio disponível somente para consulta.');const c=$('checkoutBtn');if(c){c.disabled=checkoutBusy||!storeOpen||(cardPayment()&&!cardQuote().valid);c.textContent=checkoutBusy?'Registrando pedido…':!storeOpen?'Loja fechada para pedidos online':cardPayment()&&!cardQuote().valid?'Taxa do cartão indisponível':'Confirmar pedido'}}
 function renderFilters(){
   const available=products.filter(p=>p.active&&p.stock>0&&p.category);
   const base=['Tradicional','Cremoso','Gourmet','Trufado'].filter(c=>available.some(p=>p.category===c));
@@ -176,11 +180,11 @@ function changeQty(slug,d){
   saveCart();renderProducts();renderCart();
 }
 function renderCart(){const rows=Object.entries(cart).filter(([,q])=>q>0);$('cartRows').innerHTML=rows.length?rows.map(([slug,q])=>{const p=products.find(x=>x.slug===slug);if(!p)return'';return `<div class="cartRow"><div><b>${esc(p.name)}</b><small>${esc(p.category)} · ${q} unidade(s)</small><div class="qty"><button data-dec="${esc(slug)}">−</button><span>${q}</span><button data-inc="${esc(slug)}">+</button></div></div><div class="rowPrice">${money(p.price*q)}</div></div>`}).join(''):'<div class="emptyBox">Seu carrinho está vazio.</div>';$('cartRows').querySelectorAll('[data-dec]').forEach(b=>b.onclick=()=>changeQty(b.dataset.dec,-1));$('cartRows').querySelectorAll('[data-inc]').forEach(b=>b.onclick=()=>changeQty(b.dataset.inc,1));updateTotals();renderStatus()}
-function updateTotals(){const sub=subtotal(),delivery=fulfillment()==='entrega';$('subtotal').textContent=money(sub);$('feeRow').hidden=!delivery;$('fee').textContent=money(delivery?DELIVERY_FEE:0);$('total').textContent=money(sub+(delivery?DELIVERY_FEE:0));$('addressFields').classList.toggle('show',delivery)}
+function updateTotals(){const sub=subtotal(),delivery=fulfillment()==='entrega',isCard=cardPayment(),quote=cardQuote();$('subtotal').textContent=money(sub);$('feeRow').hidden=!delivery;$('fee').textContent=money(delivery?DELIVERY_FEE:0);$('cardFeeRow').hidden=!isCard;$('cardRateSummary').textContent=isCard&&quote.valid?'('+quote.rate.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%)':'';$('cardFeeAmount').textContent=quote.valid?money(quote.fee):'Indisponível';$('total').textContent=isCard?(quote.valid?money(quote.total):'Taxa indisponível'):money(sub+(delivery?DELIVERY_FEE:0));$('addressFields').classList.toggle('show',delivery);$('pixPaymentHint').hidden=paymentMethod()!=='Pix';$('cardPaymentHint').hidden=!isCard;if(isCard){$('cardRateNotice').textContent=quote.valid?'Taxa '+(quote.promotional?'promocional até 30/11/2026':'normal desde 01/12/2026')+': '+quote.rate.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'% · acréscimo: '+money(quote.fee)+'. Total a pagar '+money(quote.total)+'.':'Taxa indisponível no momento. Não é possível finalizar por cartão.'}}
 function openCart(){setPresenceActivity(cartQty()>0?'visualizando carrinho':'visualizando carrinho');renderCart();$('cartOverlay').classList.add('show');document.body.style.overflow='hidden'}
 function closeCart(){$('cartOverlay').classList.remove('show');document.body.style.overflow=''}
 async function lookupCep(){const cep=($('cep').value||'').replace(/\D/g,'');if(cep.length!==8)return;try{const r=await fetch(`https://viacep.com.br/ws/${cep}/json/`,{cache:'no-store'});const d=await r.json();if(d.erro)return alert('CEP não encontrado.');if((d.localidade||'').toLowerCase()!=='monte alto'||String(d.uf||'').toUpperCase()!=='SP')return alert('No momento, entregamos somente em Monte Alto/SP.');$('street').value=d.logradouro||'';$('district').value=d.bairro||'';$('number').focus()}catch(_){}}
-function buildWhats(o,name,phone,address){const lines=['*PEDIDO - GELADINHO DOS SONHOS*','',`Pedido: #${o.public_code}`,`Cliente: ${name}`,`WhatsApp: ${phone}`,''];for(const [slug,q] of Object.entries(cart)){const p=products.find(x=>x.slug===slug);if(p)lines.push(`${q}x ${p.name} — ${money(p.price*q)}`)}lines.push('',`Subtotal: ${money(o.subtotal)}`);if(fulfillment()==='entrega'){lines.push(`Entrega: ${money(o.delivery_fee)}`,`Total: ${money(o.total)}`,'',`Endereço: ${address.street}, ${address.number}${address.complement?' - '+address.complement:''}`,`${address.district} - Monte Alto/SP · CEP ${address.cep}`);if(address.reference)lines.push(`Referência: ${address.reference}`)}else{lines.push(`Total: ${money(o.total)}`,'','Retirada: Rua Aparecida Marchetti Guzzo, 161 - Vale dos Sonhos - Monte Alto/SP')}const obs=$('notes').value.trim();if(obs)lines.push('',`Observação: ${obs}`);lines.push('',`Pagamento: ${paymentMethod()}`);if(paymentMethod()==='Pix')lines.push('O Pix será liberado após a loja aceitar o pedido.');lines.push('',`Acompanhe pelo código ${o.public_code}.`);return lines.join('\n')}
+function buildWhats(o,name,phone,address){const lines=['*PEDIDO - GELADINHO DOS SONHOS*','',`Pedido: #${o.public_code}`,`Cliente: ${name}`,`WhatsApp: ${phone}`,''];for(const [slug,q] of Object.entries(cart)){const p=products.find(x=>x.slug===slug);if(p)lines.push(`${q}x ${p.name} — ${money(p.price*q)}`)}lines.push('',`Subtotal: ${money(o.subtotal)}`);if(fulfillment()==='entrega'){lines.push(`Entrega: ${money(o.delivery_fee)}`,`Total: ${money(o.total)}`,'',`Endereço: ${address.street}, ${address.number}${address.complement?' - '+address.complement:''}`,`${address.district} - Monte Alto/SP · CEP ${address.cep}`);if(address.reference)lines.push(`Referência: ${address.reference}`)}else{lines.push(`Total: ${money(o.total)}`,'','Retirada: Rua Aparecida Marchetti Guzzo, 161 - Vale dos Sonhos - Monte Alto/SP')}const obs=$('notes').value.trim();if(obs)lines.push('',`Observação: ${obs}`);lines.push('',`Pagamento: ${paymentMethod()}`);if(cardPayment())lines.push('Acréscimo da maquininha ('+Number(o.card_fee_percent||0).toLocaleString('pt-BR')+'%): '+money(o.card_fee_amount||0),'Pagamento na maquininha na entrega ou retirada. Total já inclui a taxa.');if(paymentMethod()==='Pix')lines.push('O Pix será liberado após a loja aceitar o pedido.');lines.push('',`Acompanhe pelo código ${o.public_code}.`);return lines.join('\n')}
 async function checkout(){
   if(checkoutBusy)return;
   const errorBox=$('checkoutError');if(errorBox){errorBox.hidden=true;errorBox.textContent=''}
@@ -206,6 +210,7 @@ async function checkout(){
     await verifyCartStock();
     const items=Object.entries(cart).filter(([,q])=>Number(q)>0);
     if(!items.length)throw new Error('Os itens do carrinho ficaram sem estoque.');
+    if(cardPayment()){const quote=cardQuote();if(!quote.valid)throw new Error('A taxa do cartão não está disponível. Selecione outra forma de pagamento.');if(!confirm('Pagamento na maquininha no recebimento.\n\nTaxa do cartão: '+quote.rate.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'% ('+money(quote.fee)+')\nTotal a pagar: '+money(quote.total)+'\n\nVocê concorda com o valor total e deseja enviar o pedido?'))return;}
     const o=await api('/rest/v1/rpc/create_store_order_v89',{
       method:'POST',
       body:JSON.stringify({
@@ -237,7 +242,7 @@ async function checkout(){
     renderStatus();
   }
 }
-function showSuccess(o,whatsUrl){$('cartForm').hidden=true;$('success').hidden=false;$('successCode').textContent='#'+o.public_code;const pix=paymentMethod()==='Pix';const hint=$('successPaymentHint');if(hint)hint.hidden=!pix;const link=$('trackLink');link.href='./acompanhar/?t='+encodeURIComponent(o.tracking_token);link.textContent=pix?'💠 Ver Pix após aceite da loja':'📍 Acompanhar pedido';const wa=$('whatsOrderLink');if(wa)wa.href=whatsUrl}
+function showSuccess(o,whatsUrl){$('cartForm').hidden=true;$('success').hidden=false;$('successCode').textContent='#'+o.public_code;const pix=paymentMethod()==='Pix';const hint=$('successPaymentHint');if(hint)hint.hidden=!pix;const cardHint=$('cardSuccessHint');if(cardHint){cardHint.hidden=!cardPayment();if(cardPayment())cardHint.textContent='💳 Pagamento com '+(paymentMethod()==='Cartão de débito'?'débito':'crédito à vista (1x)')+' na maquininha na entrega ou retirada. Taxa: '+Number(o.card_fee_percent||0).toLocaleString('pt-BR')+'%; acréscimo: '+money(o.card_fee_amount||0)+'; total a pagar: '+money(o.total)+'. O pagamento ainda não foi realizado.';}const link=$('trackLink');link.href='./acompanhar/?t='+encodeURIComponent(o.tracking_token);link.textContent=pix?'💠 Ver Pix após aceite da loja':'📍 Acompanhar pedido';const wa=$('whatsOrderLink');if(wa)wa.href=whatsUrl}
 function resetCartModal(){$('cartForm').hidden=false;$('success').hidden=true;closeCart()}
 function renderTestimonials(rows){if(!rows.length){$('testGrid').innerHTML='<div class="emptyBox" style="grid-column:1/-1">Ainda não há depoimentos publicados. Depois que os clientes avaliarem pedidos concluídos, eles aparecerão aqui.</div>';return}$('testGrid').innerHTML=rows.map(r=>`<article class="testCard"><div class="stars">${'★'.repeat(Math.max(1,Math.min(5,Number(r.rating)||5)))}</div><p>“${esc(r.comment||'')}”</p><small>Cliente verificado · ${new Date(r.created_at).toLocaleDateString('pt-BR')}</small></article>`).join('')}
 function restoreLastOrder(){try{const o=JSON.parse(localStorage.getItem('gds_last_order')||'null');if(!o?.token)return;const a=$('lastOrder');a.hidden=false;a.href='./acompanhar/?t='+encodeURIComponent(o.token);a.textContent='📍 Acompanhar '+(o.code||'pedido')}catch(_){}}
@@ -305,7 +310,7 @@ async function enableStoreOpenPush(){
 }
 
 async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=143');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
-function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"]').forEach(r=>r.onchange=updateTotals);$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
+function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"],input[name="paymentMethod"]').forEach(r=>r.onchange=()=>{updateTotals();renderStatus()});$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 
 function setupInstallRegistration(){
  const displayStandalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
