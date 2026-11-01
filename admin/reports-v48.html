@@ -52,7 +52,11 @@ function render(){
  const paidEvents=events.filter(x=>paidEvent(x)&&inRange(eventDay(x),a,b));
  const onlineValue=online.reduce((sum,x)=>sum+saleNet(x),0),localValue=local.reduce((sum,x)=>sum+saleNet(x),0);
  const eventValue=paidEvents.reduce((sum,x)=>sum+n(x.subtotal)+n(x.delivery_fee),0);
- const total=onlineValue+localValue+eventValue,received=sold.reduce((sum,x)=>sum+receivedNet(x),0)+eventValue;
+ const total=onlineValue+localValue+eventValue;
+ const paidOrders=orders.filter(x=>!x.deleted_at&&x.status!=='Cancelado'&&x.payment_received_at&&inRange(spDate(new Date(x.payment_received_at)),a,b)&&n(x.paid_amount)>0);
+ const received=paidOrders.reduce((sum,x)=>sum+receivedNet(x),0)+eventValue;
+ const cardFeesReceived=paidOrders.reduce((sum,x)=>sum+(x.payment_status==='Pago'?n(x.card_fee_amount):0),0);
+ const pendingFromSold=sold.reduce((sum,x)=>sum+Math.max(0,n(x.total)-n(x.paid_amount)),0);
  const onlineIds=new Set(online.map(x=>x.id)),localIds=new Set(local.map(x=>x.id)),eventsIds=new Set(paidEvents.map(x=>x.id));
  const oUnits=orderItems.reduce((sum,i)=>sum+(onlineIds.has(i.order_id)?n(i.quantity):0),0);
  const lUnits=orderItems.reduce((sum,i)=>sum+(localIds.has(i.order_id)?n(i.quantity):0),0);
@@ -73,7 +77,7 @@ function render(){
  const statuses={};ordered.forEach(x=>{statuses[x.status]=(statuses[x.status]||0)+1});$('statuses').innerHTML=rowList(statuses);
  const cat={};products.forEach(x=>cat[x.category]=(cat[x.category]||0)+n(x.stock));$('cats').innerHTML=rowList(cat);
  const eventStatuses={};events.filter(x=>inRange(eventDay(x),a,b)).forEach(x=>eventStatuses[x.status]=(eventStatuses[x.status]||0)+1);$('eventStatuses').innerHTML=rowList(eventStatuses);
- $('values').innerHTML=rowList({'Pedidos online':onlineValue,'Vendas locais':localValue,'Eventos pagos':eventValue,'Total vendido':total,'Valor recebido (líquido)':received,'Saldo a receber':Math.max(0,total-received)},money);
+ $('values').innerHTML=rowList({'Pedidos online':onlineValue,'Vendas locais':localValue,'Eventos pagos':eventValue,'Total vendido':total,'Valor recebido no período (líquido)':received,'Taxas Point abatidas do caixa':cardFeesReceived,'Saldo pendente dos pedidos do período':pendingFromSold},money);
  const dayMap={};
  const ensureDay=d=>dayMap[d]??={count:0,online:0,local:0,event:0,units:0};
  sold.forEach(x=>{const d=orderDay(x),v=ensureDay(d);v.count++;if(x.sales_channel==='local')v.local+=saleNet(x);else v.online+=saleNet(x)});
@@ -94,7 +98,7 @@ async function load(){
  try{
   const [p,o,e,oi,ei]=await Promise.all([
    GDS48.sb.from('products').select('category,stock,active').limit(5000),
-   GDS48.sb.from('orders').select('id,status,total,paid_amount,card_fee_amount,created_at,archived_at,deleted_at,sales_channel,payment_status,payment_method').limit(5000),
+   GDS48.sb.from('orders').select('id,status,total,paid_amount,card_fee_amount,payment_received_at,created_at,archived_at,deleted_at,sales_channel,payment_status,payment_method').limit(5000),
    GDS48.sb.from('events').select('id,status,subtotal,delivery_fee,event_date,payment_status,payment_confirmed_at,created_at').limit(5000),
    GDS48.sb.from('order_items').select('order_id,quantity').limit(10000),
    GDS48.sb.from('event_items').select('event_id,quantity').limit(10000)
