@@ -1,8 +1,27 @@
-# Geladinho dos Sonhos — ponto de retomada da integração Mercado Pago Pix
+# Geladinho dos Sonhos — estado atual do Mercado Pago (retomada em 29/10/2026; revisão em 01/11/2026)
 
-**Situação: PAUSADA a pedido do proprietário em 21/10/2026 (horário de Brasília).**
-**Não ativar pagamentos automáticos em produção sem pedido explícito do proprietário.**
-**Este arquivo é apenas um registro da situação; não configura a integração.**
+**Status: integração retomada, porém SOMENTE CONFIGURAÇÃO e VALIDAÇÃO. PIX ONLINE AUTOMÁTICO E CARTÃO ONLINE AINDA NÃO ESTÃO ATIVOS.**
+
+## Última etapa concluída — produção sem conciliação
+1. Mercado Pago Developers da conta da esposa: webhook de **Produção** configurado e salvo para o evento **Order (Mercado Pago)**, apontando para:
+   `https://qpqruhcspbdxjcnbhdhn.supabase.co/functions/v1/gds-mercadopago-webhook-prod`
+2. Edge Function `gds-mercadopago-webhook-prod` criada/publicada no Supabase; **Verify JWT desativado** para permitir chamadas do Mercado Pago.
+3. Assinatura secreta guardada no Supabase em `MP_WEBHOOK_PROD_SECRET`, sem revelar o valor. Não copiar segredos para GitHub, HTML ou conversas.
+4. A função atual é uma **versão preliminar de validação HMAC**: GET responde; notificações de teste assinadas podem ser aceitas, mas eventos reais NÃO conciliam pedidos nem confirmam pagamentos (retornam erro de "conciliation not enabled"). Não supor que simples GET com sucesso valide HMAC.
+5. A última orientação ao usuário foi **testar a função no Supabase com método GET** e depois validar um webhook assinado pelo simulador/ambiente adequado. Não consta confirmação de teste assinado de produção bem-sucedido.
+6. Alerta na conta Supabase: **cota de uso excedida**, possível restrição a partir de novembro; confirmar/regularizar antes de depender da infraestrutura para pagamentos reais.
+7. A integração de produção não inclui `MP_ACCESS_TOKEN_PROD` validado para consultar orders nem uma rotina de reconciliação com referência única e idempotência. **NÃO ativar cobrança online/confirmar pedidos automaticamente sem desenvolvimento e testes.**
+8. Necessário evitar que Webhooks de produção continuem apontando para receptor que devolve HTTP 503 aos eventos reais: preparar conciliação e ativação com teste controlado, ou desativar temporariamente as notificações no painel do Mercado Pago. Não desativar verificação HMAC para fazer funcionar.
+9. O proprietário decidiu incluir **cartão de crédito exclusivamente à vista (1x)** e **cartão de débito**, com acréscimos explícitos antes de cobrar. Em 01/11/2026 foi implementado **registro de cartão presencial** no caixa do administrador para maquininha externa, com taxa manual real, subtotal e total no recibo; **sem conexão automática com a Point Pro**. A opção de cartão no checkout online depende das tarifas reais e da integração/validação do gateway.
+
+## Retomar a partir daqui
+- Conferir no Supabase o estado real do Webhook de produção, logs e assinatura HMAC (segredos SEMPRE somente em Secrets).
+- Resolver a cota Supabase.
+- Implementar e testar o vínculo order local ↔ MP, consulta independente à API, validação de conta/moeda/valor/status, proteção contra notificações duplicadas e reconciliação.
+- Configurar taxas de cartão débito/crédito com base nas tarifas reais da conta; assegurar que a taxa e o total final sejam mostrados ANTES da autorização.
+- Testar Pix/cobrança cartão e só depois fazer liberação gradual autorizada sem comprometer caixa e estoque.
+
+## Histórico anterior (pausa em 21/10/2026)
 
 ## O que permanece funcionando
 
@@ -34,7 +53,7 @@
 - Rever correspondência entre aplicação, **secret de Webhook no modo de teste** e `MP_WEBHOOK_TEST_SECRET` no Supabase; verificar conforme documentação/SDK oficial, inclusive composição do manifesto `data.id`, `x-request-id`, `ts` e eventuais diferenças de ambiente.
 - O HTTP 200 do botão **Simular notificação** do Mercado Pago era de uma fixture estática de **Point/cartão** e NÃO confirma a entrega dos Webhooks de cobranças Pix de teste.
 
-## Quando o proprietário decidir retomar
+## Plano histórico preparado em 21/10/2026 (parte já executada)
 
 1. Primeiro corrigir e verificar as assinaturas dos Webhooks de testes, sem pedir para enviar tokens ou assinaturas no chat. Os segredos devem permanecer no painel Supabase.
 2. Obter pelo menos um ciclo válido de criação de order Pix fictícia → notificação assinada → consulta independente da order no Mercado Pago → confirmação observada, ainda sem alterar vendas reais.
