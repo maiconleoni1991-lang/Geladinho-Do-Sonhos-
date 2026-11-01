@@ -113,10 +113,25 @@ body>#gdsAdminNav48,body>#gdsMobileBar48,body>#gdsMore48{display:none!important}
 .daily-goal-track{width:100%;height:8px;background:#f2e7ed;border-radius:15px;overflow:hidden;margin-top:9px}
 .daily-goal-track div{height:100%;width:0;background:#15965e;border-radius:15px;transition:width .3s}
 @media(max-width:640px){.daily-summary{grid-template-columns:1fr}.daily-summary-card{padding:13px}.daily-summary-card strong{font-size:24px}}
+.creditReminderPanel{margin:15px 0;background:#fff;border:1px solid #eadde6;border-radius:17px;padding:16px;box-shadow:0 9px 28px #1f25420b}
+.creditReminderPanel h2{margin:0;font-size:16px;font-weight:950}
+.creditReminderPanel .panel-head{margin-bottom:8px}
+.creditReminderPanel .creditSummary{margin:6px 0 11px;color:#715669;font-size:12px}
+.creditReminderRow{display:flex;align-items:center;gap:10px;padding:10px;border-radius:11px;border:1px solid #f1e1e9;margin-top:7px;background:#fffafc}
+.creditReminderRow .grow{flex:1;min-width:0}
+.creditReminderRow strong{display:block;font-size:13px;color:#4a101e}
+.creditReminderRow small{display:block;color:#755f6a;font-size:11px}
+.creditReminderRow .value{font-weight:950;color:#b22b59;white-space:nowrap;font-size:13px}
+.creditReminderRow .dueBadge{border-radius:99px;padding:4px 7px;background:#fff1da;color:#86520b;font-size:10px;font-weight:900}
+.creditReminderRow.late{border-left:4px solid #cf3f53}
+.creditReminderRow.today{border-left:4px solid #d38a1d}
+.creditReminderRow.soon{border-left:4px solid #3b98a8}
+.creditReminderRow a{color:#ad1f5d;text-decoration:underline;font-size:11px;font-weight:900}
+@media(max-width:600px){.creditReminderRow{flex-wrap:wrap}.creditReminderRow .value{margin-left:auto}}
 </style>
 </head>
 <body>
-<script src="./admin-common-v48.js?v=153"></script>
+<script src="./admin-common-v48.js?v=153"></script><script src="./credit-reminders-v1.js?v=160"></script>
 <div id="loading" style="padding:30px;text-align:center">🔐 Verificando acesso administrativo…</div>
 <div id="dashboard" hidden>
 <div class="layout">
@@ -157,6 +172,12 @@ body>#gdsAdminNav48,body>#gdsMobileBar48,body>#gdsMore48{display:none!important}
 <section class="daily-summary" aria-label="Visitas e meta diária">
 <div class="daily-summary-card"><div class="daily-summary-icon">👀</div><div><h2>Visitantes da loja hoje</h2><strong id="visitorsToday">—</strong><small>Navegadores diferentes que acessaram a loja hoje</small></div></div>
 <div class="daily-summary-card"><div class="daily-summary-icon">🎯</div><div style="flex:1"><h2>Meta de vendas · 30 geladinhos por dia</h2><strong id="soldUnitsToday">—</strong><small id="soldUnitsDetails">Online + local + eventos pagos</small><div class="daily-goal-track"><div id="dailyGoalFill"></div></div></div></div>
+</section>
+<section class="creditReminderPanel" aria-label="Lembretes de pagamento fiado" id="creditReminderPanel">
+ <div class="panel-head"><h2>📒 Lembretes de fiados</h2><a href="trusted-customers-v116.html?v=160" style="font-size:12px;font-weight:850;color:#b52a63">Gerenciar clientes →</a></div>
+ <div class="creditSummary" id="creditReminderSummary">Consultando vencimentos combinados…</div>
+ <div id="creditReminderList"></div>
+ <small style="display:block;color:#826e79;margin-top:9px">Aviso interno: nenhuma cobrança é enviada automaticamente. Registre o pagamento somente após receber.</small>
 </section>
 <div class="section-grid">
 <section class="panel"><div class="panel-head"><h2>📈 Vendas da semana</h2><a href="reports-v48.html?v=140">Ver relatório</a></div>
@@ -210,19 +231,26 @@ $('logout').onclick=()=>GDS48.logout();
 $('installAdmin').onclick=()=>GDS48.installAdmin();
 async function load(){
 const sb=GDS48.sb;
-const [pr,or,ev,items,logs,books,eventItems,visits]=await Promise.all([
+const [pr,or,ev,items,logs,books,eventItems,visits,customers]=await Promise.all([
  sb.from('products').select('id,name,category,stock,active,price'),
- sb.from('orders').select('id,public_code,customer_name,status,total,paid_amount,payment_status,payment_received_at,created_at,deleted_at,sales_channel').order('created_at',{ascending:false}).limit(1000),
+ sb.from('orders').select('id,public_code,customer_name,customer_phone,trusted_customer_id,payment_method,status,total,paid_amount,payment_status,payment_received_at,created_at,deleted_at,sales_channel').order('created_at',{ascending:false}).limit(1000),
  sb.from('events').select('id,status,subtotal,delivery_fee,payment_status,payment_confirmed_at,created_at').limit(1000),
  sb.from('order_items').select('order_id,product_name,quantity').limit(1000),
  sb.from('gds_recipe_production_logs').select('id,recipe_id,production_date,finished_units,created_at,recipe_snapshot').order('created_at',{ascending:false}).limit(300),
  sb.from('gds_recipe_book').select('id,recipe_name').limit(500),
  sb.from('event_items').select('event_id,quantity').limit(5000),
- sb.rpc('get_store_visit_totals_v141',{p_start_date:dayKey(new Date()),p_end_date:dayKey(new Date())})
+ sb.rpc('get_store_visit_totals_v141',{p_start_date:dayKey(new Date()),p_end_date:dayKey(new Date())}),
+  sb.from('trusted_customers').select('id,name,phone,active,deleted_at,payment_due_date,payment_due_day').is('deleted_at',null).eq('active',true).limit(1000)
 ]);
 for(const r of [pr,or,ev,items,logs,books,eventItems])if(r.error)throw r.error;
 const products=pr.data||[],orders=(or.data||[]).filter(x=>!x.deleted_at),events=ev.data||[],orderItems=items.data||[],productions=logs.data||[],book=books.data||[],allEventItems=eventItems.data||[];
 const today=dayKey(new Date());
+ const dueItems=customers.error?[]:GDSCreditReminders.collect(customers.data||[],orders,today);
+ const attention=dueItems.filter(x=>x.state==='hoje'||x.state==='atrasado');
+ const upcoming=dueItems.filter(x=>x.state==='proximo');
+ $('creditReminderSummary').textContent=customers.error?'Não foi possível consultar vencimentos: '+customers.error.message:attention.length?'🔔 '+attention.length+' pagamento(s) previstos para hoje ou atrasados · '+money(attention.reduce((n,x)=>n+x.total,0))+' a conferir':upcoming.length?'📅 '+upcoming.length+' pagamento(s) previstos nos próximos 7 dias':'✅ Sem vencimentos fiados para hoje ou nos próximos 7 dias.';
+ const creditRows=[...attention,...upcoming].slice(0,12);
+ $('creditReminderList').innerHTML=creditRows.map(x=>'<div class="creditReminderRow '+(x.state==='atrasado'?'late':x.state==='hoje'?'today':'soon')+'"><div class="grow"><strong>'+esc(x.name)+'</strong><small>📅 '+GDSCreditReminders.dateBR(x.dueDate)+' · '+(x.state==='atrasado'?'Vencido há '+Math.abs(x.daysUntil)+' dia(s)':x.state==='hoje'?'Vence hoje':'Vence em '+x.daysUntil+' dia(s)')+'</small></div><span class="dueBadge">'+(x.state==='atrasado'?'ATRASADO':x.state==='hoje'?'HOJE':'EM BREVE')+'</span><span class="value">'+money(x.total)+'</span><a href="trusted-customers-v116.html?v=160&cliente='+encodeURIComponent(x.name)+'" aria-label="Abrir ficha do cliente '+esc(x.name)+'">Ver ficha →</a></div>').join('');
 const dateText=new Intl.DateTimeFormat('pt-BR',{timeZone:tz,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
 setText('todayLabel',dateText);setText('dateBadge','📅 '+new Intl.DateTimeFormat('pt-BR',{timeZone:tz,day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()));
 const completed=orders.filter(done),todayCompleted=completed.filter(o=>dayKey(o.created_at)===today),online=todayCompleted.filter(o=>o.sales_channel==='online'),local=todayCompleted.filter(o=>o.sales_channel==='local');
