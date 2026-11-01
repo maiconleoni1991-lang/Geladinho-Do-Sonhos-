@@ -177,8 +177,8 @@ body>#gdsAdminNav48,body>#gdsMobileBar48,body>#gdsMore48{display:none!important}
  <small style="display:block;color:#826e79;margin-top:9px">Aviso interno: nenhuma cobrança é enviada automaticamente. Registre o pagamento somente após receber.</small>
 </section>
 <div class="metrics">
-<div class="metric pink"><div class="metric-icon">🛒</div><div><small>Vendas de hoje</small><strong id="salesToday">—</strong><span class="detail" id="salesCount">Pedidos concluídos</span></div></div>
-<div class="metric mint"><div class="metric-icon">💰</div><div><small>Recebido hoje</small><strong id="receivedToday">—</strong><span class="detail">Pagamentos registrados hoje</span></div></div>
+<div class="metric pink"><div class="metric-icon">🛒</div><div><small>Vendas de hoje (sem taxa Point)</small><strong id="salesToday">—</strong><span class="detail" id="salesCount">Pedidos concluídos</span></div></div>
+<div class="metric mint"><div class="metric-icon">💰</div><div><small>Recebido hoje (líquido)</small><strong id="receivedToday">—</strong><span class="detail">Pagamentos registrados hoje</span></div></div>
 <div class="metric cream"><div class="metric-icon">📦</div><div><small>Produção de hoje</small><strong id="madeToday">—</strong><span class="detail" id="productionCount">Receitas produzidas</span></div></div>
 <div class="metric blue"><div class="metric-icon">🗃️</div><div><small>Estoque total</small><strong id="stockTotal">—</strong><span class="detail" id="stockCount">Produtos cadastrados</span></div></div>
 </div>
@@ -225,6 +225,8 @@ const $=id=>document.getElementById(id);
 const esc=s=>GDS48.esc(String(s??''));
 const money=n=>GDS48.money(n);
 const num=n=>Number(n)||0;
+const saleNet=o=>Math.max(0,num(o.total)-num(o.card_fee_amount));
+const receivedNet=o=>Math.max(0,num(o.paid_amount)-(o.payment_status==='Pago'?num(o.card_fee_amount):0));
 const done=o=>['Entregue','Finalizado'].includes(o.status)&&!o.deleted_at;
 const tz='America/Sao_Paulo';
 function dayKey(value){if(!value)return '';const d=new Date(value);if(!Number.isFinite(d.getTime()))return '';const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d),r={};parts.forEach(p=>r[p.type]=p.value);return r.year+'-'+r.month+'-'+r.day}
@@ -241,7 +243,7 @@ async function load(){
 const sb=GDS48.sb;
 const [pr,or,ev,items,logs,books,eventItems,visits,customers]=await Promise.all([
  sb.from('products').select('id,name,category,stock,active,price'),
- sb.from('orders').select('id,public_code,customer_name,customer_phone,trusted_customer_id,payment_method,status,total,paid_amount,payment_status,payment_received_at,created_at,deleted_at,sales_channel').order('created_at',{ascending:false}).limit(1000),
+ sb.from('orders').select('id,public_code,customer_name,customer_phone,trusted_customer_id,payment_method,status,total,paid_amount,card_fee_amount,payment_status,payment_received_at,created_at,deleted_at,sales_channel').order('created_at',{ascending:false}).limit(1000),
  sb.from('events').select('id,status,subtotal,delivery_fee,payment_status,payment_confirmed_at,created_at').limit(1000),
  sb.from('order_items').select('order_id,product_name,quantity').limit(1000),
  sb.from('gds_recipe_production_logs').select('id,recipe_id,production_date,finished_units,created_at,recipe_snapshot').order('created_at',{ascending:false}).limit(300),
@@ -264,7 +266,7 @@ const today=dayKey(new Date());
 const dateText=new Intl.DateTimeFormat('pt-BR',{timeZone:tz,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
 setText('todayLabel',dateText);setText('dateBadge','📅 '+new Intl.DateTimeFormat('pt-BR',{timeZone:tz,day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()));
 const completed=orders.filter(done),todayCompleted=completed.filter(o=>dayKey(o.created_at)===today),online=todayCompleted.filter(o=>o.sales_channel==='online'),local=todayCompleted.filter(o=>o.sales_channel==='local');
-const sumTotal=list=>list.reduce((n,o)=>n+num(o.total),0);
+const sumTotal=list=>list.reduce((n,o)=>n+saleNet(o),0);
 setText('salesToday',money(sumTotal(todayCompleted)));
 setText('salesCount',todayCompleted.length+' pedidos concluídos');
 setText('onlineToday',money(sumTotal(online)));
@@ -272,7 +274,7 @@ setText('localToday',money(sumTotal(local)));
 setText('onlineCount',online.length+' pedidos online');
 setText('visitorsToday',visits.error?'Indisponível':String((visits.data||[]).reduce((sum,v)=>sum+Number(v.visitors||0),0)));
 setText('localCount',local.length+' vendas locais');
-const paidOrders=orders.filter(o=>o.status!=='Cancelado'&&dayKey(o.payment_received_at)===today).reduce((n,o)=>n+num(o.paid_amount),0);
+const paidOrders=orders.filter(o=>o.status!=='Cancelado'&&dayKey(o.payment_received_at)===today).reduce((n,o)=>n+receivedNet(o),0);
 const paidEvents=events.filter(e=>e.status!=='Cancelado'&&e.payment_status==='Pago'&&dayKey(e.payment_confirmed_at)===today).reduce((n,e)=>n+num(e.subtotal)+num(e.delivery_fee),0);
 setText('receivedToday',money(paidOrders+paidEvents));
 setText('madeToday',productions.filter(p=>p.production_date===today).reduce((n,p)=>n+num(p.finished_units),0)+' un.');
