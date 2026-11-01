@@ -94,11 +94,12 @@ async function refreshStockOnly(){
   if(stockRefreshBusy||checkoutBusy)return;
   stockRefreshBusy=true;
   try{
-    const p=await api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&stock=gt.0&order=category.asc,name.asc');
+    const [p,settings]=await Promise.all([api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&stock=gt.0&order=category.asc,name.asc'),api('/rest/v1/store_settings?id=eq.main&select=is_open,card_debit_rate_percent,card_credit_rate_percent,card_debit_normal_rate_percent,card_credit_normal_rate_percent,card_promo_valid_until')]);
     products=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
     const catOrder={Tradicional:0,Cremoso:1,Gourmet:2,Trufado:3};
     products.sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99)||String(a.name).localeCompare(String(b.name),'pt-BR',{sensitivity:'base'}));
-    cleanCart();renderFilters();renderProducts();
+    storeOpen=!!settings?.[0]?.is_open;cardFeeSettings=settings?.[0]||null;
+    cleanCart();renderFilters();renderProducts();updateTotals();renderStatus();
     if($('cartOverlay')?.classList.contains('show'))renderCart();
   }finally{stockRefreshBusy=false}
 }
