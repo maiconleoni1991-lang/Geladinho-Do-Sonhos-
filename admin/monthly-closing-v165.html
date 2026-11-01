@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ff0f68">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Fechamento mensal — Geladinho do Sonhos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--pink:#e91867;--wine:#4a1025;--ink:#271c2a;--muted:#765e6a;--line:#efdee7;--bg:#fff8fb;--green:#127e4d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+[hidden]{display:none!important}.wrap{max-width:1140px;margin:auto;padding:22px 14px 56px}
+.header{display:flex;align-items:center;gap:15px;border-bottom:2px solid var(--pink);padding-bottom:14px}.header img{width:72px;height:72px;object-fit:contain}.header h1{margin:0;color:var(--wine);font-size:28px}.header p{margin:4px 0;color:var(--muted);font-size:12px}.header .sp{flex:1}
+.back{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;color:var(--wine);text-decoration:none;font-weight:850}
+.controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:16px 0}.controls label{display:grid;gap:5px;font-size:12px;color:var(--muted);font-weight:850}.controls input{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff;font:inherit;color:var(--ink)}
+button{border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:#fff;color:var(--wine);font:850 13px inherit;cursor:pointer;min-height:42px}button.primary{background:var(--pink);color:#fff;border-color:var(--pink)}button:disabled{opacity:.55;cursor:wait}
+.status{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;margin-bottom:14px;color:var(--muted);font-size:13px}.status.err{color:#a51d44;background:#fff0f4}
+.section{margin-top:24px}.section h2{font-size:18px;color:var(--wine);margin:0 0 11px}.section .note{margin:-3px 0 11px;color:var(--muted);font-size:12px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.card,.panel{border:1px solid var(--line);background:#fff;border-radius:15px;padding:15px}.card b{display:block;color:var(--wine);font-size:23px;margin-top:5px;overflow-wrap:anywhere}.card small{display:block;color:var(--muted);font-size:11px}.card.feature{border-color:#f1bad1;background:#fff1f7}.card.feature b{color:var(--pink)}.card.good b{color:var(--green)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid-table{width:100%;border-collapse:collapse}.grid-table th,.grid-table td{padding:10px 8px;text-align:left;border-bottom:1px solid #f5e9ef;vertical-align:top;font-size:12px}.grid-table th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.025em}.grid-table th.right,.grid-table td.right{text-align:right;font-variant-numeric:tabular-nums}.grid-table tr:last-child td{border-bottom:0}.table-scroll{overflow:auto}.totalrow{font-weight:900;background:#fff1f6}.label{color:var(--muted);font-size:12px}.warning{background:#fff8ea;border:1px solid #f0dbad;padding:13px;border-radius:13px;color:#76531e;font-size:12px;line-height:1.55;margin:15px 0}
+.subheading{font-weight:900;color:var(--wine);font-size:14px;margin:0 0 8px}.stamp{margin-top:15px;border-top:1px dashed var(--line);padding-top:12px;font-size:11px;color:var(--muted)}.empty{color:var(--muted);font-size:12px;padding:11px 0}
+@media(max-width:700px){.cards{grid-template-columns:1fr 1fr}.split{grid-template-columns:1fr}.header h1{font-size:21px}.header img{width:54px;height:54px}}@media(max-width:470px){.cards{grid-template-columns:1fr}.header{align-items:flex-start}.header .sp{display:none}}
+@media print{@page{size:A4 portrait;margin:12mm}body{background:#fff;color:#111;font-size:11px}.wrap{max-width:none;padding:0}.controls,.back,.status{display:none!important}.header{padding:0 0 9px}.header h1{font-size:20px}.header img{width:50px;height:50px}.cards{grid-template-columns:repeat(3,1fr)}.card,.panel{break-inside:avoid;box-shadow:none;border:1px solid #ddd;padding:9px}.card b{font-size:17px}.section{margin-top:14px}.section h2{font-size:14px}.grid-table th,.grid-table td{padding:5px 4px;font-size:9px}.warning{background:#fff;border:1px solid #ddd}.split{grid-template-columns:1fr 1fr}.table-scroll{overflow:visible}.section,.grid-table tr{break-inside:avoid}#report[hidden]{display:none}}
+</style>
+</head>
+<body>
+<script src="admin-common-v48.js?v=153"></script>
+<main class="wrap">
+<header class="header">
+<img src="../assets/logo-oficial-hq-v65.webp" alt="Logotipo oficial Geladinho do Sonhos">
+<div><h1>📆 Fechamento mensal</h1><p>Geladinho do Sonhos · Controle gerencial de vendas, recebimentos, fiados e taxas</p><p id="periodTitle">Selecione o mês para gerar o relatório</p></div><div class="sp"></div>
+<a class="back" href="./">← Painel</a>
+</header>
+<section class="controls" aria-label="Ferramentas do fechamento">
+<label>Mês de referência<input type="month" id="month" required></label>
+<button class="primary" id="generate" type="button">📊 Gerar relatório</button>
+<button id="print" type="button" disabled>🖨️ Imprimir / Salvar PDF</button>
+<a class="back" href="reports-v48.html?v=164">Relatórios detalhados</a>
+</section>
+<div id="status" role="status" class="status">🔐 Verificando acesso administrativo…</div>
+<div id="report" hidden>
+<section class="section">
+<h2>Resumo do mês</h2>
+<div class="cards">
+<div class="card feature"><small>VENDAS LÍQUIDAS REGISTRADAS NO MÊS</small><b id="sales">—</b><small>Pedidos válidos e eventos pagos; sem taxa da Point</small></div>
+<div class="card good"><small>RECEBIMENTOS LÍQUIDOS IDENTIFICADOS</small><b id="received">—</b><small>Pagamentos registrados na data do período</small></div>
+<div class="card"><small>TAXAS DA POINT DESTACADAS</small><b id="fees">—</b><small>Tarifas vinculadas aos recebimentos deste mês</small></div>
+<div class="card"><small>PENDÊNCIA ATUAL DE PEDIDOS DO MÊS</small><b id="open">—</b><small>Saldo em aberto hoje, não saldo histórico de encerramento</small></div>
+<div class="card"><small>DESPESAS EXTRAS CADASTRADAS</small><b id="expenses">—</b><small>Somente despesas lançadas no módulo de despesas</small></div>
+<div class="card"><small>MOVIMENTO PARCIAL APÓS DESPESAS EXTRAS</small><b id="partial">—</b><small>Recebimento líquido − despesas extras. Não é lucro.</small></div>
+</div>
+</section>
+<section class="section">
+<div class="split">
+<div class="panel"><h2>Vendas por canal</h2><table class="grid-table"><tbody id="channels"></tbody></table><div class="stamp" id="counts">—</div></div>
+<div class="panel"><h2>Recebimentos por meio de pagamento</h2><table class="grid-table"><tbody id="payments"></tbody></table><div class="stamp">Valores líquidos; o cartão é exibido sem a tarifa cobrada para cobrir o custo da operadora.</div></div>
+</div>
+</section>
+<section class="section">
+<div class="split">
+<div class="panel"><h2>Fiados e outros saldos pendentes</h2><p class="note">Pedidos criados no mês e que ainda estão pendentes hoje. Não reconstrói saldos históricos.</p><div id="openOrders"></div></div>
+<div class="panel"><h2>Despesas extras por categoria</h2><p class="note">O total depende dos lançamentos registrados. Insumos e custo de produção não são deduzidos automaticamente.</p><table class="grid-table"><tbody id="expensesByCategory"></tbody></table></div>
+</div>
+</section>
+<section class="section">
+<h2>Movimentação diária</h2><p class="note">Vendas pela data do pedido; recebimentos pela data registrada; eventos pela data da confirmação. Valores da venda são líquidos de tarifas Point.</p>
+<div class="panel table-scroll"><table class="grid-table"><thead><tr><th>Dia</th><th class="right">Vendas</th><th class="right">Recebimentos</th><th class="right">Despesas extras</th><th class="right">Unidades</th></tr></thead><tbody id="days"></tbody></table></div>
+</section>
+<div class="warning"><b>Como interpretar este fechamento:</b> é um relatório gerencial consultivo e não bloqueia lançamentos. O valor de vendas é calculado pelo mês do pedido; o recebimento considera a data registrada no sistema, mesmo que a venda tenha sido feita antes. O sistema atual guarda o valor acumulado e a primeira data registrada de recebimento do pedido, mas não um extrato de cada parcela recebida: portanto, pagamentos parciais quitados em meses diferentes podem não ser distribuídos com precisão entre os meses. Os fiados pendentes refletem a situação atual. O valor parcial após despesas <b>não representa lucro</b>, pois não contempla integralmente custo de ingredientes, insumos, impostos ou outras obrigações. Salve o PDF ao fechar o mês para manter uma cópia da conferência.</div>
+<p id="generatedAt" class="stamp"></p>
+</div>
+</main>
+<script>
+(async()=>{
+'use strict';
+const $=id=>document.getElementById(id),fmtMoney=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const num=v=>Number(v)||0,fee=v=>Math.max(0,num(v.card_fee_amount)),netSale=v=>Math.max(0,num(v.total)-fee(v)),netReceived=v=>Math.max(0,num(v.paid_amount)-(v.payment_status==='Pago'?fee(v):0));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function dateKey(x){if(!x)return '';if(typeof x==='string'&&/^\d{4}-\d\d-\d\d$/.test(x))return x;const d=new Date(x);if(!Number.isFinite(d.getTime()))return '';const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d),out={};p.forEach(x=>out[x.type]=x.value);return out.year+'-'+out.month+'-'+out.day}
+const currentMonth=()=>dateKey(new Date()).slice(0,7);
+const monthDate=k=>new Date(k+'-01T12:00:00Z').toLocaleDateString('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'});
+const isMonth=(x,k)=>dateKey(x).slice(0,7)===k;
+function status(msg,error){$('status').textContent=msg;$('status').className='status'+(error?' err':'')}
+async function fetchAll(table,columns,orderBy){const out=[],size=500;for(let p=0;p<15000;p+=size){const r=await GDS48.sb.from(table).select(columns).order(orderBy,{ascending:false}).range(p,p+size-1);if(r.error)throw Error(table+': '+r.error.message);out.push(...(r.data||[]));if((r.data||[]).length<size)return out;}throw Error('Limite de 15 mil registros atingido em '+table+'. Amplie a paginação antes de fechar o mês.')}
+function appendValue(obj,k,v){const key=k||'Não informado';obj[key]=(obj[key]||0)+v}
+function rowsFrom(obj){const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]);return entries.length?entries.map(a=>'<tr><td>'+esc(a[0])+'</td><td class="right"><b>'+fmtMoney(a[1])+'</b></td></tr>').join(''):'<tr><td colspan="2" class="empty">Sem registros neste mês</td></tr>'}
+function dayRow(days,key){if(!days[key])days[key]={sales:0,received:0,expenses:0,units:0};return days[key]}
+let reportReady=false;
+async function generate(){
+ const month=$('month').value;
+ if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return status('Selecione um mês válido.',true);
+ $('generate').disabled=true;$('print').disabled=true;$('report').hidden=true;reportReady=false;
+ status('Consultando vendas, pagamentos, despesas e itens...');
+ try{
+  const [orders,orderItems,events,eventItems,expenses]=await Promise.all([
+   fetchAll('orders','id,public_code,customer_name,status,payment_method,payment_status,sales_channel,created_at,total,paid_amount,card_fee_amount,payment_received_at,deleted_at,trusted_customer_id','created_at'),
+   fetchAll('order_items','order_id,quantity','id'),
+   fetchAll('events','id,event_code,status,subtotal,delivery_fee,payment_status,payment_confirmed_at,created_at','created_at'),
+   fetchAll('event_items','event_id,quantity','id'),
+   fetchAll('gds_finance_extra_expenses','id,expense_date,category,description,amount','expense_date')
+  ]);
+  const valid=x=>!x.deleted_at&&x.status!=='Cancelado';
+  const statuses=['Aceito','Em preparação','Saiu para entrega','Entregue','Finalizado'];
+  const sales=orders.filter(x=>valid(x)&&isMonth(x.created_at,month)&&statuses.includes(x.status)&&(['Entregue','Finalizado'].includes(x.status)||num(x.paid_amount)>0));
+  const receipts=orders.filter(x=>valid(x)&&num(x.paid_amount)>0&&isMonth(x.payment_received_at,month));
+  const paidEvents=events.filter(x=>x.status!=='Cancelado'&&x.payment_status==='Pago'&&isMonth(x.payment_confirmed_at||x.created_at,month));
+  const expenseMonth=expenses.filter(x=>isMonth(x.expense_date,month));
+  const pending=orders.filter(x=>valid(x)&&isMonth(x.created_at,month)&&Math.round((num(x.total)-num(x.paid_amount))*100)>0);
+  const saleTotal=sales.reduce((a,x)=>a+netSale(x),0)+paidEvents.reduce((a,x)=>a+num(x.subtotal)+num(x.delivery_fee),0);
+  const receivedTotal=receipts.reduce((a,x)=>a+netReceived(x),0)+paidEvents.reduce((a,x)=>a+num(x.subtotal)+num(x.delivery_fee),0);
+  const feesTotal=receipts.reduce((a,x)=>a+(x.payment_status==='Pago'?fee(x):0),0);
+  const expenseTotal=expenseMonth.reduce((a,x)=>a+num(x.amount),0);
+  const pendingTotal=pending.reduce((a,x)=>a+Math.max(0,num(x.total)-num(x.paid_amount)),0);
+  const salesSet=new Set(sales.map(x=>x.id)),eventsSet=new Set(paidEvents.map(x=>x.id));
+  const units=orderItems.reduce((a,x)=>a+(salesSet.has(x.order_id)?num(x.quantity):0),0)+eventItems.reduce((a,x)=>a+(eventsSet.has(x.event_id)?num(x.quantity):0),0);
+  $('sales').textContent=fmtMoney(saleTotal);$('received').textContent=fmtMoney(receivedTotal);$('fees').textContent=fmtMoney(feesTotal);
+  $('open').textContent=fmtMoney(pendingTotal);$('expenses').textContent=fmtMoney(expenseTotal);$('partial').textContent=fmtMoney(receivedTotal-expenseTotal);
+  const channel={},payments={},expenseCats={};
+  sales.forEach(x=>appendValue(channel,x.sales_channel==='local'?'Balcão':'Online',netSale(x)));
+  paidEvents.forEach(x=>appendValue(channel,'Eventos pagos',num(x.subtotal)+num(x.delivery_fee)));
+  receipts.forEach(x=>appendValue(payments,x.payment_method,netReceived(x)));
+  paidEvents.forEach(x=>appendValue(payments,'Eventos pagos',num(x.subtotal)+num(x.delivery_fee)));
+  expenseMonth.forEach(x=>appendValue(expenseCats,x.category,num(x.amount)));
+  $('channels').innerHTML=rowsFrom(channel);
+  $('payments').innerHTML=rowsFrom(payments);
+  $('expensesByCategory').innerHTML=rowsFrom(expenseCats);
+  $('counts').textContent=sales.length+' pedidos vendidos · '+paidEvents.length+' eventos pagos · '+units+' geladinhos vendidos.';
+  $('openOrders').innerHTML=pending.length?'<div class="table-scroll"><table class="grid-table"><thead><tr><th>Pedido / cliente</th><th class="right">Saldo atual</th></tr></thead><tbody>'+pending.sort((a,b)=>(num(b.total)-num(b.paid_amount))-(num(a.total)-num(a.paid_amount))).map(x=>'<tr><td><b>'+esc(x.public_code)+'</b><br><span class="label">'+esc(x.customer_name)+' · '+esc(x.payment_method||'Não informado')+'</span></td><td class="right">'+fmtMoney(Math.max(0,num(x.total)-num(x.paid_amount)))+'</td></tr>').join('')+'</tbody></table></div>':'<p class="empty">Nenhum pedido deste mês com saldo pendente atualmente.</p>';
+  const days={};
+  sales.forEach(x=>{dayRow(days,dateKey(x.created_at)).sales+=netSale(x)});
+  receipts.forEach(x=>{dayRow(days,dateKey(x.payment_received_at)).received+=netReceived(x)});
+  paidEvents.forEach(x=>{const d=dateKey(x.payment_confirmed_at||x.created_at),v=num(x.subtotal)+num(x.delivery_fee);dayRow(days,d).sales+=v;dayRow(days,d).received+=v});
+  expenseMonth.forEach(x=>{dayRow(days,dateKey(x.expense_date)).expenses+=num(x.amount)});
+  orderItems.forEach(x=>{if(salesSet.has(x.order_id)){const o=sales.find(z=>z.id===x.order_id);if(o)dayRow(days,dateKey(o.created_at)).units+=num(x.quantity)}});
+  eventItems.forEach(x=>{if(eventsSet.has(x.event_id)){const o=paidEvents.find(z=>z.id===x.event_id);if(o)dayRow(days,dateKey(o.payment_confirmed_at||o.created_at)).units+=num(x.quantity)}});
+  const dates=Object.keys(days).filter(x=>x.startsWith(month)).sort();
+  $('days').innerHTML=dates.length?dates.map(d=>'<tr><td>'+d.slice(8,10)+'/'+d.slice(5,7)+'</td><td class="right">'+fmtMoney(days[d].sales)+'</td><td class="right">'+fmtMoney(days[d].received)+'</td><td class="right">'+fmtMoney(days[d].expenses)+'</td><td class="right">'+days[d].units+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhuma movimentação registrada neste mês</td></tr>';
+  $('periodTitle').textContent='Referência: '+monthDate(month);
+  $('generatedAt').textContent='Emitido em '+new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+' · Relatório gerencial — Geladinho do Sonhos';
+  $('report').hidden=false;reportReady=true;$('print').disabled=false;
+  status('✅ Fechamento de '+monthDate(month)+' calculado: '+sales.length+' pedidos de venda, '+receipts.length+' recebimentos vinculados a pedidos e '+expenseMonth.length+' despesas extras.');
+ }catch(e){console.error(e);status('Não foi possível gerar o fechamento: '+e.message,true)}
+ finally{$('generate').disabled=false}
+}
+$('month').value=currentMonth();$('generate').onclick=generate;$('print').onclick=()=>{if(reportReady)window.print()};
+try{await GDS48.ensure('reports');await generate()}catch(e){if(!['NO_SESSION','MFA_REQUIRED'].includes(e.message))status('Erro de acesso: '+e.message,true)}
+})();
+</script>
+</body>
+</html>
