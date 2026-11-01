@@ -200,7 +200,7 @@ function renderFiado(){
    (archivedShown.has(g.key)&&g.archived.length?'<button type="button" onclick="restoreCustomerPaid(\''+token+'\')">↩ Restaurar histórico</button>':'')+'</div>';
   const notes=g.records.filter(c=>c.notes).map(c=>esc(c.notes)).filter((x,i,a)=>a.indexOf(x)===i).join('<div style="height:5px"></div>');
   const customerActions=g.records.length?'<details class="cadastros"><summary>✏️ Gerenciar cadastro'+(g.records.length>1?'s ('+g.records.length+')':'')+'</summary>'+g.records.map(c=>'<div class="meta">'+esc(c.name)+' · '+esc(c.phone||'Sem telefone')+' · '+(c.active?'Ativo':'Inativo')+'</div><div class="actions"><button type="button" onclick="editCustomer(\''+c.id+'\')">✏️ Editar</button><button type="button" onclick="deleteCustomer(\''+c.id+'\')">🗑️ Excluir</button><button type="button" onclick="toggleCustomer(\''+c.id+'\','+(!c.active)+')">'+(c.active?'Pausar':'Reativar')+'</button></div>').join('')+'</details>':'<div class="fiadoTip">Pedido online sem cadastro de cliente de confiança. Os registros ficam agrupados por nome e telefone, quando disponíveis.</div>';
-  const rem=dueRecord&&g.debtTotal>0?'<div class="actions"><button type="button" class="pix" onclick="sendReminder(\''+dueRecord.id+'\')">💬 Preparar lembrete por WhatsApp</button></div>':'';
+  const rem=g.debtTotal>0?'<div class="actions"><button type="button" class="pix" onclick="sendReminderGroup(\''+token+'\')">📲 Enviar lembrete pelo WhatsApp</button></div><div class="fiadoTip">Mensagem pronta para revisar e enviar manualmente; disponível antes, no dia ou após o vencimento.</div>':'';
   return '<details class="card clientCard '+(active?'':'inactive')+'" data-ckey="'+token+'"'+(openedCards.has(g.key)?' open':'')+'><summary class="clientSummary"><span class="clientChevron" aria-hidden="true">▶</span><span class="clientSummaryLeft"><b>'+esc(g.name)+'</b><small>📱 '+esc(g.phone||'Telefone não informado')+'</small><small>'+g.visible.length+' visíveis · '+g.archived.length+' arquivados · '+g.onlineCount+' online</small></span><span class="clientSummaryRight"><span class="badge '+(g.debtTotal?'bWarning':'')+'">'+(g.debtTotal?'A RECEBER':'EM DIA')+'</span><strong>'+money(g.debtTotal)+'</strong><small>Ver histórico e dívidas</small></span></summary><div class="clientBody">'+(notes?'<div class="notesDisplay"><b>📝 Anotações</b><div>'+notes+'</div></div>':'')+due+'<div class="groupTotals"><div class="groupTotal"><small>COMPRAS</small><b>'+g.valid.length+' · '+money(g.purchasedTotal)+'</b></div><div class="groupTotal"><small>JÁ RECEBIDO</small><b>'+money(g.receivedTotal)+'</b></div><div class="groupTotal debtTotal"><small>TOTAL FIADO A RECEBER</small><b>'+money(g.debtTotal)+'</b></div></div>'+(g.debts.length?'<div class="meta"><b>Fiados em aberto ('+g.debts.length+')</b></div>':'')+debts+rem+'<div class="history"><div class="groupTitle">🧾 Histórico visível ('+g.visible.length+')</div>'+historyActions+(history||'<div class="meta">Nenhum pedido visível.</div>')+(archivedShown.has(g.key)&&g.archived.length?'<div class="historyArchive"><b>📁 Compras arquivadas ('+g.archived.length+')</b>'+archivedHistory+'</div>':'')+'<div class="historyExplanation">A limpeza oculta apenas compras pagas nesta ficha; os registros, caixa e relatórios continuam salvos. Fiados pendentes permanecem visíveis.</div><div class="historyFoot">TOTAL DEVIDO EM FIADOS: '+money(g.debtTotal)+'</div></div>'+customerActions+'</div></details>';
  }).join(''):'<div class="empty">Nenhum cliente encontrado para essa busca.</div>';
  $('grid').querySelectorAll('details.clientCard').forEach(card=>{
@@ -359,6 +359,44 @@ window.settle=async(id,method)=>{
   if(error)throw error;
   await load();
  }catch(e){alert('Não foi possível registrar pagamento: '+e.message);await load()}
+};
+
+function reminderEditor(message,phone,customer){
+ let dialog=document.getElementById('gdsReminderEditor');
+ if(!dialog){
+   dialog=document.createElement('dialog');dialog.id='gdsReminderEditor';
+   dialog.style.cssText='border:1px solid #efdde4;border-radius:17px;padding:20px;width:min(500px,calc(100vw - 30px));max-height:90dvh;overflow:auto;box-shadow:0 22px 70px #2b122544;color:#29171d;background:#fff;font:14px/1.5 Inter,system-ui,sans-serif';
+   const h=document.createElement('h2');h.textContent='📲 Lembrete de pagamento';h.style.cssText='margin:0 0 6px;font-size:21px;color:#4a101e';
+   const p=document.createElement('p');p.id='gdsReminderTarget';p.style.cssText='margin:0 0 12px;color:#78616a;font-size:12px';
+   const txt=document.createElement('textarea');txt.id='gdsReminderText';txt.setAttribute('aria-label','Mensagem para editar antes do envio');txt.style.cssText='width:100%;min-height:240px;box-sizing:border-box;border:1px solid #efdde4;border-radius:11px;padding:12px;font:14px/1.5 inherit;resize:vertical';
+   const actions=document.createElement('div');actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:12px';
+   const link=document.createElement('a');link.id='gdsReminderGo';link.textContent='📲 Abrir WhatsApp';link.target='_blank';link.rel='noopener noreferrer';link.style.cssText='background:#15834a;color:white;border-radius:10px;padding:11px 14px;font-weight:850;text-decoration:none';
+   const copy=document.createElement('button');copy.type='button';copy.id='gdsReminderCopy';copy.textContent='📋 Copiar mensagem';copy.style.cssText='border:1px solid #efdde4;border-radius:10px;background:#fff;padding:11px;font-weight:850;cursor:pointer';
+   const close=document.createElement('button');close.type='button';close.textContent='Fechar';close.style.cssText='border:1px solid #efdde4;border-radius:10px;background:#fff;padding:11px;font-weight:850;cursor:pointer';close.onclick=()=>dialog.close();
+   const status=document.createElement('p');status.id='gdsReminderStatus';status.style.cssText='margin:9px 0 0;color:#78616a;font-size:12px';
+   actions.append(link,copy,close);dialog.append(h,p,txt,actions,status);document.body.append(dialog);
+ }
+ dialog.querySelector('#gdsReminderTarget').textContent=customer+(phone?' · WhatsApp: '+phone:' · Número de WhatsApp não cadastrado');
+ const txt=dialog.querySelector('#gdsReminderText');txt.value=message;
+ const link=dialog.querySelector('#gdsReminderGo'),status=dialog.querySelector('#gdsReminderStatus'),copy=dialog.querySelector('#gdsReminderCopy');
+ const update=()=>{const edited=txt.value.trim();link.hidden=!phone;link.href=phone&&edited?'https://wa.me/55'+phone+'?text='+encodeURIComponent(edited):'#';status.textContent=!phone?'Cadastre um WhatsApp válido na ficha para enviar. Você pode copiar a mensagem.':edited?'Ao abrir o WhatsApp, revise o destinatário e toque em Enviar. Nenhuma mensagem é disparada automaticamente.':'Escreva a mensagem antes de abrir o WhatsApp.';};
+ txt.oninput=update;link.onclick=e=>{if(!txt.value.trim()||!phone)e.preventDefault();else dialog.close();};
+ copy.onclick=()=>{const t=txt.value.trim();if(!t)return;if(navigator.clipboard?.writeText)navigator.clipboard.writeText(t).then(()=>{status.textContent='✅ Mensagem copiada.'}).catch(()=>window.prompt('Copie a mensagem:',t));else window.prompt('Copie a mensagem:',t)};
+ update();dialog.showModal();
+}
+window.sendReminderGroup=encodedKey=>{
+ let key;
+ try{key=decodeURIComponent(encodedKey)}catch(_){return alert('Não foi possível localizar esta ficha.')}
+ const g=creditGroups.find(item=>item.key===key);
+ if(!g||g.debtTotal<=0)return alert('Não há fiado em aberto para esta ficha.');
+ const reminders=GDSCreditReminders.collect(g.records,g.debts,todayISO());
+ const due=reminders[0]?.dueDate||null;
+ const state=reminders[0]?.state||'';
+ const timing=due?(state==='atrasado'?'O pagamento combinado para *'+dateBR(due)+'* está em aberto.':state==='hoje'?'Hoje, *'+dateBR(due)+'*, é a data combinada para o pagamento.':'O pagamento está combinado para *'+dateBR(due)+'*.'):'Passando para lembrar que há um pagamento pendente em sua ficha.';
+ const pending=g.debts.map(o=>(o.public_code||'Pedido')+': '+money(balance(o))).join('\n');
+ const msg='Olá, '+g.name+'! 💗🍦\n\nAqui é da *Geladinho do Sonhos*.\n'+timing+'\n\n📒 *Saldo total em aberto: '+money(g.debtTotal)+'*\n🧾 Pedidos pendentes:\n'+pending+'\n\nSe já acertou o pagamento, por favor desconsidere este lembrete. Agradecemos pela confiança! 💕';
+ const phone=normalizedPhone(g.phone||g.records.find(c=>normalizedPhone(c.phone))?.phone||'');
+ reminderEditor(msg,/^\d{10,11}$/.test(phone)?phone:'',g.name);
 };
 window.sendReminder=id=>{
  const c=customers.find(x=>x.id===id);if(!c)return;
