@@ -68,6 +68,10 @@ function renderPayment(o){
  }else if(o.payment_method==='Dinheiro'){
    const when=o.fulfillment==='entrega'?'na entrega':'na retirada';
    content.innerHTML=total+partial+'<div class="cashNote"><b>💵 Pagamento em dinheiro</b><br>'+(remaining<=0?'Pagamento confirmado.':'Saldo restante: '+money(remaining)+' · pagamento '+when+'.')+'</div>';
+ }else if(o.payment_method==='Cartão de débito'||o.payment_method==='Cartão de crédito'){
+   const when=o.fulfillment==='entrega'?'na entrega':'na retirada',rate=Number(o.card_fee_percent||0),fee=Number(o.card_fee_amount||0);
+   const detail='<div class="notice"><b>💳 Pagamento na maquininha · '+(o.payment_method==='Cartão de débito'?'Débito':'Crédito à vista (1x)')+'</b><br>Acréscimo da taxa: <b>'+money(fee)+' ('+rate.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%)</b><br>Este acréscimo já está incluído no total do pedido.</div>';
+   content.innerHTML=total+detail+partial+'<div class="cashNote"><b>'+(remaining<=0?'✅ Pagamento confirmado':'⏳ Pagamento no recebimento')+'</b><br>'+(remaining<=0?'Valor recebido.':'Total restante para pagar '+when+': '+money(remaining)+'. Nossa equipe levará a maquininha Point Pro 3.')+'</div>';
  }else{
    content.innerHTML=total+'<div class="notice"><b>Forma de pagamento não identificada.</b><br>Entre em contato com a loja para confirmar como pagar este pedido.</div>';
  }
