@@ -43,6 +43,7 @@ button{border:1px solid var(--line);border-radius:10px;padding:11px 13px;backgro
 <section class="section">
 <h2>Resumo do mês</h2>
 <div class="cards">
+<div class="card feature"><small>🍧 TOTAL DE GELADINHOS VENDIDOS NO MÊS</small><b id="unitsSold">—</b><small id="unitsSoldBreakdown">Online · Balcão · Eventos</small></div>
 <div class="card feature"><small>VENDAS LÍQUIDAS REGISTRADAS NO MÊS</small><b id="sales">—</b><small>Pedidos válidos e eventos pagos; sem taxa da Point</small></div>
 <div class="card good"><small>RECEBIMENTOS LÍQUIDOS IDENTIFICADOS</small><b id="received">—</b><small>Pagamentos registrados na data do período</small></div>
 <div class="card"><small>TAXAS DA POINT DESTACADAS</small><b id="fees">—</b><small>Tarifas vinculadas aos recebimentos deste mês</small></div>
@@ -113,7 +114,14 @@ async function generate(){
   const expenseTotal=expenseMonth.reduce((a,x)=>a+num(x.amount),0);
   const pendingTotal=pending.reduce((a,x)=>a+Math.max(0,num(x.total)-num(x.paid_amount)),0);
   const salesSet=new Set(sales.map(x=>x.id)),eventsSet=new Set(paidEvents.map(x=>x.id));
-  const units=orderItems.reduce((a,x)=>a+(salesSet.has(x.order_id)?num(x.quantity):0),0)+eventItems.reduce((a,x)=>a+(eventsSet.has(x.event_id)?num(x.quantity):0),0);
+  const onlineIds=new Set(sales.filter(x=>x.sales_channel!=='local').map(x=>x.id));
+  const localIds=new Set(sales.filter(x=>x.sales_channel==='local').map(x=>x.id));
+  const onlineUnits=orderItems.reduce((a,x)=>a+(onlineIds.has(x.order_id)?num(x.quantity):0),0);
+  const localUnits=orderItems.reduce((a,x)=>a+(localIds.has(x.order_id)?num(x.quantity):0),0);
+  const eventUnits=eventItems.reduce((a,x)=>a+(eventsSet.has(x.event_id)?num(x.quantity):0),0);
+  const units=onlineUnits+localUnits+eventUnits;
+  $('unitsSold').textContent=units.toLocaleString('pt-BR')+' unidades';
+  $('unitsSoldBreakdown').textContent='Online: '+onlineUnits+' · Balcão: '+localUnits+' · Eventos: '+eventUnits;
   $('sales').textContent=fmtMoney(saleTotal);$('received').textContent=fmtMoney(receivedTotal);$('fees').textContent=fmtMoney(feesTotal);
   $('open').textContent=fmtMoney(pendingTotal);$('expenses').textContent=fmtMoney(expenseTotal);$('partial').textContent=fmtMoney(receivedTotal-expenseTotal);
   const channel={},payments={},expenseCats={};
