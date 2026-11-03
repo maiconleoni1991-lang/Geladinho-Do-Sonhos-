@@ -156,7 +156,7 @@ body>#gdsAdminNav48,body>#gdsMobileBar48,body>#gdsMore48{display:none!important}
 <div class="side-label">GESTÃO</div>
 <a class="side-link" data-nav href="reports-v48.html?v=164"><span class="ico">📊</span><span>Relatórios<small>Financeiro e gráficos</small></span></a>
 <a class="side-link" data-nav href="monthly-closing-v165.html?v=167"><span class="ico">🗓️</span><span>Fechamento mensal<small>Caixa, fiados e impressão PDF</small></span></a>
-<a class="side-link" data-nav href="trusted-customers-v116.html?v=165"><span class="ico">👥</span><span>Clientes<small>Histórico e fiado</small></span></a>
+<a class="side-link" data-nav href="trusted-customers-v116.html?v=166"><span class="ico">👥</span><span>Clientes<small>Histórico e fiado</small></span></a>
 <a class="side-link" data-nav href="events-v57.html?v=140"><span class="ico">🎉</span><span>Eventos<small>Encomendas</small></span></a>
 <div class="sidebar-bottom">
 <a class="side-link" data-nav href="reviews-v63.html?v=140"><span class="ico">⭐</span><span>Avaliações</span></a>
@@ -172,7 +172,7 @@ body>#gdsAdminNav48,body>#gdsMobileBar48,body>#gdsMore48{display:none!important}
 </div>
 <div class="heading"><div><h1>Olá! 👋</h1><p>Resumo da Geladinho do Sonhos · <span id="todayLabel">carregando data</span></p></div><div class="date-badge" id="dateBadge">📅 Hoje</div></div>
 <section class="creditReminderPanel" aria-label="Lembretes de pagamento fiado" id="creditReminderPanel">
- <div class="panel-head"><h2>📒 Lembretes de fiados</h2><span class="creditReminderFlag" id="creditReminderFlag" hidden role="status">🔔 LEMBRETE</span><a href="trusted-customers-v116.html?v=164" style="font-size:12px;font-weight:850;color:#b52a63">Gerenciar clientes →</a></div>
+ <div class="panel-head"><h2>📒 Lembretes de fiados</h2><span class="creditReminderFlag" id="creditReminderFlag" hidden role="status">🔔 LEMBRETE</span><a href="trusted-customers-v116.html?v=166" style="font-size:12px;font-weight:850;color:#b52a63">Gerenciar clientes →</a></div>
  <div class="creditSummary" id="creditReminderSummary">Consultando vencimentos combinados…</div>
  <div id="creditReminderList"></div>
  <small style="display:block;color:#826e79;margin-top:9px">Aviso interno: nenhuma cobrança é enviada automaticamente. Registre o pagamento somente após receber.</small>
@@ -264,7 +264,7 @@ const today=dayKey(new Date());
  const flag=$('creditReminderFlag');flag.hidden=!attention.length;flag.textContent=attention.some(x=>x.state==='atrasado')?'🔔 FIADOS ATRASADOS':'🔔 LEMBRETE DE HOJE';
  $('creditReminderSummary').textContent=customers.error?'Não foi possível consultar vencimentos: '+customers.error.message:attention.length?'🔔 '+attention.length+' pagamento(s) previstos para hoje ou atrasados · '+money(attention.reduce((n,x)=>n+x.total,0))+' a conferir':upcoming.length?'📅 '+upcoming.length+' pagamento(s) previstos nos próximos 7 dias':'✅ Sem vencimentos fiados para hoje ou nos próximos 7 dias.';
  const creditRows=[...attention,...upcoming].slice(0,12);
- $('creditReminderList').innerHTML=creditRows.map(x=>'<div class="creditReminderRow '+(x.state==='atrasado'?'late':x.state==='hoje'?'today':'soon')+'"><div class="grow"><strong>'+esc(x.name)+'</strong><small>📅 '+GDSCreditReminders.dateBR(x.dueDate)+' · '+(x.state==='atrasado'?'Vencido há '+Math.abs(x.daysUntil)+' dia(s)':x.state==='hoje'?'Vence hoje':'Vence em '+x.daysUntil+' dia(s)')+'</small></div><span class="dueBadge">'+(x.state==='atrasado'?'ATRASADO':x.state==='hoje'?'HOJE':'EM BREVE')+'</span><span class="value">'+money(x.total)+'</span><a href="trusted-customers-v116.html?v=164&cliente='+encodeURIComponent(x.name)+'" aria-label="Abrir ficha do cliente '+esc(x.name)+'">Ver ficha →</a></div>').join('');
+ $('creditReminderList').innerHTML=creditRows.map(x=>'<div class="creditReminderRow '+(x.state==='atrasado'?'late':x.state==='hoje'?'today':'soon')+'"><div class="grow"><strong>'+esc(x.name)+'</strong><small>📅 '+GDSCreditReminders.dateBR(x.dueDate)+' · '+(x.state==='atrasado'?'Vencido há '+Math.abs(x.daysUntil)+' dia(s)':x.state==='hoje'?'Vence hoje':'Vence em '+x.daysUntil+' dia(s)')+'</small></div><span class="dueBadge">'+(x.state==='atrasado'?'ATRASADO':x.state==='hoje'?'HOJE':'EM BREVE')+'</span><span class="value">'+money(x.total)+'</span><a href="trusted-customers-v116.html?v=166&cliente='+encodeURIComponent(x.name)+'" aria-label="Abrir ficha do cliente '+esc(x.name)+'">Ver ficha →</a></div>').join('');
 const dateText=new Intl.DateTimeFormat('pt-BR',{timeZone:tz,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
 setText('todayLabel',dateText);setText('dateBadge','📅 '+new Intl.DateTimeFormat('pt-BR',{timeZone:tz,day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()));
 const completed=orders.filter(done),todayCompleted=completed.filter(o=>dayKey(o.created_at)===today),online=todayCompleted.filter(o=>o.sales_channel==='online'),local=todayCompleted.filter(o=>o.sales_channel==='local');
