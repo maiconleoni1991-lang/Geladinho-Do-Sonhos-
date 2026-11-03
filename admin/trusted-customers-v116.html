@@ -11,7 +11,17 @@
 .history{border-top:1px solid #f1e3e8;padding-top:9px;margin-top:11px}
 .history>summary{cursor:pointer;color:#4a101e;font-weight:950;padding:6px 0}
 .historyOrder{border:1px solid #efdee6;border-radius:11px;margin:8px 0;padding:10px;background:#fff}
-.historyOrder.cancelled{opacity:.65}
+.historyOrder.paid{background:#eef7ff;border-color:#b7d9f4;border-left:4px solid #6bafe1}
+.historyOrder.paid .historyHead .money{color:#236c9f}
+.historyOrder.openBalance{background:#fff5f5;border-color:#f0cbcb;border-left:4px solid #d97d7d}
+.historyOrder.openBalance .historyHead .money{color:#b13f4a}
+.historyOrder.cancelled{opacity:.65;background:#f6f5f6;border-color:#e1dce0;border-left:4px solid #b1a9af}
+.historyOrder .paymentTag{display:inline-block;margin-top:8px;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.01em}
+.historyOrder.paid .paymentTag{background:#d9ecfb;color:#175b8d}
+.historyOrder.openBalance .paymentTag{background:#ffe0e0;color:#a33942}
+.historyOrder.cancelled .paymentTag{background:#ece8eb;color:#6a5e65}
+.debt{background:#fff7f7;border-left:3px solid #d98b8b;padding:10px 12px;border-radius:9px;margin:7px 0}
+.debt .money{color:#a83245}
 .historyHead{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:12px}
 .historyHead .money{margin-left:auto}
 .purchaseItem{display:flex;justify-content:space-between;gap:12px;margin-top:5px;font-size:12px;color:#604a54}
@@ -204,9 +214,12 @@ function renderFiado(){
   const debts=g.debts.length?g.debts.map(o=>'<div class="debt"><div class="debtTop"><b>'+esc(o.public_code||'Pedido')+'</b><span>'+new Date(o.created_at).toLocaleDateString('pt-BR')+'</span><span class="money">'+money(balance(o))+'</span></div><div class="actions"><button class="pix" onclick="settle(\''+o.id+'\',\'Pix\')">💠 Receber Pix</button><button class="cash" onclick="settle(\''+o.id+'\',\'Dinheiro\')">💵 Receber dinheiro</button><button class="cash" onclick="settleCard(\''+o.id+'\',\'Cartão de débito\')">💳 Receber débito</button><button class="cash" onclick="settleCard(\''+o.id+'\',\'Cartão de crédito\')">💳 Receber crédito 1x</button></div><div class="fiadoTip">A taxa do cartão é mostrada antes da cobrança e não conta como faturamento líquido.</div></div>').join(''):'<div class="empty">Nenhum fiado em aberto.</div>';
   const showOrder=o=>{
    const cancelled=o.status==='Cancelado';
+   const paid=!cancelled&&(o.payment_status==='Pago'||(balance(o)===0&&Number(o.paid_amount||0)>0));
+   const paymentTag=cancelled?'CANCELADO':paid?'✓ PAGO':o.payment_status==='Parcial'?'PAGAMENTO PARCIAL':'PENDENTE';
+   const visualState=cancelled?'cancelled':paid?'paid':'openBalance';
    const items=(o.order_items||[]).map(item=>'<div class="purchaseItem"><span>'+Number(item.quantity||0)+'× '+esc(item.product_name||'Produto')+'</span><b>'+money(Number(item.quantity||0)*Number(item.unit_price||0))+'</b></div>').join('');
    const payLabel=esc(o.payment_method||'Não informado');
-   return '<div class="historyOrder '+(cancelled?'cancelled':'')+'"><div class="historyHead"><b>'+esc(o.public_code||'Pedido')+'</b><span>'+new Date(o.created_at).toLocaleString('pt-BR')+'</span><span class="statusMini">'+esc(o.sales_channel==='local'?'Local':'Online')+'</span><span class="money">'+money(o.total)+'</span></div>'+(items||'<div class="meta">Itens não disponíveis</div>')+'<div class="meta">Pagamento: '+payLabel+' · '+esc(cancelled?'Cancelado':o.payment_status||'Pendente')+' · Recebido: '+money(o.paid_amount)+(Number(o.card_fee_amount||0)>0?' · Tarifa Point: '+money(o.card_fee_amount)+' · Líquido: '+money(Math.max(0,Number(o.paid_amount||0)-Number(o.card_fee_amount||0))):'')+(cancelled?' (não entra nos totais)':'')+(isCreditOrder(o)?' · Saldo fiado: '+money(balance(o)):'')+'</div></div>';
+   return '<div class="historyOrder '+visualState+'"><div class="historyHead"><b>'+esc(o.public_code||'Pedido')+'</b><span>'+new Date(o.created_at).toLocaleString('pt-BR')+'</span><span class="statusMini">'+esc(o.sales_channel==='local'?'Local':'Online')+'</span><span class="money">'+money(o.total)+'</span></div>'+(items||'<div class="meta">Itens não disponíveis</div>')+'<div class="meta">Pagamento: '+payLabel+' · '+esc(cancelled?'Cancelado':o.payment_status||'Pendente')+' · Recebido: '+money(o.paid_amount)+(Number(o.card_fee_amount||0)>0?' · Tarifa Point: '+money(o.card_fee_amount)+' · Líquido: '+money(Math.max(0,Number(o.paid_amount||0)-Number(o.card_fee_amount||0))):'')+(cancelled?' (não entra nos totais)':'')+(isCreditOrder(o)?' · Saldo fiado: '+money(balance(o)):'')+'</div><span class="paymentTag">'+paymentTag+'</span></div>';
   };
   const history=g.visible.map(showOrder).join('');
   const archivedHistory=archivedShown.has(g.key)?g.archived.map(showOrder).join(''):'';
