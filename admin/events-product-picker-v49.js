@@ -1,6 +1,6 @@
 (()=>{
   if(window.__gdsEventProductPickerV49)return;window.__gdsEventProductPickerV49=true;
-  const CATS=['Tradicional','Cremoso','Gourmet','Trufado'];
+  const CATS=['Gourmet','Trufado'];
   const collator=new Intl.Collator('pt-BR',{sensitivity:'base',numeric:true});
   let products=[];
   const $=id=>document.getElementById(id);
@@ -72,7 +72,7 @@
     if(!window.GDS48?.sb)return;
     const {data,error}=await GDS48.sb.from('products').select('id,name,category,price,stock,active').order('name',{ascending:true});
     if(error){console.error('GDS picker eventos v49',error);return}
-    products=data||[];renderPicker();organizeLines();
+    products=(data||[]).filter(p=>CATS.includes(catOf(p.category)));renderPicker();organizeLines();
   }
   function boot(){
     loadProducts();
