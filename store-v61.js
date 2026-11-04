@@ -4,6 +4,7 @@ const SB='https://qpqruhcspbdxjcnbhdhn.supabase.co';
 const KEY='sb_publishable_JVYvfl7nrRmlm17qF_KI8A_1H8mtvLk';
 const WHATS='5516992542888';
 const DELIVERY_FEE=6;
+const SELLABLE_CATEGORIES=['Gourmet','Trufado'];
 const VAPID_PUBLIC_KEY='BOJ0jB7oR4VvBDiU0ejprYRayZeWHFEOdb8DliQNXpWf5TzXAo8CJbpy3879L1MioYEF393gc3ri1iauqD3vPmw';
 const $=id=>document.getElementById(id);
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -79,8 +80,8 @@ async function loadStore(){
       api('/rest/v1/store_settings?id=eq.main&select=is_open,card_debit_rate_percent,card_credit_rate_percent,card_debit_normal_rate_percent,card_credit_normal_rate_percent,card_promo_valid_until'),
       api('/rest/v1/public_testimonials?select=rating,comment,created_at&order=created_at.desc&limit=6')
     ]);
-    products=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
-    const catOrder={Tradicional:0,Cremoso:1,Gourmet:2,Trufado:3};
+    products=(Array.isArray(p)?p:[]).filter(x=>SELLABLE_CATEGORIES.includes(x.category)).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
+    const catOrder={Gourmet:0,Trufado:1};
     products.sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99)||String(a.name).localeCompare(String(b.name),'pt-BR',{sensitivity:'base'}));
     storeOpen=!!s?.[0]?.is_open;cardFeeSettings=s?.[0]||null;
     renderStatus();cleanCart();updateTotals();renderFilters();renderProducts();renderTestimonials(Array.isArray(t)?t:[]);
@@ -95,8 +96,8 @@ async function refreshStockOnly(){
   stockRefreshBusy=true;
   try{
     const [p,settings]=await Promise.all([api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&stock=gt.0&order=category.asc,name.asc'),api('/rest/v1/store_settings?id=eq.main&select=is_open,card_debit_rate_percent,card_credit_rate_percent,card_debit_normal_rate_percent,card_credit_normal_rate_percent,card_promo_valid_until')]);
-    products=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
-    const catOrder={Tradicional:0,Cremoso:1,Gourmet:2,Trufado:3};
+    products=(Array.isArray(p)?p:[]).filter(x=>SELLABLE_CATEGORIES.includes(x.category)).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
+    const catOrder={Gourmet:0,Trufado:1};
     products.sort((a,b)=>(catOrder[a.category]??99)-(catOrder[b.category]??99)||String(a.name).localeCompare(String(b.name),'pt-BR',{sensitivity:'base'}));
     storeOpen=!!settings?.[0]?.is_open;cardFeeSettings=settings?.[0]||null;
     cleanCart();renderFilters();renderProducts();updateTotals();renderStatus();
@@ -107,7 +108,7 @@ async function verifyCartStock(){
   const requested=Object.entries(cart).filter(([,q])=>Number(q)>0);
   if(!requested.length)throw new Error('Seu carrinho está vazio.');
   const p=await api('/rest/v1/products?select=slug,name,category,description,price,stock,active,image_url,sort_order&active=eq.true&order=category.asc,name.asc');
-  const fresh=(Array.isArray(p)?p:[]).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
+  const fresh=(Array.isArray(p)?p:[]).filter(x=>SELLABLE_CATEGORIES.includes(x.category)).map(x=>({...x,price:Number(x.price),stock:Number(x.stock||0)}));
   const problems=[];
   for(const [slug,qRaw] of requested){
     const q=Number(qRaw)||0,fp=fresh.find(x=>x.slug===slug);
@@ -122,9 +123,8 @@ async function verifyCartStock(){
 function renderStatus(custom){const b=$('storeStatus');b.className='statusbar '+(custom?'closed':storeOpen?'open':'closed');b.textContent=custom|| (storeOpen?'● Vendas online abertas · Faça seu pedido pelo site.':'● Vendas online fechadas · Cardápio disponível somente para consulta.');const c=$('checkoutBtn');if(c){c.disabled=checkoutBusy||!storeOpen||(cardPayment()&&!cardQuote().valid);c.textContent=checkoutBusy?'Registrando pedido…':!storeOpen?'Loja fechada para pedidos online':cardPayment()&&!cardQuote().valid?'Taxa do cartão indisponível':'Confirmar pedido'}}
 function renderFilters(){
   const available=products.filter(p=>p.active&&p.stock>0&&p.category);
-  const base=['Tradicional','Cremoso','Gourmet','Trufado'].filter(c=>available.some(p=>p.category===c));
-  const extras=[...new Set(available.map(p=>p.category).filter(Boolean).filter(c=>!base.includes(c)))];
-  const cats=['Todos',...base,...extras];
+  const base=SELLABLE_CATEGORIES.filter(c=>available.some(p=>p.category===c));
+  const cats=['Todos',...base];
   if(!cats.includes(filter))filter='Todos';
   $('filters').innerHTML=cats.map(c=>`<button class="filter ${filter===c?'on':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');
   $('filters').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{filter=b.dataset.cat;renderFilters();renderProducts()});
@@ -310,7 +310,7 @@ async function enableStoreOpenPush(){
   }
 }
 
-async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=143');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
+async function replaceOldServiceWorker(){if(!('serviceWorker'in navigator))return;try{const reg=await navigator.serviceWorker.register('./sw.js?v=144');await reg.update().catch(()=>{});await syncPushUi().catch(()=>{})}catch(e){console.warn('PWA indisponível',e)}}
 function bind(){if($('pushBtn'))$('pushBtn').onclick=enableStoreOpenPush;$('search').oninput=e=>{term=e.target.value;renderProducts()};$('cartTop').onclick=$('floatCart').onclick=openCart;$('closeCart').onclick=resetCartModal;$('cartOverlay').onclick=e=>{if(e.target.id==='cartOverlay')resetCartModal()};document.querySelectorAll('input[name="fulfillment"],input[name="paymentMethod"]').forEach(r=>r.onchange=()=>{updateTotals();renderStatus()});$('cep').onblur=lookupCep;$('checkoutBtn').onclick=checkout;$('continueBtn').onclick=resetCartModal;$('goCatalog').onclick=()=>document.getElementById('cardapio').scrollIntoView({behavior:'smooth'});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cartOverlay').classList.contains('show'))resetCartModal()})}
 
 function setupInstallRegistration(){
