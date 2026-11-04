@@ -322,7 +322,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="recipe-name-highlight"><label class="field">✏️ Nome da receita / sabor<input id="bookName" maxlength="120" placeholder="Ex.: Morangurte, Ninho com Nutella" required></label><span class="small">Informe o nome que aparecerá no Livro. O nome da base não será usado automaticamente.</span></div>
 <label class="field" id="newRecipeBaseField" hidden>Modelo de base<select id="newRecipeBase"><option value="gourmet_nova">Base Gourmet</option><option value="premium_2">Base Premium 2</option><option value="premium_1">Base Premium 1</option></select><small>Os ingredientes são copiados para a nova ficha; a base original é preservada.</small></label>
 <div class="cols">
-<label class="field">Categoria do produto<select id="bookCategory"><option value="Gourmet">Gourmet</option><option value="Cremoso">Cremoso</option><option value="Trufado">Trufado</option><option value="Tradicional">Tradicional</option></select></label>
+<label class="field">Categoria do produto<select id="bookCategory"><option value="Gourmet">Gourmet</option><option value="Trufado">Trufado</option></select></label>
 <label class="field">Preço de venda (R$ / geladinho)<input id="salePrice" type="number" inputmode="decimal" min="0" step="0.01"></label>
 <label class="field">Rendimento por receita (unidades)<input id="yieldUnits" type="number" inputmode="numeric" min="1" step="1" placeholder="Ex.: 20"></label>
 <label class="field">Embalagem por unidade (R$)<input id="packaging" type="number" inputmode="decimal" min="0" step="0.0001" placeholder="Custo por saquinho/etiqueta"></label>
@@ -421,7 +421,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <div class="note">Cada ficha é independente e guarda uma fotografia dos valores informados ao salvar. Atualizações futuras nos preços gerais não apagam os custos registrados. <strong>Custo previsto não significa despesa realizada nem baixa de estoque.</strong></div>
 <div class="cols" style="margin-top:12px">
 <label class="field">Buscar sabor ou nome<input id="bookSearch" type="search" placeholder="Ex.: Morangurte, Prestígio, Ninho"></label>
-<label class="field">Categoria<select id="bookFilter"><option value="">Todas as categorias</option><option value="Gourmet">Gourmet</option><option value="Cremoso">Cremoso</option><option value="Trufado">Trufado</option><option value="Tradicional">Tradicional</option></select></label>
+<label class="field">Categoria<select id="bookFilter"><option value="">Todas as categorias</option><option value="Gourmet">Gourmet</option><option value="Trufado">Trufado</option></select></label>
 </div>
 <div id="bookCards" class="book-cards"></div>
 </div>
